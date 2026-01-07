@@ -1,0 +1,59 @@
+/* Login Play Button Styles */
+.login-play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 10px;
+  color: white;
+  text-shadow: 2px 2px rgb(116, 116, 116);
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 1px;
+  font-weight: 600;
+  font-size: 17px;
+  background-color: #fb923c;
+  border-radius: 50px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  text-decoration: none;
+}
+
+.login-play-button:active {
+  transform: scale(0.9);
+  transition: all 100ms ease;
+}
+
+.login-play-button svg {
+  transition: all 0.5s ease;
+  z-index: 2;
+}
+
+.login-play-button .play {
+  transition: all 0.5s ease;
+  transition-delay: 300ms;
+}
+
+.login-play-button:hover svg {
+  transform: scale(3) translate(50%);
+}
+
+.login-play-button .now {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+  transition: all 0.5s ease;
+  z-index: 2;
+}
+
+.login-play-button:hover .now {
+  transform: translateX(10px);
+  transition-delay: 300ms;
+}
+
+.login-play-button:hover .play {
+  transform: translateX(200%);
+  transition-delay: 300ms;
+}
+
