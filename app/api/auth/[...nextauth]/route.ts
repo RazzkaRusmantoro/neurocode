@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getUserByEmail } from '@/lib/models/user';
+import GoogleProvider from 'next-auth/providers/google';
+import { getUserByEmail, createOrUpdateOAuthUser } from '@/lib/models/user';
 import bcrypt from 'bcryptjs';
 
 const handler = NextAuth({
@@ -18,7 +19,7 @@ const handler = NextAuth({
 
         const user = await getUserByEmail(credentials.email as string);
 
-        if (!user) {
+        if (!user || !user.password) {
           return null;
         }
 
@@ -38,14 +39,60 @@ const handler = NextAuth({
         };
       },
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
   ],
   pages: {
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // Handle OAuth sign-in (Google, GitHub, etc.)
+      if (account?.provider === 'google' && user.email && user.name) {
+        try {
+          const dbUser = await createOrUpdateOAuthUser(user.email, user.name, 'google');
+          user.id = dbUser._id?.toString() || '';
+          return true;
+        } catch (error) {
+          console.error('Error creating/updating OAuth user:', error);
+          return false;
+        }
+      }
+      
+      if (account?.provider === 'github' && user.email && user.name) {
+        try {
+          const dbUser = await createOrUpdateOAuthUser(user.email, user.name, 'github');
+          user.id = dbUser._id?.toString() || '';
+          return true;
+        } catch (error) {
+          console.error('Error creating/updating OAuth user:', error);
+          return false;
+        }
+      }
+      
+      if (account?.provider === 'credentials') {
+        return true;
+      }
+      
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
+        if (account?.provider === 'google' && user.email && !token.id) {
+          const dbUser = await getUserByEmail(user.email);
+          if (dbUser) {
+            token.id = dbUser._id?.toString() || '';
+          }
+        }
+      }
+      if (token.email && !token.id) {
+        const dbUser = await getUserByEmail(token.email as string);
+        if (dbUser) {
+          token.id = dbUser._id?.toString() || '';
+        }
       }
       return token;
     },
