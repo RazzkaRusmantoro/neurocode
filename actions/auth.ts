@@ -22,7 +22,7 @@ export async function registerUser(
       password: hashedPassword,
       firstName,
       lastName,
-      authProvider: 'credentials',
+      authProviders: ['credentials'],
     });
 
     return { success: true };

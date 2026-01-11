@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import { getUserByEmail, createOrUpdateOAuthUser } from '@/lib/models/user';
+import { getUserByEmail, createOrUpdateOAuthUser, addAuthProviderToUser } from '@/lib/models/user';
 import bcrypt from 'bcryptjs';
 
 const handler = NextAuth({
@@ -31,6 +31,8 @@ const handler = NextAuth({
         if (!isPasswordValid) {
           return null;
         }
+
+        await addAuthProviderToUser(user.email, 'credentials');
 
         return {
           id: user._id?.toString() || '',

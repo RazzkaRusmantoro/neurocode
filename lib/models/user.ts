@@ -7,7 +7,7 @@ export interface User {
   password?: string;
   firstName: string;
   lastName: string;
-  authProvider?: 'credentials' | 'google' | 'github';
+  authProviders: ('credentials' | 'google' | 'github')[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,7 +17,7 @@ export const UserSchema = {
   password: { type: 'string', required: false },
   firstName: { type: 'string', required: true },
   lastName: { type: 'string', required: true },
-  authProvider: { type: 'string', required: false },
+  authProviders: { type: 'array', required: true },
   createdAt: { type: 'date', default: Date.now },
   updatedAt: { type: 'date', default: Date.now },
 };
@@ -32,7 +32,7 @@ export async function createUser(userData: Omit<User, '_id' | 'createdAt' | 'upd
   const now = new Date();
   const newUser: Omit<User, '_id'> = {
     ...userData,
-    authProvider: userData.authProvider || 'credentials',
+    authProviders: userData.authProviders || ['credentials'],
     createdAt: now,
     updatedAt: now,
   };
@@ -55,9 +55,14 @@ export async function createOrUpdateOAuthUser(
   const existingUser = await getUserByEmail(email);
   
   if (existingUser) {
+    const currentProviders = existingUser.authProviders || [];
+    const updatedProviders = currentProviders.includes(provider)
+      ? currentProviders
+      : [...currentProviders, provider];
+    
     const updateData: Partial<User> = {
       updatedAt: now,
-      authProvider: provider,
+      authProviders: updatedProviders,
     };
     
     if (!existingUser.firstName && firstName) {
@@ -76,7 +81,7 @@ export async function createOrUpdateOAuthUser(
       ...existingUser,
       firstName: existingUser.firstName || firstName,
       lastName: existingUser.lastName || lastName,
-      authProvider: provider,
+      authProviders: updatedProviders,
       updatedAt: now,
     };
   }
@@ -85,7 +90,7 @@ export async function createOrUpdateOAuthUser(
     email,
     firstName,
     lastName,
-    authProvider: provider,
+    authProviders: [provider],
     createdAt: now,
     updatedAt: now,
   };
@@ -101,6 +106,42 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getUserById(id: string): Promise<User | null> {
   const collection = await getUsersCollection();
   return collection.findOne({ _id: new ObjectId(id) });
+}
+
+export async function addAuthProviderToUser(
+  email: string,
+  provider: 'credentials' | 'google' | 'github'
+): Promise<User | null> {
+  const collection = await getUsersCollection();
+  const now = new Date();
+  
+  const user = await getUserByEmail(email);
+  if (!user) {
+    return null;
+  }
+  
+  const currentProviders = user.authProviders || [];
+  if (currentProviders.includes(provider)) {
+    return user;
+  }
+  
+  const updatedProviders = [...currentProviders, provider];
+  
+  await collection.updateOne(
+    { email },
+    { 
+      $set: { 
+        authProviders: updatedProviders,
+        updatedAt: now 
+      } 
+    }
+  );
+  
+  return {
+    ...user,
+    authProviders: updatedProviders,
+    updatedAt: now,
+  };
 }
 
 
