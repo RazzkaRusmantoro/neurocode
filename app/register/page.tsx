@@ -51,7 +51,7 @@ export default function RegisterPage() {
           password,
           redirect: false,
         });
-        router.push('/dashboard');
+        router.push('/personalize');
         router.refresh();
       }
     } catch (err) {
