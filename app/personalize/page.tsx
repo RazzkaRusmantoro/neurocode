@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Dropdown from '@/app/components/Dropdown';
 
 const PRIMARY_GOALS = [
@@ -38,8 +39,20 @@ export default function PersonalizePage() {
   const [primaryGoal, setPrimaryGoal] = useState('');
   const [role, setRole] = useState('');
   const router = useRouter();
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
 
   const isFormComplete = primaryGoal && role;
+
+
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   const handleNext = () => {
     if (!isFormComplete) return;

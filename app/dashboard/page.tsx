@@ -20,10 +20,6 @@ export default function DashboardPage() {
     router.refresh();
   };
 
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
   if (status === 'unauthenticated') {
     return null;
   }
