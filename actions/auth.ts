@@ -17,7 +17,7 @@ export async function registerUser(
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await createUser({
+    const newUser = await createUser({
       email,
       password: hashedPassword,
       firstName,
@@ -25,7 +25,7 @@ export async function registerUser(
       authProviders: ['credentials'],
     });
 
-    return { success: true };
+    return { success: true, userId: newUser._id?.toString() };
   } catch (error: any) {
     return { error: error.message || 'Registration failed' };
   }

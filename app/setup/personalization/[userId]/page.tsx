@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Dropdown from '@/app/components/Dropdown';
 
@@ -35,11 +35,13 @@ const ROLE_OPTIONS = [
   'Other',
 ];
 
-export default function PersonalizePage() {
+export default function PersonalizationPage() {
   const [primaryGoal, setPrimaryGoal] = useState('');
   const [role, setRole] = useState('');
   const router = useRouter();
+  const params = useParams();
   const { status } = useSession();
+  const userId = params?.userId as string;
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -49,17 +51,13 @@ export default function PersonalizePage() {
 
   const isFormComplete = primaryGoal && role;
 
-
   if (status === 'unauthenticated') {
     return null;
   }
 
   const handleNext = () => {
     if (!isFormComplete) return;
-    // For now, just redirect to dashboard
-    // Later we can add more stages or save the data
-    // true dat, i wanna know if i wanna make this personalize page also a popup instead on the dashboard or idk we'll see
-    router.push('/dashboard');
+    router.push(`/setup/pricing/${userId}`);
   };
 
   const handleSkip = () => {
@@ -114,7 +112,7 @@ export default function PersonalizePage() {
                   className={`px-4 py-2.5 whitespace-nowrap border rounded-lg cursor-pointer transition-all ${
                     role === option
                       ? 'bg-[#BC4918]/20 border-[#BC4918] text-white'
-                      : 'bg-gray-800/30 border-gray-700/30 text-gray-300 hover:bg-gray-800/50 hover:border-gray-600/50'
+                      : 'bg-[#212121] border-[#424242] text-gray-300 hover:bg-[#2a2a2a] hover:border-gray-600/50'
                   }`}
                 >
                   {option}
@@ -126,13 +124,13 @@ export default function PersonalizePage() {
 
         {/* Action Buttons - Bottom Right */}
         <div className="flex justify-end gap-3 mt-32">
-          <button
+          {/* <button
             type="button"
             onClick={handleSkip}
             className="text-sm text-gray-400 hover:text-white font-medium underline transition-colors duration-200 cursor-pointer mr-5"
           >
             Skip Personalization
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={handleNext}
@@ -150,4 +148,3 @@ export default function PersonalizePage() {
     </div>
   );
 }
-

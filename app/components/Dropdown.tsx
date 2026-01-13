@@ -39,7 +39,7 @@ export default function Dropdown({
         type="button"
         id={id}
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="w-full px-4 py-2.5 pr-5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all cursor-pointer flex items-center justify-between"
+        className="w-full px-4 py-2.5 pr-5 bg-[#212121] border border-[#424242] rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all cursor-pointer flex items-center justify-between"
       >
         <span className={value ? 'text-white' : 'text-gray-400'}>
           {value || placeholder}
@@ -54,8 +54,8 @@ export default function Dropdown({
         </svg>
       </button>
       {isDropdownOpen && (
-        <div className="absolute z-10 w-full mt-2 bg-gray-900/30 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-lg max-h-80 overflow-auto custom-scrollbar">
-          <div className="py-2 px-2">
+        <div className="absolute z-10 w-full mt-2 bg-[#212121] backdrop-blur-sm border border-[#424242] rounded-lg shadow-lg overflow-hidden">
+          <div className="py-2 px-2 max-h-80 overflow-y-auto custom-scrollbar">
             {options.map((option, index) => (
               <button
                 key={index}
@@ -64,11 +64,27 @@ export default function Dropdown({
                   onChange(option);
                   setIsDropdownOpen(false);
                 }}
-                className={`w-full px-4 py-2.5 text-left text-white hover:bg-gray-700/50 rounded transition-colors ${
-                  value === option ? 'bg-gray-700/30' : ''
-                }`}
+                className={`w-full py-2.5 text-left text-white hover:bg-[#2a2a2a] rounded transition-colors cursor-pointer flex items-center gap-3 ${
+                  value ? 'pl-3 pr-4' : 'px-4'
+                } ${value === option ? 'bg-[#2a2a2a]' : ''}`}
               >
-                {option}
+                {value && (
+                  <>
+                    {value === option ? (
+                      <svg 
+                        className="w-5 h-5 text-[#BC4918] flex-shrink-0" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <div className="w-5 h-5 flex-shrink-0" />
+                    )}
+                  </>
+                )}
+                <span>{option}</span>
               </button>
             ))}
           </div>
@@ -77,4 +93,3 @@ export default function Dropdown({
     </div>
   );
 }
-

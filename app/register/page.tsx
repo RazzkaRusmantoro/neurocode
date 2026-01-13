@@ -51,7 +51,11 @@ export default function RegisterPage() {
           password,
           redirect: false,
         });
-        router.push('/personalize');
+        if (result.userId) {
+          router.push(`/setup/personalization/${result.userId}`);
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       }
     } catch (err) {
@@ -142,7 +146,7 @@ export default function RegisterPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your first name"
               />
             </div>
@@ -159,7 +163,7 @@ export default function RegisterPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your last name"
               />
             </div>
@@ -177,7 +181,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your email"
               />
             </div>

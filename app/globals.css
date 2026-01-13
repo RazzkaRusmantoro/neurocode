@@ -32,21 +32,23 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.3);
-  border-radius: 4px;
+  background: #212121;
+  border-radius: 10px;
+  margin: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(188, 73, 24, 0.6);
-  border-radius: 4px;
+  background-color: #BC4918;
+  border-radius: 10px;
+  border: 2px solid #212121;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(188, 73, 24, 0.8);
+  background-color: #D85A2A;
 }
 
 /* Firefox scrollbar styling */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(188, 73, 24, 0.6) rgba(31, 41, 55, 0.3);
+  scrollbar-color: #BC4918 #212121;
 }
