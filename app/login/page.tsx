@@ -67,9 +67,9 @@ export default function LoginPage() {
 
         {/* Login Subtitle */}
         <div className="flex items-center justify-center gap-4 mb-8">
-          <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
-          <span className="text-gray-400 text-sm whitespace-nowrap">Login with</span>
-          <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
+          <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
+          <span className="text-white/70 text-sm whitespace-nowrap">Login with</span>
+          <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
         </div>
 
         {/* Social Login Buttons */}
@@ -201,7 +201,7 @@ export default function LoginPage() {
 
         {/* Sign Up Link */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-white/70">
             Don't have an account?{' '}
             <Link 
               href="/register" 

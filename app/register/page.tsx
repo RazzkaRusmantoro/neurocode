@@ -52,7 +52,7 @@ export default function RegisterPage() {
           redirect: false,
         });
         if (result.userId) {
-          router.push(`/setup/personalization/${result.userId}`);
+          router.push(`/setup/${result.userId}?stage=personalization`);
         } else {
           router.push('/dashboard');
         }
@@ -99,9 +99,9 @@ export default function RegisterPage() {
 
           {/* Login Subtitle */}
           <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
-            <span className="text-gray-400 text-sm whitespace-nowrap">Enjoy our services for free</span>
-            <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
+            <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
+            <span className="text-white/70 text-sm whitespace-nowrap">Enjoy our services for free</span>
+            <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
           </div>
 
           {/* Social Login Buttons */}
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                   placeholder="Enter your password"
                 />
                 <button
@@ -236,7 +236,7 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -280,7 +280,7 @@ export default function RegisterPage() {
 
           {/* Sign In Link */}
           <div className="mt-5 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/70">
               Already have an account?{' '}
               <Link 
                 href="/login" 
