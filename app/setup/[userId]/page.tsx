@@ -7,7 +7,7 @@ import PersonalizationStep from './components/PersonalizationStep';
 import PricingStep from './components/PricingStep';
 import OrganizationStep from './components/OrganizationStep';
 
-type Stage = 'personalization' | 'pricing' | 'org';
+type Stage = 'personalization' | 'pricing' | 'organization';
 
 export default function SetupPage() {
   const [primaryGoal, setPrimaryGoal] = useState('');
@@ -42,7 +42,7 @@ export default function SetupPage() {
   };
 
   const handlePricingNext = () => {
-    updateStage('org');
+    updateStage('organization');
   };
 
   const handleOrganizationFinish = () => {
@@ -51,7 +51,7 @@ export default function SetupPage() {
 
   // Determine which stages should be visible and animated
   const getStageClasses = (stage: Stage) => {
-    const stageOrder: Stage[] = ['personalization', 'pricing', 'org'];
+    const stageOrder: Stage[] = ['personalization', 'pricing', 'organization'];
     const currentIndex = stageOrder.indexOf(currentStage);
     const stageIndex = stageOrder.indexOf(stage);
 
@@ -91,7 +91,7 @@ export default function SetupPage() {
         </div>
 
         {/* Organization Step */}
-        <div className={`transition-all duration-500 ease-in-out ${getStageClasses('org')}`}>
+        <div className={`transition-all duration-500 ease-in-out ${getStageClasses('organization')}`}>
           <OrganizationStep
             organizationName={organizationName}
             onOrganizationNameChange={setOrganizationName}
