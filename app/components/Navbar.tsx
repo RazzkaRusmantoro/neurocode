@@ -26,7 +26,7 @@ export default function Navbar() {
           <div className="flex items-center gap-8">
             <a 
               href="#" 
-              className="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+              className="text-sm text-white/70 hover:text-white transition-colors duration-200 flex items-center gap-1"
               onClick={(e) => {
                 e.preventDefault();
                 setSolutionsActive(!solutionsActive);
@@ -44,7 +44,7 @@ export default function Navbar() {
             </a>
             <a 
               href="#" 
-              className="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+              className="text-sm text-white/70 hover:text-white transition-colors duration-200 flex items-center gap-1"
               onClick={(e) => {
                 e.preventDefault();
                 setResourcesActive(!resourcesActive);
@@ -60,10 +60,10 @@ export default function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white transition-colors">
+            <a href="#" className="text-sm text-white/70 hover:text-white transition-colors duration-200">
               Pricing
             </a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white transition-colors">
+            <a href="#" className="text-sm text-white/70 hover:text-white transition-colors duration-200">
               Contact
             </a>
           </div>

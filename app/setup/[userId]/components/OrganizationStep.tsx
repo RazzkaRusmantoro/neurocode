@@ -71,7 +71,7 @@ export default function OrganizationStep({
         }`}
       >
         {/* Subheader */}
-        <p className="text-gray-400 text-base mb-8">
+        <p className="text-white/60 text-base mb-8">
           Give us your organization name to get started.
         </p>
 
@@ -79,7 +79,7 @@ export default function OrganizationStep({
         <div className="space-y-6">
           {/* Organization Name Field */}
           <div>
-            <label htmlFor="organizationName" className="block text-sm font-medium text-gray-300 mb-3">
+            <label htmlFor="organizationName" className="block text-sm font-medium text-white/70 mb-3">
               Organization Name
             </label>
             <input
@@ -88,7 +88,7 @@ export default function OrganizationStep({
               name="organizationName"
               value={organizationName}
               onChange={(e) => onOrganizationNameChange(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#212121] border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+              className="w-full px-4 py-2.5 bg-[#212121] border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
               placeholder="Enter your organization name"
             />
           </div>
@@ -103,7 +103,7 @@ export default function OrganizationStep({
             className={`px-8 py-1.5 text-sm font-semibold rounded-lg border transition-all duration-300 ease-in-out ${
               isFormComplete
                 ? 'bg-[#BC4918] hover:bg-[#D85A2A] text-white border-[#BC4918] hover:border-[#D85A2A] hover:shadow-[0_0_15px_rgba(188,73,24,0.6)] cursor-pointer'
-                : 'bg-gray-700/50 text-gray-500 border-gray-700 cursor-not-allowed'
+                : 'bg-gray-700/50 text-white/50 border-gray-700 cursor-not-allowed'
             }`}
           >
             Next
@@ -120,7 +120,7 @@ export default function OrganizationStep({
         }`}
       >
         {/* Subheader */}
-        <p className="text-gray-400 text-base mb-8">
+        <p className="text-white/60 text-base mb-8">
           Invite your team members to collaborate.
         </p>
 
@@ -136,7 +136,7 @@ export default function OrganizationStep({
                     type="email"
                     value={email}
                     onChange={(e) => handleEmailChange(index, e.target.value)}
-                    className="w-full pl-4 pt-1.5 bg-transparent border-0 rounded-none text-white placeholder-gray-400 focus:outline-none focus:ring-0 transition-colors"
+                    className="w-full pl-4 pt-1.5 bg-transparent border-0 rounded-none text-white placeholder-white/60 focus:outline-none focus:ring-0 transition-colors"
                     placeholder="Email address"
                   />
                 </div>
@@ -174,7 +174,7 @@ export default function OrganizationStep({
           <button
             type="button"
             onClick={handleBack}
-            className="text-sm text-gray-400 hover:text-white font-medium underline transition-colors duration-200 cursor-pointer mr-5"
+            className="text-sm text-white/60 hover:text-white font-medium underline transition-colors duration-200 cursor-pointer mr-5"
           >
             Back
           </button>

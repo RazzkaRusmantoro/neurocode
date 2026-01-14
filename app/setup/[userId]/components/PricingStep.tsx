@@ -26,7 +26,7 @@ export default function PricingStep({
       </h1>
       
       {/* Subheader */}
-      <p className="text-gray-400 text-base mb-8">
+      <p className="text-white/60 text-base mb-8">
         Select the perfect plan to accelerate your development workflow with AI-powered code analysis and assistance.
       </p>
 
@@ -182,7 +182,7 @@ export default function PricingStep({
         <button
           type="button"
           onClick={onNext}
-          className="px-6 py-1.5 text-sm font-medium text-gray-300 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-2"
+          className="px-6 py-1.5 text-sm font-medium text-white/70 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-2"
         >
           Continue with Basic Plan
           <svg 

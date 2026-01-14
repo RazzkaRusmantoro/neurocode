@@ -77,7 +77,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleGithubLogin}
-            className="w-full py-3 px-4 bg-[#212121] hover:bg-[#2a2a2a] border border-[#424242] border-t-gray-500/50 rounded-lg text-white font-medium transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 px-4 bg-gray-800/50 hover:bg-gray-800/70 border border-gray-900 border-t-gray-500/50 rounded-lg text-white font-medium transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
@@ -105,7 +105,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-2">
               Email
             </label>
             <input
@@ -116,14 +116,14 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="off"
-              className="w-full px-4 py-3 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
               placeholder="Enter your email"
             />
           </div>
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-2">
               Password
             </label>
             <div className="relative">
@@ -135,13 +135,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full px-4 py-3 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors focus:outline-none cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors duration-200 focus:outline-none cursor-pointer"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +177,7 @@ export default function LoginPage() {
                 className="w-4 h-4 accent-[#BC4918] bg-transparent border border-[#424242] rounded focus:outline-none focus:ring-0 focus:ring-offset-0 outline-none ring-0 ring-offset-0 cursor-pointer checked:bg-[#BC4918] checked:border-[#BC4918]"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               />
-              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-300 cursor-pointer">
+              <label htmlFor="rememberMe" className="ml-2 text-sm text-white/70 cursor-pointer">
                 Remember me
               </label>
             </div>

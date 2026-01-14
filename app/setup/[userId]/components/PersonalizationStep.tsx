@@ -63,7 +63,7 @@ export default function PersonalizationStep({
       </h1>
       
       {/* Subheader */}
-      <p className="text-gray-400 text-base mb-8">
+      <p className="text-white/60 text-base mb-8">
         Help us tailor your experience to better serve your needs.
       </p>
 
@@ -71,7 +71,7 @@ export default function PersonalizationStep({
       <div className="space-y-6">
         {/* Primary Goal Dropdown */}
         <div>
-          <label htmlFor="primaryGoal" className="block text-sm font-medium text-gray-300 mb-3">
+          <label htmlFor="primaryGoal" className="block text-sm font-medium text-white/70 mb-3">
             What is your primary goal?
           </label>
           <Dropdown
@@ -85,7 +85,7 @@ export default function PersonalizationStep({
 
         {/* Role Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-3">
+          <label className="block text-sm font-medium text-white/70 mb-3">
             What best describes you?
           </label>
           <div className="flex flex-wrap gap-3">
@@ -97,7 +97,7 @@ export default function PersonalizationStep({
                 className={`px-4 py-2.5 whitespace-nowrap border rounded-lg cursor-pointer transition-all ${
                   role === option
                     ? 'bg-[#BC4918]/20 border-[#BC4918] text-white'
-                    : 'bg-[#212121] border-[#424242] text-gray-300 hover:bg-[#2a2a2a] hover:border-gray-600/50'
+                    : 'bg-[#212121] border-[#424242] text-white/70 hover:bg-[#2a2a2a] hover:border-gray-600/50'
                 }`}
               >
                 {option}
@@ -116,7 +116,7 @@ export default function PersonalizationStep({
           className={`px-8 py-1.5 text-sm font-semibold rounded-lg border transition-all duration-300 ease-in-out ${
             isFormComplete
               ? 'bg-[#BC4918] hover:bg-[#D85A2A] text-white border-[#BC4918] hover:border-[#D85A2A] hover:shadow-[0_0_15px_rgba(188,73,24,0.6)] cursor-pointer'
-              : 'bg-gray-700/50 text-gray-500 border-gray-700 cursor-not-allowed'
+              : 'bg-gray-700/50 text-white/50 border-gray-700 cursor-not-allowed'
           }`}
         >
           Next
