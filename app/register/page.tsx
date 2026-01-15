@@ -51,7 +51,11 @@ export default function RegisterPage() {
           password,
           redirect: false,
         });
-        router.push('/dashboard');
+        if (result.userId) {
+          router.push(`/setup/${result.userId}`);
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       }
     } catch (err) {
@@ -95,9 +99,9 @@ export default function RegisterPage() {
 
           {/* Login Subtitle */}
           <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
-            <span className="text-gray-400 text-sm whitespace-nowrap">Enjoy our services for free</span>
-            <div className="flex-1 max-w-[130px] border-t border-gray-700"></div>
+            <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
+            <span className="text-white/70 text-sm whitespace-nowrap">Enjoy our services for free</span>
+            <div className="flex-1 max-w-[130px] border-t border-white/70"></div>
           </div>
 
           {/* Social Login Buttons */}
@@ -132,7 +136,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* First Name Field */}
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="firstName" className="block text-sm font-medium text-white/70 mb-2">
                 First Name
               </label>
               <input
@@ -142,14 +146,14 @@ export default function RegisterPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your first name"
               />
             </div>
 
             {/* Last Name Field */}
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="lastName" className="block text-sm font-medium text-white/70 mb-2">
                 Last Name
               </label>
               <input
@@ -159,14 +163,14 @@ export default function RegisterPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your last name"
               />
             </div>
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-2">
                 Email
               </label>
               <input
@@ -177,14 +181,14 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full px-4 py-2.5 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                 placeholder="Enter your email"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -196,13 +200,13 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors focus:outline-none cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors duration-200 focus:outline-none cursor-pointer"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +224,7 @@ export default function RegisterPage() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-white/70 mb-2">
                 Confirm Password
               </label>
               <div className="relative">
@@ -232,13 +236,13 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-gray-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
                   placeholder="Confirm your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors focus:outline-none cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors duration-200 focus:outline-none cursor-pointer"
                 >
                   {showConfirmPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +280,7 @@ export default function RegisterPage() {
 
           {/* Sign In Link */}
           <div className="mt-5 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/70">
               Already have an account?{' '}
               <Link 
                 href="/login" 
