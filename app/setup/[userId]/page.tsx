@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import PersonalizationStep from './components/PersonalizationStep';
 import PricingStep from './components/PricingStep';
 import OrganizationStep from './components/OrganizationStep';
+import { updateUserPersonalization } from '@/actions/setup';
 
 type Stage = 'personalization' | 'pricing' | 'organization';
 
@@ -14,6 +15,7 @@ export default function SetupPage() {
   const [role, setRole] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('');
   const [organizationName, setOrganizationName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   const router = useRouter();
   const params = useParams();
@@ -29,6 +31,13 @@ export default function SetupPage() {
     }
   }, [status, router]);
 
+  // Reset saving state when navigating back to personalization stage
+  useEffect(() => {
+    if (currentStage === 'personalization') {
+      setIsSaving(false);
+    }
+  }, [currentStage]);
+
   if (status === 'unauthenticated') {
     return null;
   }
@@ -37,8 +46,27 @@ export default function SetupPage() {
     router.push(`/setup/${userId}?stage=${newStage}`);
   };
 
-  const handlePersonalizationNext = () => {
-    updateStage('pricing');
+  const handlePersonalizationNext = async () => {
+    if (!primaryGoal || !role || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await updateUserPersonalization(primaryGoal, role);
+      
+      if (result.error) {
+        console.error('Failed to save personalization:', result.error);
+        // You might want to show an error message to the user here
+        setIsSaving(false);
+        return;
+      }
+
+      updateStage('pricing');
+    } catch (error) {
+      console.error('Error saving personalization:', error);
+      setIsSaving(false);
+    }
   };
 
   const handlePricingNext = () => {
@@ -78,6 +106,7 @@ export default function SetupPage() {
             onPrimaryGoalChange={setPrimaryGoal}
             onRoleChange={setRole}
             onNext={handlePersonalizationNext}
+            isLoading={isSaving}
           />
         </div>
 

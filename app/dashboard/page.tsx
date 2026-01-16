@@ -31,7 +31,7 @@ export default function DashboardPage() {
       <Sidebar isExpanded={isSidebarExpanded} onToggle={toggleSidebar} />
       
       {/* Right side - Navbar and content stacked */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden px-6">
         {/* Navbar */}
         <DashboardNavbar userEmail={session?.user?.email} userName={session?.user?.name} />
         

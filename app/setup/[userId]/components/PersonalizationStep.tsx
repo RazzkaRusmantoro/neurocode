@@ -39,6 +39,7 @@ interface PersonalizationStepProps {
   onPrimaryGoalChange: (value: string) => void;
   onRoleChange: (value: string) => void;
   onNext: () => void;
+  isLoading?: boolean;
 }
 
 export default function PersonalizationStep({
@@ -47,8 +48,9 @@ export default function PersonalizationStep({
   onPrimaryGoalChange,
   onRoleChange,
   onNext,
+  isLoading = false,
 }: PersonalizationStepProps) {
-  const isFormComplete = primaryGoal && role;
+  const isFormComplete = primaryGoal && role && !isLoading;
 
   return (
     <div className="w-full">
@@ -112,9 +114,9 @@ export default function PersonalizationStep({
         <button
           type="button"
           onClick={onNext}
-          disabled={!isFormComplete}
+          disabled={!isFormComplete || isLoading}
           className={`px-8 py-1.5 text-sm font-semibold rounded-lg border transition-all duration-300 ease-in-out ${
-            isFormComplete
+            isFormComplete && !isLoading
               ? 'bg-[#BC4918] hover:bg-[#D85A2A] text-white border-[#BC4918] hover:border-[#D85A2A] hover:shadow-[0_0_15px_rgba(188,73,24,0.6)] cursor-pointer'
               : 'bg-gray-700/50 text-white/50 border-gray-700 cursor-not-allowed'
           }`}

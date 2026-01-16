@@ -208,56 +208,46 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
             </ul>
           </div>
 
-          {/* MESSAGES Section */}
+          {/* ORGANIZATION Section */}
           <div className="border-t border-[#424242] pt-6 pb-6">
-            <div className="flex items-center justify-between pl-4 pr-4 mb-3">
-              <h3 className="text-xs text-white/60">MESSAGES</h3>
-              <button className="text-white/60 hover:text-white transition-colors duration-200 cursor-pointer">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </div>
+            <h3 className="text-xs text-white/60 pl-4 mb-3">ORGANIZATION</h3>
             <ul className="space-y-2">
               <li>
                 <button 
-                  onClick={() => setActiveItem('John Doe')}
+                  onClick={() => setActiveItem('Configurations')}
                   className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'John Doe'
+                    activeItem === 'Configurations'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
                   }`}
                 >
-                  <img 
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=John"
-                    alt="John Doe"
-                    className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
-                  />
-                  <span>John Doe</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Configurations</span>
                 </button>
               </li>
               <li>
                 <button 
-                  onClick={() => setActiveItem('Jane Smith')}
+                  onClick={() => setActiveItem('Identity & Access')}
                   className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'Jane Smith'
+                    activeItem === 'Identity & Access'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
                   }`}
                 >
-                  <img 
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Jane"
-                    alt="Jane Smith"
-                    className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
-                  />
-                  <span>Jane Smith</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  <span>Identity & Access</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* CONFIGURATIONS Section - At the bottom */}
-          <div className="border-t border-[#424242] pt-6 pb-6 mt-auto">
+          {/* CONFIGURATIONS Section */}
+          <div className="border-t border-[#424242] pt-6 pb-6">
             <h3 className="text-xs text-white/60 pl-4 mb-3">CONFIGURATIONS</h3>
             <ul className="space-y-2">
               <li>

@@ -8,6 +8,10 @@ export interface User {
   firstName: string;
   lastName: string;
   authProviders: ('credentials' | 'google' | 'github')[];
+  personalization?: {
+    primaryGoal?: string;
+    role?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
