@@ -32,7 +32,7 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #212121;
+  background: transparent;
   border-radius: 10px;
   margin: 4px;
 }
@@ -50,29 +50,16 @@ body {
 /* Firefox scrollbar styling */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #BC4918 #212121;
+  scrollbar-color: #BC4918 transparent;
 }
 
-/* Sidebar Scrollbar Styling */
+/* Sidebar Scrollbar Styling - Hidden */
 .sidebar-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  display: none;
+  width: 0;
 }
 
-.sidebar-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: #424242;
-  border-radius: 3px;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #525252;
-}
-
-/* Firefox scrollbar styling for sidebar */
 .sidebar-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #424242 transparent;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }

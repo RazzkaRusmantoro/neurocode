@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { cache } from 'react';
 import { getDb } from '../db';
 import { createOrganization } from './organization';
 
@@ -158,6 +159,14 @@ export async function getUserById(id: string): Promise<User | null> {
   const collection = await getUsersCollection();
   return collection.findOne({ _id: new ObjectId(id) });
 }
+
+/**
+ * Cached user getter - ensures user is only fetched once per request
+ * Use this instead of getUserById() to avoid duplicate fetches when multiple pages need user data
+ */
+export const getCachedUserById = cache(async (id: string): Promise<User | null> => {
+  return await getUserById(id);
+});
 
 export async function addAuthProviderToUser(
   email: string,

@@ -1,12 +1,11 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getUserOrganizations, type OrganizationWithId } from '@/actions/organization';
+import { getCachedSession } from '@/lib/session';
 import MainLayoutClient from './components/MainLayoutClient';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  // Fetch session server-side
-  const session = await getServerSession(authOptions);
+  // Fetch session server-side (cached - only fetches once per request)
+  const session = await getCachedSession();
 
   // Redirect if not authenticated
   if (!session?.user) {

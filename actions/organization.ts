@@ -2,8 +2,7 @@
 
 import { getUserById } from '@/lib/models/user';
 import { getOrganizationsCollection } from '@/lib/models/organization';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getCachedSession } from '@/lib/session';
 import { ObjectId } from 'mongodb';
 
 export interface OrganizationWithId {
@@ -15,7 +14,7 @@ export interface OrganizationWithId {
 
 export async function getUserOrganizations(): Promise<{ organizations: OrganizationWithId[]; error?: string }> {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getCachedSession();
     
     if (!session?.user?.id) {
       return { organizations: [], error: 'Unauthorized' };
