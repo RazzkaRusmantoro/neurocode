@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import PersonalizationStep from './components/PersonalizationStep';
 import PricingStep from './components/PricingStep';
 import OrganizationStep from './components/OrganizationStep';
-import { updateUserPersonalization } from '@/actions/setup';
+import { updateUserPersonalization, updateUserOrganizationName } from '@/actions/setup';
 
 type Stage = 'personalization' | 'pricing' | 'organization';
 
@@ -73,7 +73,24 @@ export default function SetupPage() {
     updateStage('organization');
   };
 
-  const handleOrganizationFinish = () => {
+  const handleOrganizationFinish = async () => {
+    if (!organizationName.trim()) {
+      // If no organization name provided, use default and just redirect
+      router.push('/dashboard');
+      return;
+    }
+
+    try {
+      const result = await updateUserOrganizationName(organizationName.trim());
+      
+      if (result.error) {
+        console.error('Failed to save organization name:', result.error);
+        // Still redirect even if update fails
+      }
+    } catch (error) {
+      console.error('Error saving organization name:', error);
+    }
+    
     router.push('/dashboard');
   };
 

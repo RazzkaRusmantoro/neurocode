@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDb } from '../db';
+import { createOrganization } from './organization';
 
 export interface User {
   _id?: ObjectId;
@@ -12,36 +13,57 @@ export interface User {
     primaryGoal?: string;
     role?: string;
   };
+  organizations?: {
+    organizationId: ObjectId;
+    name: string;
+    role: 'owner' | 'member' | 'admin';
+    joinedAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
-
-export const UserSchema = {
-  email: { type: 'string', required: true, unique: true },
-  password: { type: 'string', required: false },
-  firstName: { type: 'string', required: true },
-  lastName: { type: 'string', required: true },
-  authProviders: { type: 'array', required: true },
-  createdAt: { type: 'date', default: Date.now },
-  updatedAt: { type: 'date', default: Date.now },
-};
 
 export async function getUsersCollection() {
   const db = await getDb();
   return db.collection<User>('users');
 }
 
-export async function createUser(userData: Omit<User, '_id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+export async function createUser(userData: Omit<User, '_id' | 'createdAt' | 'updatedAt' | 'organizations'>): Promise<User> {
   const collection = await getUsersCollection();
   const now = new Date();
   const newUser: Omit<User, '_id'> = {
     ...userData,
     authProviders: userData.authProviders || ['credentials'],
+    organizations: [],
     createdAt: now,
     updatedAt: now,
   };
   const result = await collection.insertOne(newUser as User);
-  return { ...newUser, _id: result.insertedId } as User;
+  const insertedUser = { ...newUser, _id: result.insertedId } as User;
+  
+  // Create default organization
+  const defaultOrgName = `${userData.firstName}'s Organization`;
+  const defaultOrg = await createOrganization(defaultOrgName, result.insertedId);
+  
+  // Link organization to user with new structure
+  const userOrg = {
+    organizationId: defaultOrg._id!,
+    name: defaultOrgName,
+    role: 'owner' as const,
+    joinedAt: now,
+  };
+  
+  await collection.updateOne(
+    { _id: result.insertedId },
+    {
+      $set: {
+        organizations: [userOrg],
+        updatedAt: new Date(),
+      },
+    }
+  );
+  
+  return { ...insertedUser, organizations: [userOrg] };
 }
 
 export async function createOrUpdateOAuthUser(
@@ -95,11 +117,36 @@ export async function createOrUpdateOAuthUser(
     firstName,
     lastName,
     authProviders: [provider],
+    organizations: [],
     createdAt: now,
     updatedAt: now,
   };
   const result = await collection.insertOne(newUser as User);
-  return { ...newUser, _id: result.insertedId } as User;
+  const insertedUser = { ...newUser, _id: result.insertedId } as User;
+  
+  // Create default organization
+  const defaultOrgName = `${firstName}'s Organization`;
+  const defaultOrg = await createOrganization(defaultOrgName, result.insertedId);
+  
+  // Link organization to user with new structure
+  const userOrg = {
+    organizationId: defaultOrg._id!,
+    name: defaultOrgName,
+    role: 'owner' as const,
+    joinedAt: now,
+  };
+  
+  await collection.updateOne(
+    { _id: result.insertedId },
+    {
+      $set: {
+        organizations: [userOrg],
+        updatedAt: new Date(),
+      },
+    }
+  );
+  
+  return { ...insertedUser, organizations: [userOrg] };
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {

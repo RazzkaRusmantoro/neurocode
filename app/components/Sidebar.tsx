@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 interface SidebarProps {
@@ -45,7 +45,7 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
     subItems: [
       { id: 'Members', label: 'Members' },
       { id: 'Teams', label: 'Teams' },
-      { id: 'Tasks', label: 'Tasks' }
+      { id: 'Projects', label: 'Projects' }
     ]
   },
   {
@@ -70,7 +70,7 @@ function SubMenuItem({ item, index, activeItem, setActiveItem }: { item: SubMenu
       </svg>
       <button 
         onClick={() => setActiveItem(item.id)}
-        className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 cursor-pointer ${
+        className={`w-full text-left pl-4 py-1.5 text-sm rounded-lg transition-colors duration-200 cursor-pointer ${
           activeItem === item.id
             ? 'text-white bg-[#2a2a2a]/50 font-bold'
             : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -102,7 +102,7 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
       <div>
         <button 
           onClick={onToggle}
-          className={`w-full text-left pl-4 pr-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center justify-between gap-3 cursor-pointer ${
+          className={`w-full text-left pl-4 pr-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center justify-between gap-3 cursor-pointer ${
             parentIsActive
               ? 'text-white hover:bg-[#2a2a2a]/50'
               : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -142,7 +142,7 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
   return (
     <button 
       onClick={() => setActiveItem(item.id)}
-      className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
+      className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
         activeItem === item.id
           ? 'text-white bg-[#2a2a2a]/50 font-bold'
           : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -158,6 +158,7 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
 
 export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [activeItem, setActiveItem] = useState<string>('');
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
     dashboard: true,
@@ -174,11 +175,21 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
     router.refresh();
   };
 
+  // Get initials from name
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return name[0]?.toUpperCase() || 'U';
+  };
+
   return (
     <aside className="h-full w-80">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="flex items-center p-6 pl-10">
+        <div className="flex items-center p-4 pl-8">
           <img 
             src="/Full-logo.png" 
             alt="Logo" 
@@ -187,11 +198,11 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
         </div>
 
         {/* Sidebar Content */}
-        <nav className="flex-1 px-6 flex flex-col overflow-y-auto sidebar-scrollbar">
+        <nav className="flex-1 px-4 flex flex-col overflow-y-auto sidebar-scrollbar">
           {/* MAIN Section */}
-          <div className="pb-6">
-            <h3 className="text-xs text-white/60 pl-4 mb-3">MAIN</h3>
-            <ul className="space-y-2">
+          <div className="pb-3">
+            <h3 className="text-xs text-white/60 pl-4 mb-2">MAIN</h3>
+            <ul className="space-y-1">
               {MAIN_MENU_ITEMS.map((item) => (
                 <li key={item.id}>
                   <MenuItemComponent
@@ -209,13 +220,13 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
           </div>
 
           {/* ORGANIZATION Section */}
-          <div className="border-t border-[#424242] pt-6 pb-6">
-            <h3 className="text-xs text-white/60 pl-4 mb-3">ORGANIZATION</h3>
-            <ul className="space-y-2">
+          <div className="border-t border-[#424242] pt-3 pb-3">
+            <h3 className="text-xs text-white/60 pl-4 mb-2">ORGANIZATION</h3>
+            <ul className="space-y-1">
               <li>
                 <button 
                   onClick={() => setActiveItem('Configurations')}
-                  className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
+                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
                     activeItem === 'Configurations'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -231,7 +242,7 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
               <li>
                 <button 
                   onClick={() => setActiveItem('Identity & Access')}
-                  className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
+                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
                     activeItem === 'Identity & Access'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -247,13 +258,13 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
           </div>
 
           {/* CONFIGURATIONS Section */}
-          <div className="border-t border-[#424242] pt-6 pb-6">
-            <h3 className="text-xs text-white/60 pl-4 mb-3">CONFIGURATIONS</h3>
-            <ul className="space-y-2">
+          <div className="border-t border-[#424242] pt-3 pb-3">
+            <h3 className="text-xs text-white/60 pl-4 mb-2">CONFIGURATIONS</h3>
+            <ul className="space-y-1">
               <li>
                 <button 
                   onClick={() => setActiveItem('Settings')}
-                  className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
+                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
                     activeItem === 'Settings'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -269,7 +280,7 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
               <li>
                 <button 
                   onClick={() => setActiveItem('Help')}
-                  className={`w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
+                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
                     activeItem === 'Help'
                       ? 'text-white bg-[#2a2a2a]/50 font-bold'
                       : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
@@ -284,7 +295,7 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
               <li>
                 <button 
                   onClick={handleLogout}
-                  className="w-full text-left pl-4 py-3 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
+                  className="w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -295,6 +306,33 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
             </ul>
           </div>
         </nav>
+
+        {/* Profile Section */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2.5 p-2.5">
+            {/* Profile Picture */}
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center shadow-sm">
+                <span className="text-white text-sm font-semibold">
+                  {getInitials(session?.user?.name)}
+                </span>
+              </div>
+            </div>
+            {/* Full Name */}
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-medium truncate">
+                {session?.user?.name || 'User'}
+              </p>
+            </div>
+            {/* Settings Icon */}
+            <button className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group">
+              <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </aside>
   );

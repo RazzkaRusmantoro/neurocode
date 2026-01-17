@@ -3,6 +3,7 @@
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
+import { getUserOrganizations, type OrganizationWithId } from '@/actions/organization';
 
 interface DashboardNavbarProps {
   userEmail?: string | null;
@@ -14,14 +15,29 @@ export default function DashboardNavbar({ userEmail, userName }: DashboardNavbar
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
   const orgDropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [organizations, setOrganizations] = useState<OrganizationWithId[]>([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithId | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Placeholder organization data - replace with actual data later
-  const organizations = ['Razzka\'s Org - 2024-07-22', 'Another Org - 2024-06-15', 'Third Organization - 2024-05-10'];
-  const [selectedOrganization, setSelectedOrganization] = useState(organizations[0]);
-  
+  // Fetch user's organizations on mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setIsLoading(true);
+      const result = await getUserOrganizations();
+      if (result.organizations.length > 0) {
+        setOrganizations(result.organizations);
+        // Set first organization as selected by default
+        setSelectedOrganization(result.organizations[0]);
+      }
+      setIsLoading(false);
+    };
+    
+    fetchOrganizations();
+  }, []);
+
   // Filter organizations based on search
   const filteredOrganizations = organizations.filter(org =>
-    org.toLowerCase().includes(searchQuery.toLowerCase())
+    org.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   useEffect(() => {
@@ -49,7 +65,7 @@ export default function DashboardNavbar({ userEmail, userName }: DashboardNavbar
     console.log('Profile clicked');
   };
 
-  const handleOrganizationChange = (org: string) => {
+  const handleOrganizationChange = (org: OrganizationWithId) => {
     setSelectedOrganization(org);
     setIsOrgDropdownOpen(false);
     setSearchQuery('');
@@ -86,7 +102,9 @@ export default function DashboardNavbar({ userEmail, userName }: DashboardNavbar
             >
               <span className="text-sm font-bold text-[#BC4918] mb-1">ORGANIZATION</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-white">{selectedOrganization}</span>
+                <span className="text-sm text-white">
+                  {isLoading ? 'Loading...' : selectedOrganization?.name || 'No organization'}
+                </span>
                 <svg 
                   className={`w-3 h-3 text-white/70 transition-transform duration-200 ${isOrgDropdownOpen ? 'rotate-180' : ''}`}
                   fill="currentColor" 
@@ -122,19 +140,23 @@ export default function DashboardNavbar({ userEmail, userName }: DashboardNavbar
               
               {/* Organization List */}
               <div className="py-2 max-h-64 overflow-y-auto">
-                {filteredOrganizations.length > 0 ? (
-                  filteredOrganizations.map((org, index) => (
+                {isLoading ? (
+                  <div className="px-4 py-2 text-sm text-white/60 text-center">
+                    Loading organizations...
+                  </div>
+                ) : filteredOrganizations.length > 0 ? (
+                  filteredOrganizations.map((org) => (
                     <button
-                      key={index}
+                      key={org.id}
                       type="button"
                       onClick={() => handleOrganizationChange(org)}
                       className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer ${
-                        selectedOrganization === org
+                        selectedOrganization?.id === org.id
                           ? 'bg-[#BC4918]/20 text-[#BC4918] hover:bg-[#BC4918]/30'
                           : 'text-white hover:bg-[#2a2a2a]'
                       }`}
                     >
-                      {org}
+                      {org.name}
                     </button>
                   ))
                 ) : (
