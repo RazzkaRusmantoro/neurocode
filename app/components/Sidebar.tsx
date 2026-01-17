@@ -8,6 +8,9 @@ import { usePathname } from 'next/navigation';
 interface SidebarProps {
   isExpanded: boolean;
   onToggle: () => void;
+  userName?: string | null;
+  userEmail?: string | null;
+  userId?: string | null;
 }
 
 // Types for menu items
@@ -157,7 +160,13 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
   );
 }
 
-export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
+export default function Sidebar({ 
+  isExpanded, 
+  onToggle,
+  userName: propUserName,
+  userEmail: propUserEmail,
+  userId: propUserId,
+}: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -166,6 +175,10 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
     dashboard: true,
     management: true
   });
+
+  // Use props if available, fallback to session
+  const userName = propUserName ?? session?.user?.name;
+  const userEmail = propUserEmail ?? session?.user?.email;
 
   const setExpandedState = (id: string, value: boolean) => {
     setExpandedStates(prev => ({ ...prev, [id]: value }));
@@ -319,14 +332,14 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
             <div className="flex-shrink-0">
               <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center shadow-sm">
                 <span className="text-white text-sm font-semibold">
-                  {getInitials(session?.user?.name)}
+                  {getInitials(userName)}
                 </span>
               </div>
             </div>
             {/* Full Name */}
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium truncate">
-                {session?.user?.name || 'User'}
+                {userName || 'User'}
               </p>
             </div>
             {/* Settings Icon */}

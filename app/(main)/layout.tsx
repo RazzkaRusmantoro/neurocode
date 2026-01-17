@@ -1,46 +1,32 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getUserOrganizations, type OrganizationWithId } from '@/actions/organization';
+import MainLayoutClient from './components/MainLayoutClient';
 
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import DashboardNavbar from '@/app/components/DashboardNavbar';
-import Sidebar from '@/app/components/Sidebar';
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // Fetch session server-side
+  const session = await getServerSession(authOptions);
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
-
-  if (status === 'unauthenticated') {
-    return null;
+  // Redirect if not authenticated
+  if (!session?.user) {
+    redirect('/login');
   }
 
-  const toggleSidebar = () => {
-    setIsSidebarExpanded(!isSidebarExpanded);
-  };
+  // Fetch organizations server-side
+  const { organizations } = await getUserOrganizations();
+  const selectedOrganization = organizations.length > 0 ? organizations[0] : null;
 
   return (
-    <div className="h-screen flex bg-transparent">
-      {/* Sidebar on the left - full height */}
-      <Sidebar isExpanded={isSidebarExpanded} onToggle={toggleSidebar} />
-      
-      {/* Right side - Navbar and content stacked */}
-      <div className="flex-1 flex flex-col overflow-hidden px-6">
-        {/* Navbar */}
-        <DashboardNavbar userEmail={session?.user?.email} userName={session?.user?.name} />
-        
-        {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <MainLayoutClient
+      userEmail={session.user.email}
+      userName={session.user.name}
+      userId={session.user.id}
+      organizations={organizations}
+      selectedOrganization={selectedOrganization}
+    >
+      {children}
+    </MainLayoutClient>
   );
 }
 

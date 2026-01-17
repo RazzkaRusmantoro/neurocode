@@ -2,20 +2,31 @@
 
 import OrganizationDropdown from './OrganizationDropdown';
 import ProfileDropdown from './ProfileDropdown';
+import type { OrganizationWithId } from '@/actions/organization';
 
 interface DashboardNavbarProps {
   userEmail?: string | null;
   userName?: string | null;
+  organizations: OrganizationWithId[];
+  selectedOrganization: OrganizationWithId | null;
 }
 
-export default function DashboardNavbar({ userEmail, userName }: DashboardNavbarProps) {
+export default function DashboardNavbar({ 
+  userEmail, 
+  userName,
+  organizations,
+  selectedOrganization,
+}: DashboardNavbarProps) {
 
   return (
     <nav className="w-full" style={{ fontFamily: 'var(--font-poppins)' }}>
       <div className="flex items-center py-8">
         <div className="flex items-center gap-12 w-full max-w-screen-2xl mx-auto">
           {/* Organization Dropdown */}
-          <OrganizationDropdown />
+          <OrganizationDropdown 
+            organizations={organizations}
+            selectedOrganization={selectedOrganization}
+          />
           
           {/* Right Side - Icons and Profile */}
           <div className="flex items-center gap-4 ml-auto">

@@ -1,31 +1,30 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { getUserOrganizations, type OrganizationWithId } from '@/actions/organization';
+import type { OrganizationWithId } from '@/actions/organization';
 
-export default function OrganizationDropdown() {
+interface OrganizationDropdownProps {
+  organizations: OrganizationWithId[];
+  selectedOrganization: OrganizationWithId | null;
+  onOrganizationChange?: (org: OrganizationWithId) => void;
+}
+
+export default function OrganizationDropdown({
+  organizations,
+  selectedOrganization: initialSelectedOrganization,
+  onOrganizationChange,
+}: OrganizationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [organizations, setOrganizations] = useState<OrganizationWithId[]>([]);
-  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithId | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrganization, setSelectedOrganization] = useState<OrganizationWithId | null>(
+    initialSelectedOrganization
+  );
 
-  // Fetch user's organizations on mount
+  // Update selected organization when prop changes
   useEffect(() => {
-    const fetchOrganizations = async () => {
-      setIsLoading(true);
-      const result = await getUserOrganizations();
-      if (result.organizations.length > 0) {
-        setOrganizations(result.organizations);
-        // Set first organization as selected by default
-        setSelectedOrganization(result.organizations[0]);
-      }
-      setIsLoading(false);
-    };
-
-    fetchOrganizations();
-  }, []);
+    setSelectedOrganization(initialSelectedOrganization);
+  }, [initialSelectedOrganization]);
 
   // Filter organizations based on search
   const filteredOrganizations = organizations.filter(org =>
@@ -50,6 +49,7 @@ export default function OrganizationDropdown() {
     setSelectedOrganization(org);
     setIsOpen(false);
     setSearchQuery('');
+    onOrganizationChange?.(org);
     // TODO: Add logic to switch organization context
   };
 
@@ -107,11 +107,7 @@ export default function OrganizationDropdown() {
 
         {/* Organization List */}
         <div className="py-2 px-2 max-h-64 overflow-y-auto">
-          {isLoading ? (
-            <div className="px-4 py-2 text-sm text-white/60 text-center">
-              Loading organizations...
-            </div>
-          ) : filteredOrganizations.length > 0 ? (
+          {filteredOrganizations.length > 0 ? (
             filteredOrganizations.map((org) => (
               <button
                 key={org.id}
