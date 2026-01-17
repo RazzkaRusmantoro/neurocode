@@ -108,8 +108,7 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
             type="button"
             onClick={() => {
               setIsOpen(false);
-              // TODO: Navigate to settings
-              console.log('Settings clicked');
+              router.push('/settings');
             }}
             className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors cursor-pointer flex items-center gap-3 rounded-lg"
           >

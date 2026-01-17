@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
 import Sidebar from '@/app/components/Sidebar';
 
-export default function DashboardPage() {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -37,15 +37,10 @@ export default function DashboardPage() {
         
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-screen-2xl">
-            {/* <h1 className="text-2xl font-bold text-white mb-4">Dashboard</h1>
-            <p className="text-white/70">Welcome, {session?.user?.email}!</p> */}
-          </div>
+          {children}
         </main>
       </div>
     </div>
   );
 }
-
-
 

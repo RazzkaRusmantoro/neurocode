@@ -70,7 +70,7 @@ export default function OrganizationDropdown() {
         <span className="text-sm font-bold text-[#BC4918] mb-1">ORGANIZATION</span>
         <div className="flex items-center gap-2">
           <span className="text-sm text-white">
-            {isLoading ? 'Loading...' : selectedOrganization?.name || 'No organization'}
+            {selectedOrganization?.name || 'No organization'}
           </span>
           <svg
             className={`w-3 h-3 text-white/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
