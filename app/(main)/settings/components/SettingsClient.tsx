@@ -172,7 +172,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                className="px-4 py-2 bg-[#2a2a2a] border border-[#424242] rounded-lg text-white text-sm hover:bg-[#2a2a2a]/80 transition-colors duration-200 cursor-pointer"
+                className="px-4 py-2 bg-[#BC4918] border border-[#BC4918] rounded-lg text-white text-sm hover:bg-[#BC4918]/80 transition-colors duration-200 cursor-pointer"
               >
                 Upload Photo
               </button>
@@ -194,7 +194,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border-none rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] transition-all bg-[#FFD45C]/5"
                 placeholder="Enter your first name"
               />
             </div>
@@ -208,7 +208,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border-none rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] transition-all bg-[#FFD45C]/5"
                 placeholder="Enter your last name"
               />
             </div>
@@ -228,7 +228,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled
-                  className="w-full px-4 py-2.5 pr-10 border border-[#2a2a2a] rounded-lg text-white/40 placeholder-white/30 opacity-60 focus:outline-none focus:ring-0 focus:border-[#2a2a2a] transition-all cursor-not-allowed"
+                  className="w-full px-4 py-2.5 pr-10 border-none rounded-lg text-white/40 placeholder-white/30 opacity-60 focus:outline-none focus:ring-0 transition-all cursor-not-allowed bg-[#FFD45C]/5"
                   placeholder="Enter your email"
                 />
                 <button
@@ -254,7 +254,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled
-                  className="w-full px-4 py-2.5 pr-10 border border-[#2a2a2a] rounded-lg text-white/40 placeholder-white/30 opacity-60 focus:outline-none focus:ring-0 focus:border-[#2a2a2a] transition-all cursor-not-allowed"
+                  className="w-full px-4 py-2.5 pr-10 border-none rounded-lg text-white/40 placeholder-white/30 opacity-60 focus:outline-none focus:ring-0 transition-all cursor-not-allowed bg-[#FFD45C]/5"
                   placeholder="••••••••"
                 />
                 <button
@@ -277,7 +277,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
         
         <div className="space-y-3">
           {/* GitHub Connection */}
-          <div className="flex items-center justify-between p-4 bg-[#1a1a1a] border border-[#424242] rounded-lg hover:border-[#424242]/80 transition-all duration-200">
+          <div className="flex items-center justify-between p-4 bg-[#FFD45C]/5 border-none rounded-lg transition-all duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#424242] flex items-center justify-center flex-shrink-0">
                 <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -329,7 +329,7 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
           </div>
 
           {/* Bitbucket Connection */}
-          <div className="flex items-center justify-between p-4 bg-[#1a1a1a] border border-[#424242] rounded-lg hover:border-[#424242]/80 transition-all duration-200">
+          <div className="flex items-center justify-between p-4 bg-[#FFD45C]/5 border-none rounded-lg transition-all duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#424242] flex items-center justify-center flex-shrink-0">
                 <svg className="w-7 h-7 text-[#2684FF]" fill="currentColor" viewBox="0 0 24 24">
