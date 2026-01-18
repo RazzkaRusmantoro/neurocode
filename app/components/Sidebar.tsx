@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 interface SidebarProps {
@@ -205,12 +205,26 @@ export default function Sidebar({
   userEmail: propUserEmail,
 }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [activeItem, setActiveItem] = useState<string>('');
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
     dashboard: true,
     management: true
   });
+
+  // Set active item based on current pathname
+  useEffect(() => {
+    if (pathname === '/settings') {
+      setActiveItem('Settings');
+    } else if (pathname === '/repositories') {
+      setActiveItem('Repositories');
+    } else if (pathname === '/dashboard' || pathname === '/') {
+      setActiveItem('Overview');
+      setExpandedStates(prev => ({ ...prev, dashboard: true }));
+    }
+    // Add more route mappings as pages are created
+  }, [pathname]);
 
   // Use props if available, fallback to session
   const userName = propUserName ?? session?.user?.name;
