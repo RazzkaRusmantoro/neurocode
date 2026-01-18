@@ -1,16 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { usePathname } from 'next/navigation';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 interface SidebarProps {
   isExpanded: boolean;
   onToggle: () => void;
   userName?: string | null;
   userEmail?: string | null;
-  userId?: string | null;
 }
 
 // Types for menu items
@@ -23,8 +22,15 @@ interface MenuItem {
   id: string;
   label: string;
   iconPath: string;
+  route?: string; // Optional route for navigation
   subItems?: SubMenuItem[];
 }
+
+// Route mapping for menu items
+const MENU_ITEM_ROUTES: Record<string, string> = {
+  Repositories: '/repositories',
+  Settings: '/settings',
+};
 
 // Menu items configuration
 const MAIN_MENU_ITEMS: MenuItem[] = [
@@ -40,7 +46,8 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     id: 'Repositories',
     label: 'Repositories',
-    iconPath: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+    iconPath: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+    route: '/repositories',
   },
   {
     id: 'management',
@@ -64,8 +71,35 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
   }
 ];
 
+// Common class names
+const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer';
+const BUTTON_ACTIVE_CLASSES = 'text-white bg-[#2a2a2a]/50 font-bold';
+const BUTTON_INACTIVE_CLASSES = 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50';
+
+// Icon component helper - supports single path or array of paths
+function Icon({ iconPath, className = 'w-5 h-5' }: { iconPath: string | string[]; className?: string }) {
+  const paths = Array.isArray(iconPath) ? iconPath : [iconPath];
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {paths.map((path, index) => (
+        <path key={index} strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
+      ))}
+    </svg>
+  );
+}
+
 // SubMenuItem component
-function SubMenuItem({ item, index, activeItem, setActiveItem }: { item: SubMenuItem; index: number; activeItem: string; setActiveItem: (id: string) => void }) {
+function SubMenuItem({ 
+  item, 
+  activeItem, 
+  setActiveItem 
+}: { 
+  item: SubMenuItem; 
+  activeItem: string; 
+  setActiveItem: (id: string) => void;
+}) {
+  const isActive = activeItem === item.id;
+  
   return (
     <li className="relative">
       {/* Curved connection line */}
@@ -75,9 +109,7 @@ function SubMenuItem({ item, index, activeItem, setActiveItem }: { item: SubMenu
       <button 
         onClick={() => setActiveItem(item.id)}
         className={`w-full text-left pl-4 py-1.5 text-sm rounded-lg transition-colors duration-200 cursor-pointer ${
-          activeItem === item.id
-            ? 'text-white bg-[#2a2a2a]/50 font-bold'
-            : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+          isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
         }`}
       >
         {item.label}
@@ -86,52 +118,64 @@ function SubMenuItem({ item, index, activeItem, setActiveItem }: { item: SubMenu
   );
 }
 
-// MenuItem component
-function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveItem, expandedStates, setExpandedState }: {
+interface MenuItemComponentProps {
   item: MenuItem;
   isExpanded: boolean;
   onToggle: () => void;
   activeItem: string;
   setActiveItem: (id: string) => void;
-  expandedStates: Record<string, boolean>;
-  setExpandedState: (id: string, value: boolean) => void;
-}) {
-  const hasSubItems = item.subItems && item.subItems.length > 0;
+  router: AppRouterInstance;
+}
+
+// MenuItem component
+function MenuItemComponent({ 
+  item, 
+  isExpanded, 
+  onToggle, 
+  activeItem, 
+  setActiveItem, 
+  router 
+}: MenuItemComponentProps) {
+  const hasSubItems = Boolean(item.subItems?.length);
   const isActive = activeItem === item.id || (hasSubItems && item.subItems?.some(sub => activeItem === sub.id));
 
+  const handleMenuItemClick = useCallback(() => {
+    setActiveItem(item.id);
+    const route = item.route || MENU_ITEM_ROUTES[item.id];
+    if (route) {
+      router.push(route);
+    }
+  }, [item.id, item.route, setActiveItem, router]);
+
   if (hasSubItems) {
-    const parentIsActive = item.subItems?.some(sub => activeItem === sub.id);
+    const parentIsActive = item.subItems!.some(sub => activeItem === sub.id);
     
     return (
       <div>
         <button 
           onClick={onToggle}
-          className={`w-full text-left pl-4 pr-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center justify-between gap-3 cursor-pointer ${
-            parentIsActive
-              ? 'text-white hover:bg-[#2a2a2a]/50'
-              : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+          className={`${BUTTON_BASE_CLASSES} pr-4 justify-between ${
+            parentIsActive ? 'text-white hover:bg-[#2a2a2a]/50' : BUTTON_INACTIVE_CLASSES
           }`}
         >
           <div className="flex items-center gap-3">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.iconPath} />
-            </svg>
+            <Icon iconPath={item.iconPath} />
             <span className={parentIsActive ? 'font-bold' : ''}>{item.label}</span>
           </div>
-          <svg className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <Icon 
+            iconPath="M19 9l-7 7-7-7" 
+            className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          />
         </button>
         {isExpanded && (
           <div className="relative mt-1">
             {/* Vertical line */}
             <div className="absolute left-[26px] top-0 bottom-0 w-[1.5px] bg-[#424242]"></div>
             <ul className="space-y-1 pl-12">
-              {item.subItems!.map((subItem, index) => (
+              {item.subItems!.map((subItem) => (
                 <SubMenuItem
                   key={subItem.id}
                   item={subItem}
-                  index={index}
                   activeItem={activeItem}
                   setActiveItem={setActiveItem}
                 />
@@ -145,16 +189,10 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
 
   return (
     <button 
-      onClick={() => setActiveItem(item.id)}
-      className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-        activeItem === item.id
-          ? 'text-white bg-[#2a2a2a]/50 font-bold'
-          : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
-      }`}
+      onClick={handleMenuItemClick}
+      className={`${BUTTON_BASE_CLASSES} ${isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
     >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.iconPath} />
-      </svg>
+      <Icon iconPath={item.iconPath} />
       <span>{item.label}</span>
     </button>
   );
@@ -165,10 +203,8 @@ export default function Sidebar({
   onToggle,
   userName: propUserName,
   userEmail: propUserEmail,
-  userId: propUserId,
 }: SidebarProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { data: session } = useSession();
   const [activeItem, setActiveItem] = useState<string>('');
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
@@ -180,25 +216,34 @@ export default function Sidebar({
   const userName = propUserName ?? session?.user?.name;
   const userEmail = propUserEmail ?? session?.user?.email;
 
-  const setExpandedState = (id: string, value: boolean) => {
+  const setExpandedState = useCallback((id: string, value: boolean) => {
     setExpandedStates(prev => ({ ...prev, [id]: value }));
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await signOut({ redirect: false });
     router.push('/login');
     router.refresh();
-  };
+  }, [router]);
 
-  // Get initials from name
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
+  // Get initials from name - memoized since it depends on userName
+  const userInitials = useMemo(() => {
+    if (!userName) return 'U';
+    const parts = userName.trim().split(' ');
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
-    return name[0]?.toUpperCase() || 'U';
-  };
+    return userName[0]?.toUpperCase() || 'U';
+  }, [userName]);
+
+  const handleSettingsClick = useCallback(() => {
+    setActiveItem('Settings');
+    router.push('/settings');
+  }, [router]);
+
+  const handleOrgItemClick = useCallback((itemId: string) => {
+    setActiveItem(itemId);
+  }, []);
 
   return (
     <aside className="h-full w-80">
@@ -226,8 +271,7 @@ export default function Sidebar({
                     onToggle={() => setExpandedState(item.id, !expandedStates[item.id])}
                     activeItem={activeItem}
                     setActiveItem={setActiveItem}
-                    expandedStates={expandedStates}
-                    setExpandedState={setExpandedState}
+                    router={router}
                   />
                 </li>
               ))}
@@ -240,32 +284,26 @@ export default function Sidebar({
             <ul className="space-y-1">
               <li>
                 <button 
-                  onClick={() => setActiveItem('Configurations')}
-                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'Configurations'
-                      ? 'text-white bg-[#2a2a2a]/50 font-bold'
-                      : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+                  onClick={() => handleOrgItemClick('Configurations')}
+                  className={`${BUTTON_BASE_CLASSES} ${
+                    activeItem === 'Configurations' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  <Icon iconPath={[
+                    "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
+                    "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ]} />
                   <span>Configurations</span>
                 </button>
               </li>
               <li>
                 <button 
-                  onClick={() => setActiveItem('Identity & Access')}
-                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'Identity & Access'
-                      ? 'text-white bg-[#2a2a2a]/50 font-bold'
-                      : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+                  onClick={() => handleOrgItemClick('Identity & Access')}
+                  className={`${BUTTON_BASE_CLASSES} ${
+                    activeItem === 'Identity & Access' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  </svg>
+                  <Icon iconPath="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   <span>Identity & Access</span>
                 </button>
               </li>
@@ -278,46 +316,35 @@ export default function Sidebar({
             <ul className="space-y-1">
               <li>
                 <button 
-                  onClick={() => {
-                    setActiveItem('Settings');
-                    router.push('/settings');
-                  }}
-                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'Settings'
-                      ? 'text-white bg-[#2a2a2a]/50 font-bold'
-                      : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+                  onClick={handleSettingsClick}
+                  className={`${BUTTON_BASE_CLASSES} ${
+                    activeItem === 'Settings' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  <Icon iconPath={[
+                    "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
+                    "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ]} />
                   <span>Settings</span>
                 </button>
               </li>
               <li>
                 <button 
-                  onClick={() => setActiveItem('Help')}
-                  className={`w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer ${
-                    activeItem === 'Help'
-                      ? 'text-white bg-[#2a2a2a]/50 font-bold'
-                      : 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50'
+                  onClick={() => handleOrgItemClick('Help')}
+                  className={`${BUTTON_BASE_CLASSES} ${
+                    activeItem === 'Help' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Icon iconPath="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   <span>Help</span>
                 </button>
               </li>
               <li>
                 <button 
                   onClick={handleLogout}
-                  className="w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
+                  className={`${BUTTON_BASE_CLASSES} ${BUTTON_INACTIVE_CLASSES}`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <Icon iconPath="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   <span>Logout</span>
                 </button>
               </li>
@@ -332,7 +359,7 @@ export default function Sidebar({
             <div className="flex-shrink-0">
               <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center shadow-sm">
                 <span className="text-white text-sm font-semibold">
-                  {getInitials(userName)}
+                  {userInitials}
                 </span>
               </div>
             </div>
@@ -344,13 +371,13 @@ export default function Sidebar({
             </div>
             {/* Settings Icon */}
             <button 
-              onClick={() => router.push('/settings')}
+              onClick={handleSettingsClick}
               className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group"
             >
-              <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <Icon 
+                iconPath="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200"
+              />
             </button>
           </div>
         </div>

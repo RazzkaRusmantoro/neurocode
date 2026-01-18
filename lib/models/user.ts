@@ -14,6 +14,14 @@ export interface User {
     primaryGoal?: string;
     role?: string;
   };
+  github?: {
+    providerAccount: string;  // GitHub username
+    providerUserId: string;   // GitHub user ID
+    accessToken: string;      // Encrypted - OAuth access token
+    scope?: string[];         // Granted scopes
+    connectedAt: Date;
+    status: 'active' | 'expired' | 'revoked';
+  };
   organizations?: {
     organizationId: ObjectId;
     name: string;

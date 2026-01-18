@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GlowButton from '@/app/components/GlowButton';
+import { getGitHubAuthUrl, disconnectGitHub } from '@/actions/github';
 
 const TABS = [
   { id: 'general', label: 'General' },
@@ -17,11 +20,37 @@ interface SettingsClientProps {
     firstName: string;
     lastName: string;
     email: string;
+    github: {
+      providerAccount: string;
+      providerUserId: string;
+      accessToken: string;
+      scope?: string[];
+      connectedAt: Date;
+      status: 'active' | 'expired' | 'revoked';
+    } | null;
   };
 }
 
 export default function SettingsClient({ userData }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState('general');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+
+  // Check for OAuth callback success/error messages and clean up URL params
+  useEffect(() => {
+    const githubConnected = searchParams?.get('github_connected');
+    const oauthError = searchParams?.get('error');
+
+    if (githubConnected || oauthError) {
+      // Clean up URL params after showing message
+      const timer = setTimeout(() => {
+        router.replace('/settings');
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, router]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -54,7 +83,7 @@ export default function SettingsClient({ userData }: SettingsClientProps) {
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
           <div className="p-6">
-            {activeTab === 'general' && <GeneralTab userData={userData} />}
+            {activeTab === 'general' && <GeneralTab userData={userData} session={session} router={router} />}
             {activeTab === 'applications' && <ApplicationsTab />}
             {activeTab === 'billings' && <BillingsTab />}
             {activeTab === 'preferences' && <PreferencesTab />}
@@ -73,16 +102,60 @@ interface GeneralTabProps {
     firstName: string;
     lastName: string;
     email: string;
+    github: {
+      providerAccount: string;
+      providerUserId: string;
+      accessToken: string;
+      scope?: string[];
+      connectedAt: Date;
+      status: 'active' | 'expired' | 'revoked';
+    } | null;
   };
+  session: any;
+  router: ReturnType<typeof useRouter>;
 }
 
-function GeneralTab({ userData }: GeneralTabProps) {
+function GeneralTab({ userData, session, router }: GeneralTabProps) {
   const [firstName, setFirstName] = useState(userData.firstName || '');
   const [lastName, setLastName] = useState(userData.lastName || '');
   const [email, setEmail] = useState(userData.email || '');
   const [password, setPassword] = useState('');
-  const [githubConnected, setGithubConnected] = useState(false);
   const [bitbucketConnected, setBitbucketConnected] = useState(false);
+
+  // Check if GitHub is connected
+  const githubConnected = !!(userData.github && userData.github.status === 'active');
+  const githubAccount = userData.github?.providerAccount;
+
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  const handleConnectGitHub = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const authUrl = await getGitHubAuthUrl(session.user.id);
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error connecting GitHub:', error);
+    }
+  };
+
+  const handleDisconnectGitHub = async () => {
+    if (!session?.user?.id) return;
+    
+    setIsDisconnecting(true);
+    try {
+      const result = await disconnectGitHub();
+      if (result.success) {
+        router.refresh(); // Refresh to update UI
+      } else {
+        console.error('Error disconnecting GitHub:', result.error);
+      }
+    } catch (error) {
+      console.error('Error disconnecting GitHub:', error);
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -225,20 +298,25 @@ function GeneralTab({ userData }: GeneralTabProps) {
                     {githubConnected ? 'Connected' : 'Not connected'}
                   </span>
                 </div>
-                <p className="text-xs text-white/40 mt-0.5">Connect your GitHub account</p>
+                <p className="text-xs text-white/40 mt-0.5">
+                  {githubConnected 
+                    ? `Connected as @${githubAccount}` 
+                    : 'Connect your GitHub account'}
+                </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setGithubConnected(!githubConnected)}
+              onClick={githubConnected ? handleDisconnectGitHub : handleConnectGitHub}
+              disabled={isDisconnecting}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 githubConnected
-                  ? 'bg-[#2a2a2a] text-white border border-[#424242] hover:bg-[#333333] hover:border-[#4a4a4a]'
+                  ? 'bg-red-900/30 text-red-400 hover:bg-red-900/40 border border-red-600/50 hover:border-red-600'
                   : 'bg-[#181717] text-white hover:bg-[#2d2d2d] border border-[#181717] hover:border-[#2d2d2d]'
-              }`}
+              } ${isDisconnecting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {githubConnected ? (
-                'Disconnect'
+                'Revoke'
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

@@ -24,6 +24,7 @@ export default async function SettingsPage() {
     firstName: user.firstName || '',
     lastName: user.lastName || '',
     email: user.email || '',
+    github: user.github || null,
   };
 
   return <SettingsClient userData={userData} />;
