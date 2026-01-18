@@ -56,9 +56,8 @@ export default function SettingsClient({ userData }: SettingsClientProps) {
     <div className="w-full h-full flex flex-col">
       <div className="max-w-screen-2xl mx-auto w-full flex flex-col h-full">
         {/* Header */}
-        <div className="mb-8 flex-shrink-0">
+        <div className="mb-5 flex-shrink-0">
           <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-white/60 text-sm">Manage your account settings and preferences</p>
         </div>
 
         {/* Tabs */}
@@ -82,7 +81,7 @@ export default function SettingsClient({ userData }: SettingsClientProps) {
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-          <div className="p-6">
+          <div className="p-4">
             {activeTab === 'general' && <GeneralTab userData={userData} session={session} router={router} />}
             {activeTab === 'applications' && <ApplicationsTab />}
             {activeTab === 'billings' && <BillingsTab />}
@@ -164,7 +163,6 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
         
         {/* Profile Picture */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-white mb-3">Profile Picture</label>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-lg bg-[#BC4918] flex items-center justify-center text-white text-2xl font-semibold">
               {firstName[0]?.toUpperCase() || lastName[0]?.toUpperCase() || 'U'}

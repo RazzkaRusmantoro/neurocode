@@ -28,13 +28,9 @@ export default async function RepositoriesPage() {
       
       {isGitHubConnected && <RepositorySearch />}
       
-      {!isGitHubConnected ? (
+      {!isGitHubConnected && (
         <div className="mt-6">
           <p className="text-white/70 mb-4">Connect your GitHub account to view your repositories.</p>
-        </div>
-      ) : (
-        <div className="mt-6">
-          <p className="text-white/70">Repositories will be displayed here.</p>
         </div>
       )}
     </div>
