@@ -21,12 +21,13 @@ export default async function RepositoriesPage() {
 
   // Check if GitHub is connected
   const isGitHubConnected = user.github && user.github.status === 'active';
+  const githubAccount = user.github?.providerAccount || null;
 
   return (
-    <div className="mx-auto max-w-screen-2xl py-8">
-      <h1 className="text-2xl font-bold text-white mb-4">Repositories</h1>
+    <div className="mx-auto max-w-screen-2xl">
+      <h1 className="text-3xl font-bold text-white mb-10">Repositories</h1>
       
-      {isGitHubConnected && <RepositorySearch />}
+      {isGitHubConnected && <RepositorySearch githubAccount={githubAccount} />}
       
       {!isGitHubConnected && (
         <div className="mt-6">

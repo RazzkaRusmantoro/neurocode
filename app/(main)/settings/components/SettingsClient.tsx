@@ -330,8 +330,15 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
           <div className="flex items-center justify-between p-4 bg-[#FFD45C]/5 border-none rounded-lg transition-all duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#424242] flex items-center justify-center flex-shrink-0">
-                <svg className="w-7 h-7 text-[#2684FF]" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.778 1.213a.768.768 0 00-.768.892l3.263 19.81c.084.5.515.868 1.022.873H20.71a.772.772 0 00.77-.646l3.27-19.81a.768.768 0 00-.768-.891L.778 1.213zM14.52 15.53H9.522L8.17 8.466h7.561l-1.211 7.064z"/>
+                <svg className="w-7 h-7" viewBox="8.4 14.39 2481.29 2231.21" fill="none">
+                  <defs>
+                    <linearGradient id="bitbucket-gradient" x1="945.1094" y1="1524.8389" x2="944.4923" y2="1524.1893" gradientTransform="matrix(1996.6343 0 0 -1480.3047 -1884485.625 2258195)" gradientUnits="userSpaceOnUse">
+                      <stop offset="0.18" stopColor="#0052CC"/>
+                      <stop offset="1" stopColor="#2684FF"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M88.92,14.4C45.02,13.83,8.97,48.96,8.41,92.86c-0.06,4.61,0.28,9.22,1.02,13.77l337.48,2048.72 c8.68,51.75,53.26,89.8,105.74,90.24h1619.03c39.38,0.5,73.19-27.9,79.49-66.78l337.49-2071.78c7.03-43.34-22.41-84.17-65.75-91.2 c-4.55-0.74-9.15-1.08-13.76-1.02L88.92,14.4z M1509.99,1495.09H993.24l-139.92-731h781.89L1509.99,1495.09z" fill="#2684FF"/>
+                  <path d="M2379.27,763.06h-745.5l-125.12,730.42H992.31l-609.67,723.67c19.32,16.71,43.96,26,69.5,26.21h1618.13 c39.35,0.51,73.14-27.88,79.44-66.72L2379.27,763.06z" fill="url(#bitbucket-gradient)"/>
                 </svg>
               </div>
               <div className="flex flex-col">
@@ -364,8 +371,9 @@ function GeneralTab({ userData, session, router }: GeneralTabProps) {
                 'Disconnect'
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.778 1.213a.768.768 0 00-.768.892l3.263 19.81c.084.5.515.868 1.022.873H20.71a.772.772 0 00.77-.646l3.27-19.81a.768.768 0 00-.768-.891L.778 1.213zM14.52 15.53H9.522L8.17 8.466h7.561l-1.211 7.064z"/>
+                  <svg className="w-5 h-5" viewBox="8.4 14.39 2481.29 2231.21" fill="none">
+                    <path d="M88.92,14.4C45.02,13.83,8.97,48.96,8.41,92.86c-0.06,4.61,0.28,9.22,1.02,13.77l337.48,2048.72 c8.68,51.75,53.26,89.8,105.74,90.24h1619.03c39.38,0.5,73.19-27.9,79.49-66.78l337.49-2071.78c7.03-43.34-22.41-84.17-65.75-91.2 c-4.55-0.74-9.15-1.08-13.76-1.02L88.92,14.4z M1509.99,1495.09H993.24l-139.92-731h781.89L1509.99,1495.09z" fill="white"/>
+                    <path d="M2379.27,763.06h-745.5l-125.12,730.42H992.31l-609.67,723.67c19.32,16.71,43.96,26,69.5,26.21h1618.13 c39.35,0.51,73.14-27.88,79.44-66.72L2379.27,763.06z" fill="white"/>
                   </svg>
                   Connect Bitbucket
                 </>
