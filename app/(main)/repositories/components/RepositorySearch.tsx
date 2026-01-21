@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import AddRepositoryModal from './AddRepositoryModal';
+import type { OrganizationWithId } from '@/actions/organization';
 
 interface RepositorySearchProps {
   githubAccount?: string | null;
+  selectedOrganization: OrganizationWithId | null;
 }
 
-export default function RepositorySearch({ githubAccount }: RepositorySearchProps) {
+export default function RepositorySearch({ githubAccount, selectedOrganization }: RepositorySearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -49,6 +51,7 @@ export default function RepositorySearch({ githubAccount }: RepositorySearchProp
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         githubAccount={githubAccount}
+        selectedOrganization={selectedOrganization}
       />
     </>
   );

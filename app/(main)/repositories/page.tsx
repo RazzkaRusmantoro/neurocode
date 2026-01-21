@@ -1,6 +1,7 @@
 import { getCachedUserById } from '@/lib/models/user';
 import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
+import { getUserOrganizations } from '@/actions/organization';
 import RepositorySearch from './components/RepositorySearch';
 
 export default async function RepositoriesPage() {
@@ -19,6 +20,10 @@ export default async function RepositoriesPage() {
     redirect('/login');
   }
 
+  // Get user organizations and select the first one (same as layout)
+  const { organizations } = await getUserOrganizations();
+  const selectedOrganization = organizations.length > 0 ? organizations[0] : null;
+
   // Check if GitHub is connected
   const isGitHubConnected = user.github && user.github.status === 'active';
   const githubAccount = user.github?.providerAccount || null;
@@ -27,7 +32,12 @@ export default async function RepositoriesPage() {
     <div className="mx-auto max-w-screen-2xl">
       <h1 className="text-3xl font-bold text-white mb-10">Repositories</h1>
       
-      {isGitHubConnected && <RepositorySearch githubAccount={githubAccount} />}
+      {isGitHubConnected && (
+        <RepositorySearch 
+          githubAccount={githubAccount} 
+          selectedOrganization={selectedOrganization}
+        />
+      )}
       
       {!isGitHubConnected && (
         <div className="mt-6">

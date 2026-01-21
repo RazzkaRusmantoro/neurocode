@@ -6,6 +6,11 @@ export interface Organization {
   name: string;
   ownerId: ObjectId;
   members: ObjectId[];
+  repositories?: {
+    repositoryId: ObjectId;
+    githubId?: number; // Optional - only for GitHub repos
+    name: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +56,37 @@ export async function updateOrganizationName(
     {
       $set: {
         name: newName,
+        updatedAt: now,
+      },
+    }
+  );
+  
+  return result.modifiedCount > 0;
+}
+
+// Modify for upload and bitbucket repositories as well
+export async function addRepositoryToOrganization(
+  organizationId: string,
+  repositoryId: ObjectId,
+  githubId: number | undefined,
+  name: string
+): Promise<boolean> {
+  const collection = await getOrganizationsCollection();
+  const now = new Date();
+  
+  const repository = {
+    repositoryId,
+    ...(githubId !== undefined && githubId !== 0 && { githubId }),
+    name,
+  };
+  
+  const result = await collection.updateOne(
+    { _id: new ObjectId(organizationId) },
+    {
+      $push: {
+        repositories: repository,
+      },
+      $set: {
         updatedAt: now,
       },
     }

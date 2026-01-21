@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import { addRepository } from '@/actions/repository';
+import type { OrganizationWithId } from '@/actions/organization';
 
 interface AddRepositoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   githubAccount?: string | null;
+  selectedOrganization: OrganizationWithId | null;
   onUploadFromComputer?: () => void;
   onUploadFromGitHub?: () => void;
   onUploadFromBitbucket?: () => void;
@@ -46,6 +49,7 @@ export default function AddRepositoryModal({
   isOpen,
   onClose,
   githubAccount,
+  selectedOrganization,
   onUploadFromComputer,
   onUploadFromGitHub,
   onUploadFromBitbucket,
@@ -64,6 +68,7 @@ export default function AddRepositoryModal({
     permissions: any;
   }>>([]);
   const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isGitHubConnected = !!githubAccount;
   const githubAvatarUrl = githubAccount ? `https://github.com/${githubAccount}.png` : null;
@@ -79,6 +84,7 @@ export default function AddRepositoryModal({
       setIsLoading(false);
       setCollaborators([]);
       setIsLoadingCollaborators(false);
+      setError(null);
     }
   }, [isOpen]);
 
@@ -167,9 +173,30 @@ export default function AddRepositoryModal({
     setSelectedRepository(null);
   };
 
-  const handleAddRepository = () => {
-    // TODO: Implement adding the repository
-    console.log('Adding repository:', selectedRepository);
+  const handleAddRepository = async () => {
+    if (!selectedRepository || !selectedOrganization) {
+      setError('Organization not selected');
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const result = await addRepository(selectedOrganization.id, {
+        githubId: selectedRepository.id,
+        name: selectedRepository.name,
+        url: selectedRepository.url,
+        source: 'github',
+      });
+
+      if (result.success) {
+        onClose();
+      } else {
+        setError(result.error || 'Failed to add repository');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to add repository');
+    }
   };
 
   if (!isOpen) return null;
@@ -591,9 +618,15 @@ export default function AddRepositoryModal({
         {/* Fixed Footer with Add Repository Button - Only shown at stage 3 */}
         {selectedRepository && (
           <div className="pt-6 border-t border-[#424242] mt-6 flex-shrink-0">
+            {error && (
+              <div className="mb-4 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                {error}
+              </div>
+            )}
             <button
               onClick={handleAddRepository}
-              className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
+              disabled={!selectedOrganization}
+              className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
             >
               Add Repository
             </button>
