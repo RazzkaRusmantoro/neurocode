@@ -187,6 +187,9 @@ export default function AddRepositoryModal({
         name: selectedRepository.name,
         url: selectedRepository.url,
         source: 'github',
+        description: selectedRepository.description || undefined,
+        size: selectedRepository.size,
+        lastUpdate: selectedRepository.updatedAt,
       });
 
       if (result.success) {

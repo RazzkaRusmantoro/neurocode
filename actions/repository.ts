@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
-import { createRepository, getRepositoryByGithubIdAndOrganization } from '@/lib/models/repository';
+import { createRepository, getRepositoryByGithubIdAndOrganization, getRepositoriesByOrganization } from '@/lib/models/repository';
 import { addRepositoryToOrganization, getOrganizationById } from '@/lib/models/organization';
 import { ObjectId } from 'mongodb';
 
@@ -12,6 +12,9 @@ interface AddRepositoryData {
   name: string;
   url: string;
   source: 'github' | 'bitbucket' | 'upload';
+  description?: string; // Optional description
+  size?: number; // Repository size in KB
+  lastUpdate?: Date | string; // Last update date
 }
 
 export async function addRepository(
@@ -74,6 +77,58 @@ export async function addRepository(
   } catch (error: any) {
     console.error('Error adding repository:', error);
     return { success: false, error: error.message || 'Failed to add repository' };
+  }
+}
+
+export async function getOrganizationRepositories(
+  organizationId: string
+): Promise<{ success: boolean; repositories?: any[]; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const user = await getCachedUserById(session.user.id);
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Verify user has access to the organization
+    const organization = await getOrganizationById(organizationId);
+    if (!organization) {
+      return { success: false, error: 'Organization not found' };
+    }
+
+    // Check if user is a member of this organization
+    const userOrg = user.organizations?.find(
+      org => org.organizationId.toString() === organizationId
+    );
+    if (!userOrg) {
+      return { success: false, error: 'Unauthorized: Not a member of this organization' };
+    }
+
+    // Get all repositories for this organization
+    const repositories = await getRepositoriesByOrganization(organizationId);
+
+    return { 
+      success: true, 
+      repositories: repositories.map(repo => ({
+        id: repo._id?.toString(),
+        name: repo.name,
+        url: repo.url,
+        source: repo.source,
+        githubId: repo.githubId,
+        description: repo.description,
+        size: repo.size,
+        lastUpdate: repo.lastUpdate,
+        addedAt: repo.addedAt,
+      }))
+    };
+  } catch (error: any) {
+    console.error('Error fetching repositories:', error);
+    return { success: false, error: error.message || 'Failed to fetch repositories' };
   }
 }
 

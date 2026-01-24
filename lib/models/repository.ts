@@ -8,6 +8,9 @@ export interface Repository {
   name: string;
   url: string;
   source: 'github' | 'bitbucket' | 'upload';
+  description?: string; // Optional description
+  size?: number; // Repository size in KB (from GitHub API)
+  lastUpdate?: Date; // Last update date (from GitHub API)
   addedAt: Date;
 }
 
@@ -16,15 +19,25 @@ export async function getRepositoriesCollection() {
   return db.collection<Repository>('repositories');
 }
 
+export type CreateRepositoryData = Omit<Repository, '_id' | 'organizationId' | 'addedAt' | 'lastUpdate'> & {
+  lastUpdate?: Date | string; // Allow string for conversion
+};
+
 export async function createRepository(
   organizationId: string,
-  repositoryData: Omit<Repository, '_id' | 'organizationId' | 'addedAt'>
+  repositoryData: CreateRepositoryData
 ): Promise<Repository> {
   const collection = await getRepositoriesCollection();
   const now = new Date();
   
+  // Convert lastUpdate from string to Date if provided
+  const lastUpdate = repositoryData.lastUpdate 
+    ? (typeof repositoryData.lastUpdate === 'string' ? new Date(repositoryData.lastUpdate) : repositoryData.lastUpdate)
+    : undefined;
+  
   const newRepository: Omit<Repository, '_id'> = {
     ...repositoryData,
+    lastUpdate,
     organizationId: new ObjectId(organizationId),
     addedAt: now,
   };
