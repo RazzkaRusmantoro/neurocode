@@ -15,7 +15,7 @@ export default function OrganizationsNavbar({
   return (
     <nav className="w-full" style={{ fontFamily: 'var(--font-poppins)' }}>
       <div className="flex items-center py-8">
-        <div className="flex items-center gap-12 w-full max-w-screen-2xl mx-auto">
+        <div className="flex items-center gap-12 w-full max-w-screen-2xl mx-auto px-40">
           {/* Full Logo */}
           <div className="flex items-center">
             <img 
@@ -65,4 +65,6 @@ export default function OrganizationsNavbar({
     </nav>
   );
 }
+
+
 

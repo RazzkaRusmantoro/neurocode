@@ -275,12 +275,8 @@ export default function Sidebar({
 
   const handleSettingsClick = useCallback(() => {
     setActiveItem('Settings');
-    // Extract orgShortId from current pathname
-    const match = pathname.match(/\/org-([^/]+)/);
-    const orgShortId = match ? match[1] : null;
-    const route = orgShortId ? `/org-${orgShortId}/settings` : '/settings';
-    router.push(route);
-  }, [router, pathname]);
+    router.push('/settings');
+  }, [router]);
 
   const handleOrgItemClick = useCallback((itemId: string) => {
     setActiveItem(itemId);

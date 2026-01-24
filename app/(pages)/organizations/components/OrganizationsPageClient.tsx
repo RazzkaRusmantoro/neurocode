@@ -45,7 +45,7 @@ export default function OrganizationsPageClient({ organizations: initialOrganiza
   };
 
   return (
-    <div className="mx-auto max-w-screen-2xl">
+    <div className="mx-auto max-w-screen-2xl px-40">
       <h1 className="text-3xl font-bold text-white mb-10">Organizations</h1>
       
       <OrganizationSearch 
@@ -107,4 +107,6 @@ export default function OrganizationsPageClient({ organizations: initialOrganiza
     </div>
   );
 }
+
+
 

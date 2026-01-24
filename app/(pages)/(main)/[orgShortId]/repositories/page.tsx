@@ -1,12 +1,16 @@
 import { getCachedUserById } from '@/lib/models/user';
 import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
-import { getUserOrganizations } from '@/actions/organization';
-import { getOrganizationRepositories } from '@/actions/repository';
+import { getOrganizationByShortId } from '@/lib/models/organization';
+import { getRepositoriesByOrganization } from '@/lib/models/repository';
 import RepositorySearch from './components/RepositorySearch';
 import RepositoryCard from './components/RepositoryCard';
 
-export default async function RepositoriesPage() {
+export default async function RepositoriesPage({
+  params
+}: {
+  params: Promise<{ orgShortId: string }> | { orgShortId: string };
+}) {
   // Fetch session server-side (cached - uses same fetch as layout)
   const session = await getCachedSession();
 
@@ -22,22 +26,56 @@ export default async function RepositoriesPage() {
     redirect('/login');
   }
 
-  // Get user organizations and select the first one (same as layout)
-  const { organizations } = await getUserOrganizations();
-  const selectedOrganization = organizations.length > 0 ? organizations[0] : null;
+  // Get organization from URL params (already validated in layout)
+  const resolvedParams = await Promise.resolve(params);
+  const shortId = resolvedParams.orgShortId.startsWith('org-') 
+    ? resolvedParams.orgShortId.replace('org-', '') 
+    : resolvedParams.orgShortId;
+
+  const organization = await getOrganizationByShortId(shortId);
+
+  if (!organization) {
+    redirect('/organizations');
+  }
+
+  // Check if user is a member of this organization (quick check from user data)
+  const userOrg = user.organizations?.find(
+    org => org.organizationId.toString() === organization._id!.toString()
+  );
+
+  if (!userOrg) {
+    redirect('/organizations');
+  }
 
   // Check if GitHub is connected
   const isGitHubConnected = user.github && user.github.status === 'active';
   const githubAccount = user.github?.providerAccount || null;
 
-  // Fetch repositories for the selected organization
-  let repositories: any[] = [];
-  if (selectedOrganization) {
-    const reposResult = await getOrganizationRepositories(selectedOrganization.id);
-    if (reposResult.success && reposResult.repositories) {
-      repositories = reposResult.repositories;
-    }
-  }
+  // Fetch repositories directly (no redundant checks)
+  const repositories = await getRepositoriesByOrganization(organization._id!.toString());
+
+  // Format repositories for display
+  const formattedRepositories = repositories
+    .filter(repo => repo._id) // Filter out repos without IDs
+    .map(repo => ({
+      id: repo._id!.toString(),
+      name: repo.name,
+      url: repo.url,
+      source: repo.source,
+      description: repo.description,
+      size: repo.size,
+      lastUpdate: repo.lastUpdate,
+      addedAt: repo.addedAt,
+    }));
+
+  // Create selectedOrganization object for RepositorySearch component
+  const selectedOrganization = {
+    id: organization._id!.toString(),
+    shortId: organization.shortId,
+    name: userOrg.name,
+    role: userOrg.role,
+    ownerId: organization.ownerId.toString(),
+  };
 
   return (
     <div className="mx-auto max-w-screen-2xl">
@@ -50,9 +88,9 @@ export default async function RepositoriesPage() {
 
       {/* Repositories Grid */}
       <div className="mt-10">
-        {repositories.length > 0 ? (
+        {formattedRepositories.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {repositories.map((repo) => (
+            {formattedRepositories.map((repo) => (
               <RepositoryCard
                 key={repo.id}
                 id={repo.id}
