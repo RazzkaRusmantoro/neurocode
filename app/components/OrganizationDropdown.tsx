@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import type { OrganizationWithId } from '@/actions/organization';
 
 interface OrganizationDropdownProps {
@@ -14,6 +15,8 @@ export default function OrganizationDropdown({
   selectedOrganization: initialSelectedOrganization,
   onOrganizationChange,
 }: OrganizationDropdownProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +53,11 @@ export default function OrganizationDropdown({
     setIsOpen(false);
     setSearchQuery('');
     onOrganizationChange?.(org);
-    // TODO: Add logic to switch organization context
+    
+    // Navigate to the new organization's dashboard
+    // Extract current route path (e.g., /org-x7k2/repositories -> /repositories)
+    const currentPath = pathname.replace(/^\/org-[^/]+/, '') || '/dashboard';
+    router.push(`/org-${org.shortId}${currentPath}`);
   };
 
   const handleViewAllOrganizations = () => {

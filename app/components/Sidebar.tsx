@@ -26,7 +26,7 @@ interface MenuItem {
   subItems?: SubMenuItem[];
 }
 
-// Route mapping for menu items
+// Route mapping for menu items (will be built dynamically with orgShortId)
 const MENU_ITEM_ROUTES: Record<string, string> = {
   Repositories: '/repositories',
   Settings: '/settings',
@@ -47,7 +47,7 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
     id: 'Repositories',
     label: 'Repositories',
     iconPath: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-    route: '/repositories',
+    // route will be built dynamically
   },
   {
     id: 'management',
@@ -125,6 +125,7 @@ interface MenuItemComponentProps {
   activeItem: string;
   setActiveItem: (id: string) => void;
   router: AppRouterInstance;
+  pathname: string;
 }
 
 // MenuItem component
@@ -134,18 +135,24 @@ function MenuItemComponent({
   onToggle, 
   activeItem, 
   setActiveItem, 
-  router 
+  router,
+  pathname
 }: MenuItemComponentProps) {
   const hasSubItems = Boolean(item.subItems?.length);
   const isActive = activeItem === item.id || (hasSubItems && item.subItems?.some(sub => activeItem === sub.id));
 
   const handleMenuItemClick = useCallback(() => {
     setActiveItem(item.id);
-    const route = item.route || MENU_ITEM_ROUTES[item.id];
-    if (route) {
+    // Extract orgShortId from current pathname
+    const match = pathname.match(/\/org-([^/]+)/);
+    const orgShortId = match ? match[1] : null;
+    
+    const baseRoute = item.route || MENU_ITEM_ROUTES[item.id];
+    if (baseRoute) {
+      const route = orgShortId ? `/org-${orgShortId}${baseRoute}` : baseRoute;
       router.push(route);
     }
-  }, [item.id, item.route, setActiveItem, router]);
+  }, [item.id, item.route, setActiveItem, router, pathname]);
 
   if (hasSubItems) {
     const parentIsActive = item.subItems!.some(sub => activeItem === sub.id);
@@ -213,13 +220,29 @@ export default function Sidebar({
     management: true
   });
 
+  // Extract orgShortId from pathname (e.g., /org-x7k2/repositories -> x7k2)
+  const getOrgShortIdFromPath = useCallback(() => {
+    const match = pathname.match(/\/org-([^/]+)/);
+    return match ? match[1] : null;
+  }, [pathname]);
+
+  const orgShortId = getOrgShortIdFromPath();
+
+  // Helper to build route with org prefix
+  const buildRoute = useCallback((route: string) => {
+    if (orgShortId) {
+      return `/org-${orgShortId}${route}`;
+    }
+    return route;
+  }, [orgShortId]);
+
   // Set active item based on current pathname
   useEffect(() => {
-    if (pathname === '/settings') {
+    if (pathname.includes('/settings')) {
       setActiveItem('Settings');
-    } else if (pathname === '/repositories') {
+    } else if (pathname.includes('/repositories')) {
       setActiveItem('Repositories');
-    } else if (pathname === '/dashboard' || pathname === '/') {
+    } else if (pathname.includes('/dashboard') || pathname === '/') {
       setActiveItem('Overview');
       setExpandedStates(prev => ({ ...prev, dashboard: true }));
     }
@@ -252,8 +275,12 @@ export default function Sidebar({
 
   const handleSettingsClick = useCallback(() => {
     setActiveItem('Settings');
-    router.push('/settings');
-  }, [router]);
+    // Extract orgShortId from current pathname
+    const match = pathname.match(/\/org-([^/]+)/);
+    const orgShortId = match ? match[1] : null;
+    const route = orgShortId ? `/org-${orgShortId}/settings` : '/settings';
+    router.push(route);
+  }, [router, pathname]);
 
   const handleOrgItemClick = useCallback((itemId: string) => {
     setActiveItem(itemId);
@@ -286,6 +313,7 @@ export default function Sidebar({
                     activeItem={activeItem}
                     setActiveItem={setActiveItem}
                     router={router}
+                    pathname={pathname}
                   />
                 </li>
               ))}

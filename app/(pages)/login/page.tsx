@@ -30,7 +30,7 @@ export default function LoginPage() {
         console.log(result.error);
         setError('Invalid email or password');
       } else {
-        router.push('/dashboard');
+        router.push('/organizations');
         router.refresh();
       }
     } catch (err) {
@@ -41,11 +41,11 @@ export default function LoginPage() {
   };
 
   const handleGithubLogin = () => {
-    signIn('github', { callbackUrl: '/dashboard' });
+    signIn('github', { callbackUrl: '/organizations' });
   };
 
   const handleGoogleLogin = () => {
-    signIn('google', { callbackUrl: '/dashboard' });
+    signIn('google', { callbackUrl: '/organizations' });
   };
 
   return (

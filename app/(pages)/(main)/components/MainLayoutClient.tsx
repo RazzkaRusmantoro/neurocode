@@ -35,7 +35,6 @@ export default function MainLayoutClient({
         onToggle={toggleSidebar}
         userName={userName}
         userEmail={userEmail}
-        userId={userId}
       />
       
       {/* Right side - Navbar and content stacked */}

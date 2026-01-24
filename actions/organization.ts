@@ -7,6 +7,7 @@ import { ObjectId } from 'mongodb';
 
 export interface OrganizationWithId {
   id: string;
+  shortId: string;
   name: string;
   role: 'owner' | 'member' | 'admin';
   ownerId: string;
@@ -44,6 +45,7 @@ export async function getUserOrganizations(): Promise<{ organizations: Organizat
       const orgDoc = orgMap.get(userOrg.organizationId.toString());
       return {
         id: userOrg.organizationId.toString(),
+        shortId: orgDoc?.shortId || '',
         name: userOrg.name,
         role: userOrg.role,
         ownerId: orgDoc?.ownerId.toString() || '',
