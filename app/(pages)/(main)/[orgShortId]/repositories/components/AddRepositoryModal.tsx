@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { addRepository } from '@/actions/repository';
 import type { OrganizationWithId } from '@/actions/organization';
+import { generateSlug } from '@/lib/utils/slug';
 
 interface AddRepositoryModalProps {
   isOpen: boolean;
@@ -69,6 +70,7 @@ export default function AddRepositoryModal({
   }>>([]);
   const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [urlName, setUrlName] = useState<string>('');
 
   const isGitHubConnected = !!githubAccount;
   const githubAvatarUrl = githubAccount ? `https://github.com/${githubAccount}.png` : null;
@@ -85,6 +87,7 @@ export default function AddRepositoryModal({
       setCollaborators([]);
       setIsLoadingCollaborators(false);
       setError(null);
+      setUrlName('');
     }
   }, [isOpen]);
 
@@ -149,6 +152,8 @@ export default function AddRepositoryModal({
 
   const handleSelectRepository = async (repo: Repository) => {
     setSelectedRepository(repo);
+    // Auto-generate urlName from repository name
+    setUrlName(generateSlug(repo.name));
     setIsLoadingCollaborators(true);
     
     // Fetch collaborators
@@ -179,12 +184,18 @@ export default function AddRepositoryModal({
       return;
     }
 
+    if (!urlName.trim()) {
+      setError('URL name is required');
+      return;
+    }
+
     setError(null);
 
     try {
       const result = await addRepository(selectedOrganization.id, {
         githubId: selectedRepository.id,
         name: selectedRepository.name,
+        urlName: urlName.trim(),
         url: selectedRepository.url,
         source: 'github',
         description: selectedRepository.description || undefined,
@@ -320,6 +331,23 @@ export default function AddRepositoryModal({
                     <p className="text-white/80">{selectedRepository.description}</p>
                   </div>
                 )}
+
+                {/* URL Name Field */}
+                <div>
+                  <h4 className="text-sm font-semibold text-white/60 mb-2">URL Name</h4>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={urlName}
+                      onChange={(e) => setUrlName(generateSlug(e.target.value))}
+                      placeholder="url-name"
+                      className="w-full px-4 py-2.5 border-none rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] transition-all bg-[#2a2a2a] border border-[#424242]"
+                    />
+                    <p className="text-xs text-white/40">
+                      This will be used in the URL: /org-{selectedOrganization?.shortId}/repo/{urlName || 'url-name'}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Topics */}
                 {selectedRepository.topics && selectedRepository.topics.length > 0 && (

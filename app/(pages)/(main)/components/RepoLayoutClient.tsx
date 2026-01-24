@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
-import Sidebar from '@/app/components/Sidebar';
+import RepoSidebar from '@/app/components/RepoSidebar';
 import type { OrganizationWithId } from '@/actions/organization';
 
-interface MainLayoutClientProps {
+interface RepoLayoutClientProps {
   userEmail?: string | null;
   userName?: string | null;
   userId?: string | null;
@@ -13,14 +13,14 @@ interface MainLayoutClientProps {
   selectedOrganization: OrganizationWithId | null;
 }
 
-export default function MainLayoutClient({
+export default function RepoLayoutClient({
   userEmail,
   userName,
   userId,
   organizations,
   selectedOrganization,
   children,
-}: MainLayoutClientProps & { children: React.ReactNode }) {
+}: RepoLayoutClientProps & { children: React.ReactNode }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 
   const toggleSidebar = () => {
@@ -30,7 +30,7 @@ export default function MainLayoutClient({
   return (
     <div className="h-screen flex bg-transparent">
       {/* Sidebar on the left - full height */}
-      <Sidebar 
+      <RepoSidebar 
         isExpanded={isSidebarExpanded} 
         onToggle={toggleSidebar}
         userName={userName}

@@ -10,6 +10,7 @@ import { ObjectId } from 'mongodb';
 interface AddRepositoryData {
   githubId?: number; // Optional - only for GitHub repos
   name: string;
+  urlName?: string; // Optional - will be auto-generated if not provided
   url: string;
   source: 'github' | 'bitbucket' | 'upload';
   description?: string; // Optional description

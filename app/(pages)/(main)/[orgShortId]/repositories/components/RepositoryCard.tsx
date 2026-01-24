@@ -1,11 +1,14 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 interface RepositoryCardProps {
   id: string;
   name: string;
+  urlName: string;
   url: string;
+  orgShortId: string;
   source?: 'github' | 'bitbucket' | 'upload';
   addedAt: Date | string;
   size?: string;
@@ -13,32 +16,20 @@ interface RepositoryCardProps {
   description?: string;
 }
 
-export default function RepositoryCard({ id, name, url, source, addedAt, size, lastUpdate, description }: RepositoryCardProps) {
+export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description }: RepositoryCardProps) {
+  const router = useRouter();
   const addedDate = typeof addedAt === 'string' ? new Date(addedAt) : addedAt;
   const updateDate = lastUpdate ? (typeof lastUpdate === 'string' ? new Date(lastUpdate) : lastUpdate) : addedDate;
   const sizeDisplay = size || 'N/A';
 
-  // Extract repository path from GitHub URL (e.g., /rolzo-web from https://github.com/user/rolzo-web)
-  const getRepositoryPath = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      // Extract only the repository name (last part of the path)
-      const pathParts = urlObj.pathname.split('/').filter(part => part);
-      return pathParts.length > 0 ? `/${pathParts[pathParts.length - 1]}` : '';
-    } catch {
-      // If URL parsing fails, try to extract from string
-      const match = url.match(/github\.com[\/](.+)/);
-      return match ? `/${match[1].split('/').pop()}` : '';
-    }
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(`/org-${orgShortId}/repo/${urlName}`);
   };
 
-  const repositoryPath = getRepositoryPath(url);
-
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
+      onClick={handleClick}
       className="group relative border border-white/10 rounded-lg p-6 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
       style={{ backgroundColor: '#212121' }}
       onMouseEnter={(e) => {
@@ -55,15 +46,13 @@ export default function RepositoryCard({ id, name, url, source, addedAt, size, l
         {name}
       </h2>
 
-      {/* Repository Path Badge */}
-      {repositoryPath && (
-        <div 
-          className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3"
-          style={{ backgroundColor: 'rgba(233, 94, 35, 0.3)', color: '#E95E23' }}
-        >
-          {repositoryPath}
-        </div>
-      )}
+      {/* Repository URL Name Badge */}
+      <div 
+        className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3"
+        style={{ backgroundColor: 'rgba(233, 94, 35, 0.3)', color: '#E95E23' }}
+      >
+        /{urlName}
+      </div>
 
       {/* Description */}
       {description && (
@@ -86,7 +75,7 @@ export default function RepositoryCard({ id, name, url, source, addedAt, size, l
 
       {/* Hover Glow Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
-    </a>
+    </div>
   );
 }
 

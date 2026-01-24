@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
 import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getRepositoriesByOrganization } from '@/lib/models/repository';
+import { generateSlug } from '@/lib/utils/slug';
 import RepositorySearch from './components/RepositorySearch';
 import RepositoryCard from './components/RepositoryCard';
 
@@ -55,11 +56,13 @@ export default async function RepositoriesPage({
   const repositories = await getRepositoriesByOrganization(organization._id!.toString());
 
   // Format repositories for display
+  // Generate urlName for existing repos that don't have it yet
   const formattedRepositories = repositories
     .filter(repo => repo._id) // Filter out repos without IDs
     .map(repo => ({
       id: repo._id!.toString(),
       name: repo.name,
+      urlName: repo.urlName || generateSlug(repo.name), // Generate urlName if missing
       url: repo.url,
       source: repo.source,
       description: repo.description,
@@ -95,7 +98,9 @@ export default async function RepositoriesPage({
                 key={repo.id}
                 id={repo.id}
                 name={repo.name}
+                urlName={repo.urlName}
                 url={repo.url}
+                orgShortId={shortId}
                 source={repo.source}
                 addedAt={repo.addedAt}
                 description={repo.description}

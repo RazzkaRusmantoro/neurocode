@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getUserOrganizations } from '@/actions/organization';
 import { getCachedSession } from '@/lib/session';
-import ConditionalLayoutWrapper from '../components/ConditionalLayoutWrapper';
+import RepoLayoutClient from '../../components/RepoLayoutClient';
 
-export default async function OrgLayout({ 
+export default async function RepoLayout({ 
   children,
   params 
 }: { 
@@ -50,7 +50,7 @@ export default async function OrgLayout({
   const selectedOrganization = organizations.find(org => org.id === organization._id!.toString()) || null;
 
   return (
-    <ConditionalLayoutWrapper
+    <RepoLayoutClient
       userEmail={session.user.email}
       userName={session.user.name}
       userId={session.user.id}
@@ -58,7 +58,7 @@ export default async function OrgLayout({
       selectedOrganization={selectedOrganization}
     >
       {children}
-    </ConditionalLayoutWrapper>
+    </RepoLayoutClient>
   );
 }
 
