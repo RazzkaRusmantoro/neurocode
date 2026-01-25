@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getUserOrganizations } from '@/actions/organization';
 import { getCachedSession } from '@/lib/session';
+import { getRepositoriesByOrganization } from '@/lib/models/repository';
 import RepoLayoutClient from '../../components/RepoLayoutClient';
 
 export default async function RepoLayout({ 
@@ -49,6 +50,24 @@ export default async function RepoLayout({
   const { organizations } = await getUserOrganizations();
   const selectedOrganization = organizations.find(org => org.id === organization._id!.toString()) || null;
 
+  // Get all repositories for this organization
+  const repositories = await getRepositoriesByOrganization(organization._id!.toString());
+  // Serialize repositories for client components (convert ObjectId and Date to strings)
+  const repositoriesWithId = repositories.map(repo => ({
+    _id: repo._id!.toString(),
+    id: repo._id!.toString(),
+    organizationId: repo.organizationId.toString(),
+    githubId: repo.githubId,
+    name: repo.name,
+    urlName: repo.urlName,
+    url: repo.url,
+    source: repo.source,
+    description: repo.description,
+    size: repo.size,
+    lastUpdate: repo.lastUpdate ? repo.lastUpdate.toISOString() : undefined,
+    addedAt: repo.addedAt.toISOString(),
+  }));
+
   return (
     <RepoLayoutClient
       userEmail={session.user.email}
@@ -56,6 +75,7 @@ export default async function RepoLayout({
       userId={session.user.id}
       organizations={organizations}
       selectedOrganization={selectedOrganization}
+      repositories={repositoriesWithId}
     >
       {children}
     </RepoLayoutClient>

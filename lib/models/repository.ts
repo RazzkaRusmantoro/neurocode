@@ -14,6 +14,7 @@ export interface Repository {
   size?: number; // Repository size in KB (from GitHub API)
   lastUpdate?: Date; // Last update date (from GitHub API)
   addedAt: Date;
+  addedBy?: ObjectId; // User ID who added this repository
 }
 
 export async function getRepositoriesCollection() {
@@ -21,9 +22,10 @@ export async function getRepositoriesCollection() {
   return db.collection<Repository>('repositories');
 }
 
-export type CreateRepositoryData = Omit<Repository, '_id' | 'organizationId' | 'addedAt' | 'lastUpdate' | 'urlName'> & {
+export type CreateRepositoryData = Omit<Repository, '_id' | 'organizationId' | 'addedAt' | 'lastUpdate' | 'urlName' | 'addedBy'> & {
   urlName?: string; // Optional - will be generated if not provided
   lastUpdate?: Date | string; // Allow string for conversion
+  addedBy?: string; // User ID who added this repository
 };
 
 export async function createRepository(
@@ -56,6 +58,7 @@ export async function createRepository(
     lastUpdate,
     organizationId: new ObjectId(organizationId),
     addedAt: now,
+    addedBy: repositoryData.addedBy ? new ObjectId(repositoryData.addedBy) : undefined,
   };
   
   const result = await collection.insertOne(newRepository as Repository);

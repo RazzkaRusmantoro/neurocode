@@ -59,8 +59,11 @@ export async function addRepository(
       }
     }
 
-    // Create repository in repositories collection
-    const repository = await createRepository(organizationId, repositoryData);
+    // Create repository in repositories collection (include who added it)
+    const repository = await createRepository(organizationId, {
+      ...repositoryData,
+      addedBy: session.user.id, // Store who added the repository
+    });
 
     // Add repository reference to organization
     const success = await addRepositoryToOrganization(

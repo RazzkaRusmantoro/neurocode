@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface RepoSidebarProps {
   isExpanded: boolean;
@@ -35,12 +35,23 @@ export default function RepoSidebar({
   userEmail: propUserEmail,
 }: RepoSidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [activeItem, setActiveItem] = useState<string>('Code Viewer');
 
   // Use props if available, fallback to session
   const userName = propUserName ?? session?.user?.name;
   const userEmail = propUserEmail ?? session?.user?.email;
+
+  // Extract orgShortId from pathname (e.g., /org-2Sc8S/repo/repo-name -> org-2Sc8S)
+  const orgMatch = pathname.match(/\/org-([^/]+)/);
+  const orgShortId = orgMatch ? `org-${orgMatch[1]}` : null;
+
+  const handleBackToRepositories = useCallback(() => {
+    if (orgShortId) {
+      router.push(`/${orgShortId}/repositories`);
+    }
+  }, [router, orgShortId]);
 
   const handleSettingsClick = useCallback(() => {
     router.push('/settings');
@@ -67,6 +78,19 @@ export default function RepoSidebar({
             className="h-12 w-auto"
           />
         </div>
+
+        {/* Back to Repositories Button */}
+        {orgShortId && (
+          <div className="px-4 pb-3">
+            <button
+              onClick={handleBackToRepositories}
+              className="w-full text-left pl-4 py-2.5 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
+            >
+              <Icon iconPath="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <span>Back to Repositories</span>
+            </button>
+          </div>
+        )}
 
         {/* Sidebar Content */}
         <nav className="flex-1 px-4 flex flex-col overflow-y-auto sidebar-scrollbar">

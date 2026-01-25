@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
 import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getRepositoryByUrlNameAndOrganization } from '@/lib/models/repository';
+import RepositoryViewer from './components/RepositoryViewer';
 
 export default async function RepositoryPage({
   params
@@ -56,10 +57,37 @@ export default async function RepositoryPage({
     redirect(`/org-${shortId}/repositories`);
   }
 
+  // Extract owner/repo from GitHub URL (e.g., https://github.com/owner/repo -> owner/repo)
+  let repoFullName = '';
+  if (repository.url && repository.source === 'github') {
+    try {
+      const url = new URL(repository.url);
+      const pathParts = url.pathname.split('/').filter(part => part);
+      if (pathParts.length >= 2) {
+        repoFullName = `${pathParts[0]}/${pathParts[1]}`;
+      }
+    } catch (error) {
+      console.error('Error parsing repository URL:', error);
+    }
+  }
+
   return (
-    <div>
-      {/* Content will go here */}
-    </div>
+    <>
+      {repoFullName ? (
+        <RepositoryViewer 
+          repoFullName={repoFullName}
+          orgShortId={shortId}
+          repoUrlName={repoName}
+          repoName={repository.name}
+        />
+      ) : (
+        <div className="h-full flex items-center justify-center">
+          <div className="px-4 py-8 text-center text-white/60 text-sm">
+            Repository not found
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

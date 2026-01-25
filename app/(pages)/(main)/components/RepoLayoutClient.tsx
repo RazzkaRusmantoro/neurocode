@@ -1,9 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
 import RepoSidebar from '@/app/components/RepoSidebar';
 import type { OrganizationWithId } from '@/actions/organization';
+import type { Repository } from '@/lib/models/repository';
+
+interface RepositoryWithId extends Repository {
+  id: string;
+}
 
 interface RepoLayoutClientProps {
   userEmail?: string | null;
@@ -11,6 +17,7 @@ interface RepoLayoutClientProps {
   userId?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
+  repositories: RepositoryWithId[];
 }
 
 export default function RepoLayoutClient({
@@ -19,13 +26,22 @@ export default function RepoLayoutClient({
   userId,
   organizations,
   selectedOrganization,
+  repositories,
   children,
 }: RepoLayoutClientProps & { children: React.ReactNode }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const pathname = usePathname();
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
   };
+
+  // Extract repo name from pathname (e.g., /org-x7k2/repo/repo-name -> repo-name)
+  const repoMatch = pathname.match(/\/repo\/([^/]+)/);
+  const currentRepoName = repoMatch ? repoMatch[1] : null;
+  const selectedRepository = currentRepoName
+    ? repositories.find(repo => repo.urlName === currentRepoName) || null
+    : null;
 
   return (
     <div className="h-screen flex bg-transparent">
@@ -45,11 +61,15 @@ export default function RepoLayoutClient({
           userName={userName}
           organizations={organizations}
           selectedOrganization={selectedOrganization}
+          repositories={repositories}
+          selectedRepository={selectedRepository}
         />
         
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
+        <main className="flex-1 overflow-hidden min-h-0">
+          <div className="h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>
