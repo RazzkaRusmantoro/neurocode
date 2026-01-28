@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -37,15 +37,24 @@ export default function RepoSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [activeItem, setActiveItem] = useState<string>('Code Viewer');
 
   // Use props if available, fallback to session
   const userName = propUserName ?? session?.user?.name;
   const userEmail = propUserEmail ?? session?.user?.email;
 
-  // Extract orgShortId from pathname (e.g., /org-2Sc8S/repo/repo-name -> org-2Sc8S)
+  // Extract orgShortId and repoName from pathname (e.g., /org-2Sc8S/repo/repo-name -> org-2Sc8S, repo-name)
   const orgMatch = pathname.match(/\/org-([^/]+)/);
   const orgShortId = orgMatch ? `org-${orgMatch[1]}` : null;
+  const repoMatch = pathname.match(/\/repo\/([^/]+)/);
+  const repoName = repoMatch ? repoMatch[1] : null;
+
+  // Determine active item based on pathname
+  const activeItem = useMemo(() => {
+    if (pathname?.includes('/documentation')) {
+      return 'Documentation';
+    }
+    return 'Code Viewer';
+  }, [pathname]);
 
   const handleBackToRepositories = useCallback(() => {
     if (orgShortId) {
@@ -56,6 +65,18 @@ export default function RepoSidebar({
   const handleSettingsClick = useCallback(() => {
     router.push('/settings');
   }, [router]);
+
+  const handleCodeViewerClick = useCallback(() => {
+    if (orgShortId && repoName) {
+      router.push(`/${orgShortId}/repo/${repoName}`);
+    }
+  }, [router, orgShortId, repoName]);
+
+  const handleDocumentationClick = useCallback(() => {
+    if (orgShortId && repoName) {
+      router.push(`/${orgShortId}/repo/${repoName}/documentation`);
+    }
+  }, [router, orgShortId, repoName]);
 
   // Get initials from name - memoized since it depends on userName
   const userInitials = useMemo(() => {
@@ -100,11 +121,20 @@ export default function RepoSidebar({
             <ul className="space-y-1">
               <li>
                 <button
-                  onClick={() => setActiveItem('Code Viewer')}
+                  onClick={handleCodeViewerClick}
                   className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Code Viewer' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
                 >
                   <Icon iconPath="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   <span>Code Viewer</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={handleDocumentationClick}
+                  className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Documentation' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
+                >
+                  <Icon iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <span>Documentation</span>
                 </button>
               </li>
             </ul>

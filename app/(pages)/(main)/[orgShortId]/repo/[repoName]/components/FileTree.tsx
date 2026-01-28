@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRepoCache } from '../../context/RepoCacheContext';
 
 interface FileTreeItem {
   name: string;
@@ -24,10 +25,6 @@ interface FileTreeProps {
   onFileSelect?: (file: FileTreeItem) => void;
   onContentsChange?: (contents: FileTreeItem[]) => void;
   onPathChange?: (path: string[]) => void;
-  contentsCache: Map<string, FileTreeItem[]>;
-  setContentsCache: React.Dispatch<React.SetStateAction<Map<string, FileTreeItem[]>>>;
-  fileCache: Map<string, FileTreeItem>;
-  setFileCache: React.Dispatch<React.SetStateAction<Map<string, FileTreeItem>>>;
   isLoading?: boolean;
 }
 
@@ -82,12 +79,9 @@ export default function FileTree({
   onFileSelect, 
   onContentsChange, 
   onPathChange,
-  contentsCache,
-  setContentsCache,
-  fileCache,
-  setFileCache,
   isLoading: initialLoading = false 
 }: FileTreeProps) {
+  const cache = useRepoCache();
 
   // Sort contents: directories first, then files, both alphabetically
   const sortedContents = [...contents].sort((a, b) => {
@@ -112,8 +106,7 @@ export default function FileTree({
     if (file.type !== 'file' || !onFileSelect) return;
     
     // Check cache first
-    const cacheKey = `${selectedBranch}:${file.path}`;
-    const cached = fileCache.get(cacheKey);
+    const cached = cache.getFile(selectedBranch, file.path);
     if (cached && cached.content) {
       onFileSelect(cached);
       return;
@@ -140,7 +133,7 @@ export default function FileTree({
             };
             
             // Store in cache
-            setFileCache(prev => new Map(prev).set(cacheKey, fileWithContent));
+            cache.setFile(selectedBranch, file.path, fileWithContent);
             
             onFileSelect(fileWithContent);
           } catch (decodeError) {

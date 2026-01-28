@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
 import RepoSidebar from '@/app/components/RepoSidebar';
+import { RepoCacheProvider } from '../[orgShortId]/repo/context/RepoCacheContext';
 import type { OrganizationWithId } from '@/actions/organization';
 import type { Repository } from '@/lib/models/repository';
 
@@ -44,35 +45,37 @@ export default function RepoLayoutClient({
     : null;
 
   return (
-    <div className="h-screen flex bg-transparent">
-      {/* Sidebar on the left - full height */}
-      <RepoSidebar 
-        isExpanded={isSidebarExpanded} 
-        onToggle={toggleSidebar}
-        userName={userName}
-        userEmail={userEmail}
-      />
-      
-      {/* Right side - Navbar and content stacked */}
-      <div className="flex-1 flex flex-col overflow-hidden px-16">
-        {/* Navbar */}
-        <DashboardNavbar 
-          userEmail={userEmail} 
+    <RepoCacheProvider>
+      <div className="h-screen flex bg-transparent">
+        {/* Sidebar on the left - full height */}
+        <RepoSidebar 
+          isExpanded={isSidebarExpanded} 
+          onToggle={toggleSidebar}
           userName={userName}
-          organizations={organizations}
-          selectedOrganization={selectedOrganization}
-          repositories={repositories}
-          selectedRepository={selectedRepository}
+          userEmail={userEmail}
         />
         
-        {/* Main content area */}
-        <main className="flex-1 overflow-hidden min-h-0">
-          <div className="h-full">
-            {children}
-          </div>
-        </main>
+        {/* Right side - Navbar and content stacked */}
+        <div className="flex-1 flex flex-col overflow-hidden px-16">
+          {/* Navbar */}
+          <DashboardNavbar 
+            userEmail={userEmail} 
+            userName={userName}
+            organizations={organizations}
+            selectedOrganization={selectedOrganization}
+            repositories={repositories}
+            selectedRepository={selectedRepository}
+          />
+          
+          {/* Main content area */}
+          <main className="flex-1 overflow-hidden min-h-0">
+            <div className="h-full">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </RepoCacheProvider>
   );
 }
 

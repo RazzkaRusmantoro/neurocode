@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRepoCache } from '../../context/RepoCacheContext';
 import FileTree from './FileTree';
 
 interface FileTreeItem {
@@ -23,10 +24,6 @@ interface FileTreeWrapperProps {
   selectedBranch: string;
   currentPath?: string[];
   onPathChange?: (path: string[]) => void;
-  contentsCache: Map<string, FileTreeItem[]>;
-  setContentsCache: React.Dispatch<React.SetStateAction<Map<string, FileTreeItem[]>>>;
-  fileCache: Map<string, FileTreeItem>;
-  setFileCache: React.Dispatch<React.SetStateAction<Map<string, FileTreeItem>>>;
   onFileSelect?: (file: FileTreeItem) => void;
 }
 
@@ -37,12 +34,9 @@ export default function FileTreeWrapper({
   selectedBranch,
   currentPath = [], 
   onPathChange, 
-  contentsCache,
-  setContentsCache,
-  fileCache,
-  setFileCache,
   onFileSelect 
 }: FileTreeWrapperProps) {
+  const cache = useRepoCache();
   const [currentContents, setCurrentContents] = useState<FileTreeItem[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -52,10 +46,9 @@ export default function FileTreeWrapper({
     
     const fetchContents = async () => {
       const path = currentPath.length > 0 ? currentPath.join('/') : '';
-      const cacheKey = `${selectedBranch}:${path}`;
       
       // Check cache first
-      const cached = contentsCache.get(cacheKey);
+      const cached = cache.getContents(selectedBranch, path);
       if (cached) {
         if (isMounted) {
           setCurrentContents(cached);
@@ -84,7 +77,7 @@ export default function FileTreeWrapper({
           }));
           
           // Store in cache
-          setContentsCache(prev => new Map(prev).set(cacheKey, contents));
+          cache.setContents(selectedBranch, path, contents);
           
           if (isMounted) {
             setCurrentContents(contents);
@@ -110,7 +103,7 @@ export default function FileTreeWrapper({
     return () => {
       isMounted = false;
     };
-  }, [repoFullName, orgShortId, repoUrlName, selectedBranch, currentPath.join('/')]);
+  }, [repoFullName, orgShortId, repoUrlName, selectedBranch, currentPath.join('/'), cache]);
 
   return (
     <FileTree 
@@ -121,10 +114,6 @@ export default function FileTreeWrapper({
       selectedBranch={selectedBranch}
       onContentsChange={setCurrentContents}
       onPathChange={onPathChange}
-      contentsCache={contentsCache}
-      setContentsCache={setContentsCache}
-      fileCache={fileCache}
-      setFileCache={setFileCache}
       onFileSelect={onFileSelect}
       isLoading={isInitialLoading}
     />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRepoCache } from '../../context/RepoCacheContext';
 import FileTreeWrapper from './FileTreeWrapper';
 import FileContentViewer from './FileContentViewer';
 
@@ -42,33 +43,46 @@ interface Commit {
 }
 
 export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName, repoName }: RepositoryViewerProps) {
+  const cache = useRepoCache();
   const [selectedFile, setSelectedFile] = useState<FileTreeItem | null>(null);
   const [showFileTree, setShowFileTree] = useState(true);
   const [activeTab, setActiveTab] = useState<'documentation' | 'ai-chat'>('documentation');
   const [breadcrumbPath, setBreadcrumbPath] = useState<string[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('main');
-  const [recentCommit, setRecentCommit] = useState<Commit | null>(null);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [branchSearchQuery, setBranchSearchQuery] = useState('');
   const branchDropdownRef = useRef<HTMLDivElement>(null);
   
-  // Cache for folder and file contents
-  // Key format: "branch:path" or "branch:" for root
-  const [contentsCache, setContentsCache] = useState<Map<string, FileTreeItem[]>>(new Map());
-  const [fileCache, setFileCache] = useState<Map<string, FileTreeItem>>(new Map());
+  // Use cached branches and selected branch
+  const branches = cache.cache.branches;
+  const selectedBranch = cache.cache.selectedBranch;
+  const recentCommit = cache.cache.recentCommits.get(selectedBranch) || null;
 
-  // Clear cache when branch changes
+  // Clear local state when branch changes
   useEffect(() => {
-    setContentsCache(new Map());
-    setFileCache(new Map());
     setBreadcrumbPath([]);
     setSelectedFile(null);
     setShowFileTree(true);
   }, [selectedBranch]);
 
-  // Fetch branches on mount
+  // Fetch branches on mount only if not cached
   useEffect(() => {
+    // Check if branches are already cached and not expired
+    const lastFetched = cache.cache.lastFetched.branches;
+    const isExpired = !lastFetched || Date.now() - lastFetched > 5 * 60 * 1000; // 5 minutes
+    
+    if (cache.cache.branches.length > 0 && !isExpired) {
+      // Use cached branches
+      if (cache.cache.selectedBranch === 'main' && cache.cache.branches.length > 0) {
+        const mainBranch = cache.cache.branches.find((b: Branch) => b.name === 'main') || 
+                          cache.cache.branches.find((b: Branch) => b.name === 'master') ||
+                          cache.cache.branches[0];
+        if (mainBranch && cache.cache.selectedBranch !== mainBranch.name) {
+          cache.setSelectedBranch(mainBranch.name);
+        }
+      }
+      return;
+    }
+    
     let isMounted = true;
     
     const fetchBranches = async () => {
@@ -76,14 +90,16 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
         const response = await fetch(`/api/github/repositories/${encodeURIComponent(repoFullName)}/branches?orgShortId=${encodeURIComponent(orgShortId)}&repoUrlName=${encodeURIComponent(repoUrlName)}`);
         if (response.ok && isMounted) {
           const data = await response.json();
-          setBranches(data.branches || []);
+          const fetchedBranches = data.branches || [];
+          cache.setBranches(fetchedBranches);
+          
           // Set default branch to main or first branch
-          if (data.branches && data.branches.length > 0) {
-            const mainBranch = data.branches.find((b: Branch) => b.name === 'main') || 
-                              data.branches.find((b: Branch) => b.name === 'master') ||
-                              data.branches[0];
-            if (isMounted) {
-              setSelectedBranch(mainBranch.name);
+          if (fetchedBranches.length > 0) {
+            const mainBranch = fetchedBranches.find((b: Branch) => b.name === 'main') || 
+                              fetchedBranches.find((b: Branch) => b.name === 'master') ||
+                              fetchedBranches[0];
+            if (isMounted && cache.cache.selectedBranch === 'main') {
+              cache.setSelectedBranch(mainBranch.name);
             }
           }
         }
@@ -101,11 +117,20 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
     return () => {
       isMounted = false;
     };
-  }, [repoFullName, orgShortId, repoUrlName]);
+  }, [repoFullName, orgShortId, repoUrlName, cache]);
 
-  // Fetch recent commit when branch changes
+  // Fetch recent commit when branch changes (only if not cached)
   useEffect(() => {
     if (!selectedBranch) return; // Don't fetch if no branch selected yet
+    
+    // Check if commit is already cached
+    const cachedCommit = cache.cache.recentCommits.get(selectedBranch);
+    const lastFetched = cache.cache.lastFetched[`commit:${selectedBranch}`];
+    const isExpired = !lastFetched || Date.now() - lastFetched > 5 * 60 * 1000; // 5 minutes
+    
+    if (cachedCommit && !isExpired) {
+      return; // Use cached commit
+    }
     
     let isMounted = true;
     
@@ -117,7 +142,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
         if (response.ok && isMounted) {
           const data = await response.json();
           if (data.commits && data.commits.length > 0) {
-            setRecentCommit(data.commits[0]);
+            cache.setRecentCommit(selectedBranch, data.commits[0]);
           }
         }
       } catch (error) {
@@ -134,7 +159,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
     return () => {
       isMounted = false;
     };
-  }, [repoFullName, selectedBranch, orgShortId, repoUrlName]);
+  }, [repoFullName, selectedBranch, orgShortId, repoUrlName, cache]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -172,6 +197,8 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
   };
 
   const breadcrumbItems = getBreadcrumbDisplay();
+
+
 
   const handleBreadcrumbClick = (index: number) => {
     if (index === 0) {
@@ -287,7 +314,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           <button
                             key={branch.name}
                             onClick={() => {
-                              setSelectedBranch(branch.name);
+                              cache.setSelectedBranch(branch.name);
                               setIsBranchDropdownOpen(false);
                               setBranchSearchQuery('');
                             }}
@@ -423,7 +450,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           <button
                             key={branch.name}
                             onClick={() => {
-                              setSelectedBranch(branch.name);
+                              cache.setSelectedBranch(branch.name);
                               setIsBranchDropdownOpen(false);
                               setBranchSearchQuery('');
                             }}
@@ -454,10 +481,6 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                 selectedBranch={selectedBranch}
                 currentPath={breadcrumbPath}
                 onPathChange={setBreadcrumbPath}
-                contentsCache={contentsCache}
-                setContentsCache={setContentsCache}
-                fileCache={fileCache}
-                setFileCache={setFileCache}
                 onFileSelect={(file) => {
                   setSelectedFile(file);
                   setShowFileTree(false);
@@ -500,8 +523,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0">
           {activeTab === 'documentation' ? (
-            <div className="text-white/60 text-sm text-center py-8">
-              Documentation will appear here
+            <div className="h-full flex flex-col">
             </div>
           ) : (
             <div className="text-white/60 text-sm text-center py-8">
