@@ -62,24 +62,20 @@ export default function OrganizationsPageClient({ organizations: initialOrganiza
               <div
                 key={org.id}
                 onClick={() => handleOrganizationClick(org)}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-6 py-4 hover:bg-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-between"
+                className="bg-[#121215] backdrop-blur-sm border border-[#262626] rounded-lg px-6 py-4 hover:bg-[#262626]/50 hover:border-[#2a2a2a] transition-all duration-200 cursor-pointer flex items-center justify-between"
               >
                 <div className="flex items-center gap-4">
                   <div className="text-white font-medium text-lg">{org.name}</div>
                   {org.role === 'owner' && (
                     <span 
-                      className="inline-block px-3 py-1 rounded-lg text-xs font-medium capitalize"
-                      style={{ 
-                        backgroundColor: 'rgba(188, 73, 24, 0.3)',
-                        color: '#E95E23'
-                      }}
+                      className="inline-block px-3 py-1 rounded-lg text-xs font-medium capitalize bg-[#5C42CE]/20 text-[#5C42CE] border border-[#5C42CE]/30"
                     >
                       {org.role}
                     </span>
                   )}
                 </div>
                 <svg 
-                  className="w-5 h-5 text-white/60" 
+                  className="w-5 h-5 text-white/70" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -90,7 +86,7 @@ export default function OrganizationsPageClient({ organizations: initialOrganiza
             ))}
           </div>
         ) : (
-          <div className="mt-6 p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg text-center">
+          <div className="mt-6 p-8 bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-lg text-center">
             <p className="text-white/70">
               {searchQuery 
                 ? 'No organizations found matching your search.'

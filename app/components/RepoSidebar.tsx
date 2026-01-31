@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -37,6 +37,7 @@ export default function RepoSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Use props if available, fallback to session
   const userName = propUserName ?? session?.user?.name;
@@ -89,35 +90,76 @@ export default function RepoSidebar({
   }, [userName]);
 
   return (
-    <aside className="h-full w-80">
+    <aside className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="flex items-center p-4 pl-8">
-          <img 
-            src="/Full-logo.png" 
-            alt="Logo" 
-            className="h-12 w-auto"
-          />
+        <div className={`flex items-center ${isMinimized ? 'justify-center' : 'justify-between'} p-4 ${isMinimized ? 'px-4' : 'pl-8 pr-4'}`}>
+          {!isMinimized && (
+            <img 
+              src="/Full-logo.png" 
+              alt="Logo" 
+              className="h-10 w-auto"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="p-1.5 hover:bg-white/10 rounded-md transition-colors duration-200 cursor-pointer"
+            aria-label="Minimize sidebar"
+          >
+            <svg className="w-5 h-5 text-white/70 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMinimized ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} />
+            </svg>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[#262626]"></div>
+
+        {/* Search Bar */}
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
+          {isMinimized ? (
+            <button
+              type="button"
+              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded-lg hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
+              aria-label="Search"
+            >
+              <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          ) : (
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
+              />
+            </div>
+          )}
         </div>
 
         {/* Back to Repositories Button */}
         {orgShortId && (
-          <div className="px-4 pb-3">
+          <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4 pb-3`}>
             <button
               onClick={handleBackToRepositories}
               className="w-full text-left pl-4 py-2.5 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
             >
               <Icon iconPath="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              <span>Back to Repositories</span>
+              <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Back to Repositories</span>
             </button>
           </div>
         )}
 
         {/* Sidebar Content */}
-        <nav className="flex-1 px-4 flex flex-col overflow-y-auto sidebar-scrollbar">
+        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
           {/* Repository Section */}
           <div className="pb-3">
-            <h3 className="text-xs text-white/60 pl-4 mb-2">REPOSITORY</h3>
+            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">REPOSITORY</h3>}
             <ul className="space-y-1">
               <li>
                 <button
@@ -125,7 +167,7 @@ export default function RepoSidebar({
                   className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Code Viewer' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
                 >
                   <Icon iconPath="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  <span>Code Viewer</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Code Viewer</span>
                 </button>
               </li>
               <li>
@@ -134,7 +176,7 @@ export default function RepoSidebar({
                   className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Documentation' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
                 >
                   <Icon iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  <span>Documentation</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Documentation</span>
                 </button>
               </li>
             </ul>
@@ -142,35 +184,39 @@ export default function RepoSidebar({
         </nav>
 
         {/* Profile Section */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-2.5 p-2.5">
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-3`}>
+          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-2.5'} p-2.5`}>
             {/* Profile Picture */}
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center shadow-sm">
-                <span className="text-white text-sm font-semibold">
-                  {userInitials}
-                </span>
-              </div>
+              <img 
+                src="/Pfp-placeholder.png" 
+                alt="Profile" 
+                className="w-10 h-10 rounded-lg object-cover shadow-sm"
+              />
             </div>
             {/* Full Name */}
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">
-                {userName || 'User'}
-              </p>
-            </div>
+            {!isMinimized && (
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">
+                  {userName || 'User'}
+                </p>
+              </div>
+            )}
             {/* Settings Icon */}
-            <button 
-              onClick={handleSettingsClick}
-              className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group"
-            >
-              <Icon 
-                iconPath={[
-                  "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
-                  "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                ]}
-                className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200"
-              />
-            </button>
+            {!isMinimized && (
+              <button 
+                onClick={handleSettingsClick}
+                className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group"
+              >
+                <Icon 
+                  iconPath={[
+                    "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
+                    "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ]}
+                  className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200"
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>

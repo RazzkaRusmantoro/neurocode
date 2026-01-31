@@ -30,10 +30,9 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
   return (
     <div
       onClick={handleClick}
-      className="group relative border border-white/10 rounded-lg p-6 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
-      style={{ backgroundColor: '#212121' }}
+      className="group relative border border-[#262626] rounded-lg p-6 hover:border-[#5C42CE]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#121215]"
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
+        e.currentTarget.style.boxShadow = '0 0 25px rgba(92, 66, 206, 0.3)';
         e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
@@ -42,14 +41,13 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
       }}
     >
       {/* Repository Name - Headline */}
-      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[#D85A2A] transition-colors duration-300">
+      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[#5C42CE] transition-colors duration-300">
         {name}
       </h2>
 
       {/* Repository URL Name Badge */}
       <div 
-        className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3"
-        style={{ backgroundColor: 'rgba(233, 94, 35, 0.3)', color: '#E95E23' }}
+        className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3 bg-[#5C42CE]/20 text-[#5C42CE] border border-[#5C42CE]/30"
       >
         /{urlName}
       </div>
@@ -65,16 +63,16 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
       <div className="flex-grow"></div>
 
       {/* Horizontal Line */}
-      <hr className="border-white/10 mb-3 mt-4" />
+      <hr className="border-[#262626] mb-3 mt-4" />
 
       {/* Footer: Size on left, Last Update on right */}
-      <div className="flex justify-between items-center text-xs text-white/60">
+      <div className="flex justify-between items-center text-xs text-white/50">
         <span>Size: {sizeDisplay}</span>
         <span>Last Update: {updateDate.toLocaleDateString()}</span>
       </div>
 
       {/* Hover Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#5C42CE]/0 to-[#5C42CE]/0 group-hover:from-[#5C42CE]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
     </div>
   );
 }

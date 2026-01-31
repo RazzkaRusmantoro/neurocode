@@ -58,7 +58,7 @@ function FileTreeItem({
     <div>
       <div
         onClick={onClick}
-        className={`flex items-center gap-2 py-3 hover:bg-white/5 transition-colors border-b border-white/10 ${
+        className={`flex items-center gap-2 py-3 hover:bg-[#171717] transition-colors border-b border-[#262626] ${
           item.type === 'dir' ? 'font-medium text-white cursor-pointer' : 'text-white/80 cursor-pointer'
         }`}
         style={{ paddingLeft: `${20 + level * 16}px`, paddingRight: '12px' }}
@@ -157,11 +157,11 @@ export default function FileTree({
         {[...Array(8)].map((_, index) => (
           <div
             key={index}
-            className="flex items-center gap-2 py-3 border-b border-white/10 animate-pulse"
+            className="flex items-center gap-2 py-3 border-b border-[#262626] animate-pulse"
             style={{ paddingLeft: '20px', paddingRight: '12px' }}
           >
-            <div className="w-4 h-4 bg-white/10 rounded"></div>
-            <div className="h-4 bg-white/10 rounded" style={{ width: `${skeletonWidths[index % skeletonWidths.length]}px` }}></div>
+            <div className="w-4 h-4 bg-[#262626]/50 rounded"></div>
+            <div className="h-4 bg-[#262626]/50 rounded" style={{ width: `${skeletonWidths[index % skeletonWidths.length]}px` }}></div>
           </div>
         ))}
       </div>

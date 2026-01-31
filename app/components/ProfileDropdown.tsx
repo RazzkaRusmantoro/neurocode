@@ -50,9 +50,11 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer"
         aria-label="Profile"
       >
-        <div className="w-8 h-8 rounded-lg bg-[#BC4918] flex items-center justify-center text-white text-sm font-medium">
-          {getInitials(userName)}
-        </div>
+        <img 
+          src="/Pfp-placeholder.png" 
+          alt="Profile" 
+          className="w-8 h-8 rounded-lg object-cover"
+        />
         {userName && (
           <span className="text-sm text-white/70 hover:text-white">
             {userName}
@@ -62,18 +64,20 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
 
       {/* Profile Dropdown */}
       <div
-        className={`absolute right-0 z-10 mt-2 bg-[#212121] border border-[#424242] rounded-lg shadow-lg overflow-hidden min-w-[240px] transition-all duration-200 ease-in-out ${
+        className={`absolute right-0 z-10 mt-2 bg-[#121215] border border-[#262626] rounded-lg shadow-lg overflow-hidden min-w-[240px] transition-all duration-200 ease-in-out ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
       >
         {/* Profile Header */}
-        <div className="px-4 py-3 border-b border-[#424242]">
+        <div className="px-4 py-3 border-b border-[#262626]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center text-white text-sm font-medium">
-              {getInitials(userName)}
-            </div>
+            <img 
+              src="/Pfp-placeholder.png" 
+              alt="Profile" 
+              className="w-10 h-10 rounded-lg object-cover"
+            />
             <div className="flex flex-col">
               <span className="text-sm font-medium text-white">
                 {userName || 'User'}
@@ -136,7 +140,7 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#424242]"></div>
+        <div className="border-t border-[#262626]"></div>
 
         {/* Second Menu Items */}
         <div className="py-2 px-2">
@@ -187,7 +191,7 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#424242]"></div>
+        <div className="border-t border-[#262626]"></div>
 
         {/* Logout Button */}
         <div className="py-2 px-2">

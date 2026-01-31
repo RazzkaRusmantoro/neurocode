@@ -37,15 +37,12 @@ export default function DocumentationViewer({
             <button
               type="button"
               onClick={handleGenerateDocumentation}
-              className="relative px-18 py-2.5 bg-transparent border-2 border-[#BC4918] rounded-xl text-[#BC4918] text-sm font-medium overflow-hidden transition-all duration-300 cursor-pointer group z-0"
+              className="relative px-18 py-3 bg-[#5C42CE] hover:bg-[#4A35B5] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group ml-auto shadow-lg hover:shadow-[0_0_20px_rgba(92,66,206,0.4)] hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span className="relative z-[1] flex items-center gap-2 transition-colors duration-300 group-hover:text-white">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+              <span className="relative z-[1]">
                 Generate Documentation
               </span>
-              <span className="absolute inset-0 bg-[#BC4918] transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
+              <span className="absolute inset-0 bg-gradient-to-r from-[#7B6DD9] to-[#5C42CE] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
             </button>
           </div>
         </div>

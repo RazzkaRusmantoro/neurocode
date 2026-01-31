@@ -73,7 +73,7 @@ export default function RepositoryDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className="flex flex-col items-start cursor-pointer"
       >
-        <span className="text-sm font-bold text-[#BC4918] mb-1">REPOSITORY</span>
+        <span className="text-sm font-bold text-[#5C42CE] mb-1">REPOSITORY</span>
         <div className="flex items-center gap-2">
           <span className="text-sm text-white">
             {selectedRepository?.name || 'No repository'}
@@ -88,14 +88,14 @@ export default function RepositoryDropdown({
         </div>
       </button>
       <div
-        className={`absolute z-10 mt-2 bg-[#212121] border border-[#424242] rounded-lg shadow-lg overflow-hidden min-w-[280px] transition-all duration-200 ease-in-out ${
+        className={`absolute z-10 mt-2 bg-[#121215] border border-[#262626] rounded-lg shadow-lg overflow-hidden min-w-[280px] transition-all duration-200 ease-in-out ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
       >
         {/* Search Input */}
-        <div className="p-3 border-b border-[#424242]">
+        <div className="p-3 border-b border-[#262626]">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -105,7 +105,7 @@ export default function RepositoryDropdown({
               placeholder="Find a repository"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#424242] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -121,7 +121,7 @@ export default function RepositoryDropdown({
                 onClick={() => handleRepositoryChange(repo)}
                 className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                   selectedRepository?.id === repo.id
-                    ? 'bg-[#BC4918]/20 text-[#BC4918] hover:bg-[#BC4918]/30'
+                    ? 'bg-[#5C42CE]/20 text-[#5C42CE] hover:bg-[#5C42CE]/30'
                     : 'text-white hover:bg-[#2a2a2a]'
                 }`}
               >
@@ -136,7 +136,7 @@ export default function RepositoryDropdown({
         </div>
 
         {/* View All Repositories */}
-        <div className="border-t border-[#424242]">
+        <div className="border-t border-[#262626]">
           <button
             type="button"
             onClick={() => {

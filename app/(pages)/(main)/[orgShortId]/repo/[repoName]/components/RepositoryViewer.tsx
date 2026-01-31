@@ -218,10 +218,10 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
   return (
     <div className="h-full max-h-[1000px] flex gap-6 py-6 max-w-screen-2xl mx-auto w-full">
       {/* Left Container - File Tree / Code Viewer */}
-      <div className="flex-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 bg-[#121215] border border-[#262626] rounded-lg overflow-hidden flex flex-col min-h-0">
         {selectedFile && selectedFile.content ? (
           <>
-            <div className="px-4 py-3 border-b border-white/10 flex-shrink-0 flex items-center justify-between bg-white/[0.03]">
+            <div className="px-4 py-3 border-b border-[#262626] flex-shrink-0 flex items-center justify-between bg-[#121215]">
               {/* Breadcrumb Navigation */}
               <div className="flex items-center gap-2 text-sm">
                 {breadcrumbItems.map((item: string, index: number) => (
@@ -251,7 +251,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   <input
                     type="text"
                     placeholder="Search files..."
-                    className="w-full pl-10 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
                   />
                 </div>
                 {/* Recent Commit */}
@@ -267,7 +267,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                 <div className="relative" ref={branchDropdownRef}>
                   <button
                     onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-sm text-white transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#262626]/50 hover:bg-[#262626]/70 border border-[#262626] rounded-md text-sm text-white transition-colors cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -284,14 +284,14 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   
                   {/* Dropdown Menu */}
                   <div
-                    className={`absolute right-0 mt-2 w-48 bg-[#212121] border border-[#424242] rounded-lg shadow-lg overflow-hidden z-10 transition-all duration-200 ease-in-out ${
+                    className={`absolute right-0 mt-2 w-48 bg-[#121215] border border-[#262626] rounded-lg shadow-lg overflow-hidden z-10 transition-all duration-200 ease-in-out ${
                       isBranchDropdownOpen
                         ? 'opacity-100 translate-y-0 pointer-events-auto'
                         : 'opacity-0 -translate-y-2 pointer-events-none'
                     }`}
                   >
                     {/* Search Input */}
-                    <div className="p-3 border-b border-[#424242]">
+                    <div className="p-3 border-b border-[#262626]">
                       <div className="relative">
                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -301,7 +301,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           placeholder="Find a branch"
                           value={branchSearchQuery}
                           onChange={(e) => setBranchSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#424242] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -320,7 +320,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                             }}
                             className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                               selectedBranch === branch.name
-                                ? 'bg-[#BC4918]/20 text-[#BC4918] hover:bg-[#BC4918]/30'
+                                ? 'bg-[#5C42CE]/20 text-[#5C42CE] hover:bg-[#5C42CE]/30'
                                 : 'text-white hover:bg-[#2a2a2a]'
                             }`}
                           >
@@ -387,7 +387,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   <input
                     type="text"
                     placeholder="Search files..."
-                    className="w-full pl-10 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
                   />
                 </div>
                 {/* Recent Commit */}
@@ -403,7 +403,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                 <div className="relative" ref={branchDropdownRef}>
                   <button
                     onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-sm text-white transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#262626]/50 hover:bg-[#262626]/70 border border-[#262626] rounded-md text-sm text-white transition-colors cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -420,14 +420,14 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   
                   {/* Dropdown Menu */}
                   <div
-                    className={`absolute right-0 mt-2 w-48 bg-[#212121] border border-[#424242] rounded-lg shadow-lg overflow-hidden z-10 transition-all duration-200 ease-in-out ${
+                    className={`absolute right-0 mt-2 w-48 bg-[#121215] border border-[#262626] rounded-lg shadow-lg overflow-hidden z-10 transition-all duration-200 ease-in-out ${
                       isBranchDropdownOpen
                         ? 'opacity-100 translate-y-0 pointer-events-auto'
                         : 'opacity-0 -translate-y-2 pointer-events-none'
                     }`}
                   >
                     {/* Search Input */}
-                    <div className="p-3 border-b border-[#424242]">
+                    <div className="p-3 border-b border-[#262626]">
                       <div className="relative">
                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -437,7 +437,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           placeholder="Find a branch"
                           value={branchSearchQuery}
                           onChange={(e) => setBranchSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#424242] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -456,7 +456,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                             }}
                             className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                               selectedBranch === branch.name
-                                ? 'bg-[#BC4918]/20 text-[#BC4918] hover:bg-[#BC4918]/30'
+                                ? 'bg-[#5C42CE]/20 text-[#5C42CE] hover:bg-[#5C42CE]/30'
                                 : 'text-white hover:bg-[#2a2a2a]'
                             }`}
                           >
@@ -495,14 +495,14 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
       </div>
 
       {/* Right Container - Documentation */}
-      <div className="w-96 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden flex flex-col min-h-0">
+      <div className="w-96 bg-[#121215] border border-[#262626] rounded-lg overflow-hidden flex flex-col min-h-0">
         {/* Tabs */}
-        <div className="flex border-b border-white/10 flex-shrink-0 bg-white/[0.03]">
+        <div className="flex border-b border-[#262626] flex-shrink-0 bg-[#121215]">
           <button
             onClick={() => setActiveTab('documentation')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
               activeTab === 'documentation'
-                ? 'text-white border-b-2 border-[#BC4918]'
+                ? 'text-white border-b-2 border-[#5C42CE]'
                 : 'text-white/60 hover:text-white/80'
             }`}
           >
@@ -512,7 +512,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
             onClick={() => setActiveTab('ai-chat')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
               activeTab === 'ai-chat'
-                ? 'text-white border-b-2 border-[#BC4918]'
+                ? 'text-white border-b-2 border-[#5C42CE]'
                 : 'text-white/60 hover:text-white/80'
             }`}
           >

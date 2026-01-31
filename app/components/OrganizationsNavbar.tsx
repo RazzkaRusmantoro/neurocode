@@ -29,7 +29,7 @@ export default function OrganizationsNavbar({
           <div className="flex items-center gap-4 ml-auto">
             {/* Person Add Icon */}
             <button
-              className="p-2 text-white/70 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="p-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer"
               aria-label="Add person"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@ export default function OrganizationsNavbar({
 
             {/* Notification Bell Icon */}
             <button
-              className="p-2 text-white/70 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="p-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer"
               aria-label="Notifications"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@ export default function OrganizationsNavbar({
 
             {/* 9 Blocks Icon */}
             <button
-              className="p-2 text-white/70 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="p-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer"
               aria-label="Apps"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
