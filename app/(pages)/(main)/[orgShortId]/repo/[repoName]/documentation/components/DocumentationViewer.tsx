@@ -52,6 +52,10 @@ export default function DocumentationViewer({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         repoName={repoName}
+        repoFullName={repoFullName}
+        orgShortId={orgShortId}
+        repoUrlName={repoUrlName}
+        repositoryId={repositoryId}
       />
     </>
   );

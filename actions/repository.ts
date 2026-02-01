@@ -5,7 +5,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
 import { createRepository, getRepositoryByGithubIdAndOrganization, getRepositoriesByOrganization } from '@/lib/models/repository';
 import { addRepositoryToOrganization, getOrganizationById } from '@/lib/models/organization';
-import { ObjectId } from 'mongodb';
 
 interface AddRepositoryData {
   githubId?: number; // Optional - only for GitHub repos

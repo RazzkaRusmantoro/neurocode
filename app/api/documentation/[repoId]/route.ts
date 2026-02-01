@@ -5,43 +5,33 @@ import { getCachedUserById } from '@/lib/models/user';
 import { getGitHubTokenWithFallback, testGitHubTokenAccess } from '@/lib/utils/github-token';
 import { getRepositoryByUrlNameAndOrganization } from '@/lib/models/repository';
 import { getOrganizationByShortId } from '@/lib/models/organization';
-import { OrchestratorAgent } from '@/neurocode-ai/agents/orchestrator/OrchestratorAgent';
-import { createDocumentation } from '@/lib/models/documentation';
-import { nanoid } from 'nanoid';
-
 /**
  * POST /api/documentation/[repoId]
- * Generate documentation for a repository
+ * Documentation generation endpoint (parsing functionality disabled)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ repoId: string }> | { repoId: string } }
 ) {
-  const requestStartTime = Date.now();
-  console.log(`[API] POST /api/documentation - Starting request`);
   
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      console.log(`[API] ✗ Not authenticated`);
       return Response.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const user = await getCachedUserById(session.user.id);
     if (!user) {
-      console.log(`[API] ✗ User not found: ${session.user.id}`);
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
     const resolvedParams = await Promise.resolve(params);
     const repoFullName = decodeURIComponent(resolvedParams.repoId);
-    console.log(`[API] Repository: ${repoFullName}, User: ${session.user.id}`);
 
     // Get request body
     const body = await request.json();
     const { scope = 'repository', target, branch = 'main', orgShortId, repoUrlName } = body;
-    console.log(`[API] Request params: scope=${scope}, target=${target || 'N/A'}, branch=${branch}`);
 
     // Get organization and repository
     if (!orgShortId || !repoUrlName) {
@@ -77,140 +67,23 @@ export async function POST(
     }
 
     const accessToken = tokenResult.token;
-    console.log(`[API] ✓ GitHub token obtained`);
 
     // Fetch repository files
-    console.log(`[API] Fetching repository files from branch: ${branch}...`);
     const files = await fetchRepositoryFiles(repoFullName, accessToken, branch);
-    console.log(`[API] ✓ Fetched ${files.length} files from repository`);
 
     if (files.length === 0) {
-      console.log(`[API] ✗ No files found in repository`);
       return Response.json({ error: 'No files found in repository' }, { status: 404 });
     }
 
-    // Create agent context
-    const requestId = nanoid();
-    const context = {
-      requestId,
-      repositoryId: repository._id!.toString(),
-      userId: session.user.id,
-      scope: scope as 'file' | 'module' | 'repository',
-      target: target || (scope === 'repository' ? 'full' : undefined),
-    };
-    console.log(`[API] Created agent context: requestId=${requestId}, repositoryId=${context.repositoryId}`);
-
-    // Initialize orchestrator and generate documentation
-    console.log(`[API] Initializing OrchestratorAgent...`);
-    const orchestrator = new OrchestratorAgent();
-    const result = await orchestrator.execute(context, { files });
-    console.log(`[API] ✓ Documentation generated successfully`);
-
-    // Store documentation in database
-    console.log(`[API] Storing documentation in database...`);
-    const documentation = await createDocumentation(repository._id!.toString(), {
-      scope: context.scope,
-      target: context.target || 'full',
-      content: result.documentation,
-      metadata: result.metadata,
-      branch,
-      createdBy: new (await import('mongodb')).ObjectId(session.user.id),
-    });
-    console.log(`[API] ✓ Documentation stored with ID: ${documentation._id!.toString()}`);
-
-    const totalTime = Date.now() - requestStartTime;
-    console.log(`[API] ✓ Request completed in ${totalTime}ms`);
-
+    // Tree-sitter parsing has been disabled
     return Response.json({
-      success: true,
-      documentation: {
-        id: documentation._id!.toString(),
-        content: documentation.content,
-        metadata: documentation.metadata,
-        scope: documentation.scope,
-        target: documentation.target,
-        createdAt: documentation.createdAt,
-      },
+      success: false,
+      message: 'Code parsing functionality is currently disabled. Tree-sitter has been removed.',
+      filesFetched: files.length,
     });
   } catch (error) {
-    const totalTime = Date.now() - requestStartTime;
-    console.error(`[API] ✗ Error after ${totalTime}ms:`, error);
     return Response.json(
-      { error: 'Failed to generate documentation', message: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/documentation/[repoId]
- * Get existing documentation for a repository
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ repoId: string }> | { repoId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return Response.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const resolvedParams = await Promise.resolve(params);
-    const { searchParams } = new URL(request.url);
-    const orgShortId = searchParams.get('orgShortId');
-    const repoUrlName = searchParams.get('repoUrlName');
-    const scope = searchParams.get('scope') as 'file' | 'module' | 'repository' | null;
-    const target = searchParams.get('target');
-
-    if (!orgShortId || !repoUrlName) {
-      return Response.json(
-        { error: 'orgShortId and repoUrlName are required' },
-        { status: 400 }
-      );
-    }
-
-    const shortId = orgShortId.startsWith('org-') ? orgShortId.replace('org-', '') : orgShortId;
-    const organization = await getOrganizationByShortId(shortId);
-
-    if (!organization) {
-      return Response.json({ error: 'Organization not found' }, { status: 404 });
-    }
-
-    const repository = await getRepositoryByUrlNameAndOrganization(repoUrlName, organization._id!.toString());
-
-    if (!repository) {
-      return Response.json({ error: 'Repository not found' }, { status: 404 });
-    }
-
-    const { getDocumentationByRepository } = await import('@/lib/models/documentation');
-    const documentation = await getDocumentationByRepository(
-      repository._id!.toString(),
-      scope || undefined,
-      target || undefined
-    );
-
-    if (!documentation) {
-      return Response.json({ error: 'Documentation not found' }, { status: 404 });
-    }
-
-    return Response.json({
-      success: true,
-      documentation: {
-        id: documentation._id!.toString(),
-        content: documentation.content,
-        metadata: documentation.metadata,
-        scope: documentation.scope,
-        target: documentation.target,
-        createdAt: documentation.createdAt,
-        updatedAt: documentation.updatedAt,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching documentation:', error);
-    return Response.json(
-      { error: 'Failed to fetch documentation', message: (error as Error).message },
+      { error: 'Failed to parse repository', message: (error as Error).message },
       { status: 500 }
     );
   }

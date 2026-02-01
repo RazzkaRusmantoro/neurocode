@@ -20,7 +20,8 @@
 }
 
 body {
-  background: linear-gradient(to bottom right, #000000 0%, #210d01 100%);
+  background: #0a0a0a;
+  background-image: radial-gradient(ellipse at bottom, rgba(124, 58, 237, 0.15) 0%, transparent 55%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -38,19 +39,19 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #BC4918;
+  background-color: #7c3aed;
   border-radius: 10px;
   border: 2px solid #212121;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #D85A2A;
+  background-color: #8b5cf6;
 }
 
 /* Firefox scrollbar styling */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #BC4918 transparent;
+  scrollbar-color: #7c3aed transparent;
 }
 
 /* Sidebar Scrollbar Styling - Hidden */

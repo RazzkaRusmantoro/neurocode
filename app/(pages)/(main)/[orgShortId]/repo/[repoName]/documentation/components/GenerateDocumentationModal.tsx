@@ -6,6 +6,10 @@ interface GenerateDocumentationModalProps {
   isOpen: boolean;
   onClose: () => void;
   repoName: string;
+  repoFullName: string;
+  orgShortId: string;
+  repoUrlName: string;
+  repositoryId: string;
 }
 
 type Scope = 'module' | 'file' | 'custom';
@@ -14,16 +18,23 @@ export default function GenerateDocumentationModal({
   isOpen,
   onClose,
   repoName,
+  repoFullName,
+  orgShortId,
+  repoUrlName,
+  repositoryId,
 }: GenerateDocumentationModalProps) {
   const [showCustomOptions, setShowCustomOptions] = useState(false);
   const [showCustomDetails, setShowCustomDetails] = useState(false);
   const [scope, setScope] = useState<Scope>('module');
   const [target, setTarget] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleCompleteDocumentation = () => {
-    // Do nothing for now
+  const handleCompleteDocumentation = async () => {
+      // Nothing yet
   };
 
   const handleCustomDocumentation = () => {
@@ -255,10 +266,11 @@ export default function GenerateDocumentationModal({
                 {/* Generate Button */}
                 <div className="pt-4 border-t border-white/10">
                   <button
-                    onClick={handleGenerate}
-                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                    onClick={() => handleGenerate()}
+                    disabled={isGenerating}
+                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
                   >
-                    Generate Documentation
+                    Generation Documentation
                   </button>
                 </div>
               </div>
