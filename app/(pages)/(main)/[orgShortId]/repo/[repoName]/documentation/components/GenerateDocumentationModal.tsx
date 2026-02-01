@@ -12,7 +12,7 @@ interface GenerateDocumentationModalProps {
   repositoryId: string;
 }
 
-type Scope = 'module' | 'file' | 'custom';
+type Scope = 'module' | 'file' | 'custom' | 'repository';
 
 export default function GenerateDocumentationModal({
   isOpen,
@@ -34,7 +34,39 @@ export default function GenerateDocumentationModal({
   if (!isOpen) return null;
 
   const handleCompleteDocumentation = async () => {
-      // Nothing yet
+    setIsGenerating(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/documentation/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repoFullName: repoFullName,
+          orgShortId: orgShortId,
+          repoUrlName: repoUrlName,
+          branch: 'main',
+          scope: 'repository',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to generate documentation');
+        return;
+      }
+
+      setResult(data);
+      console.log('Documentation generated:', data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCustomDocumentation = () => {
@@ -57,12 +89,46 @@ export default function GenerateDocumentationModal({
     setTarget('');
   };
 
-  const handleGenerate = () => {
-    // Frontend only for now
-    console.log('Generate documentation:', {
-      scope,
-      target,
-    });
+  const handleGenerate = async () => {
+    if (!target.trim()) {
+      setError('Please enter a description of what documentation you want to generate');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/documentation/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repoFullName: repoFullName,
+          orgShortId: orgShortId,
+          repoUrlName: repoUrlName,
+          branch: 'main',
+          scope: 'custom',
+          prompt: target.trim(), // Send the user's prompt/description
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || data.details || 'Failed to generate documentation');
+        return;
+      }
+
+      setResult(data);
+      console.log('Documentation generated:', data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -249,30 +315,37 @@ export default function GenerateDocumentationModal({
                 : 'transform translate-x-full opacity-0 absolute w-full'
             }`}>
               <div className="space-y-6">
-                {/* Description Field */}
+                {/* Prompt/Description Field */}
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-3">
-                    Description
+                    What documentation would you like to generate?
                   </label>
                   <textarea
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
-                    placeholder={scope === 'module' ? 'Enter module path (e.g., src/components)' : scope === 'file' ? 'Enter file path (e.g., src/utils/helper.ts)' : 'Enter a description of the documentation you want to generate'}
+                    placeholder="Describe what you want documented. For example: 'Explain the payment processing flow' or 'Document the authentication system' or 'How does the API handle user requests?'"
                     rows={8}
                     className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
                   />
                 </div>
 
                 {/* Generate Button */}
-                <div className="pt-4 border-t border-white/10">
+                <div className="pt-4 border-t border-white/10 space-y-3">
                   <button
                     onClick={() => handleGenerate()}
-                    disabled={isGenerating}
+                    disabled={isGenerating || !target.trim()}
                     className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
                   >
-                    Generation Documentation
+                    {isGenerating ? 'Generating Documentation...' : 'Generate Documentation'}
                   </button>
                 </div>
+
+                {/* Error Display */}
+                {error && (
+                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
