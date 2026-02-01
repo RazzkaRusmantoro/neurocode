@@ -1,9 +1,11 @@
 import { ObjectId } from 'mongodb';
+import { nanoid } from 'nanoid';
 import { getDb } from '../db';
 
 export interface Organization {
   _id?: ObjectId;
   name: string;
+  shortId: string; // Unique short identifier for URLs
   ownerId: ObjectId;
   members: ObjectId[];
   repositories?: {
@@ -20,6 +22,22 @@ export async function getOrganizationsCollection() {
   return db.collection<Organization>('organizations');
 }
 
+
+async function generateUniqueShortId(): Promise<string> {
+  const collection = await getOrganizationsCollection();
+  let shortId: string;
+  let exists = true;
+  
+  // Keep generating until we find a unique one
+  while (exists) {
+    shortId = nanoid(5); // 6 characters for good uniqueness
+    const existing = await collection.findOne({ shortId });
+    exists = existing !== null;
+  }
+  
+  return shortId!;
+}
+
 export async function createOrganization(
   name: string,
   ownerId: ObjectId
@@ -27,8 +45,11 @@ export async function createOrganization(
   const collection = await getOrganizationsCollection();
   const now = new Date();
   
+  const shortId = await generateUniqueShortId();
+  
   const newOrganization: Omit<Organization, '_id'> = {
     name,
+    shortId,
     ownerId,
     members: [ownerId],
     createdAt: now,
@@ -42,6 +63,12 @@ export async function createOrganization(
 export async function getOrganizationById(id: string): Promise<Organization | null> {
   const collection = await getOrganizationsCollection();
   return collection.findOne({ _id: new ObjectId(id) });
+}
+
+
+export async function getOrganizationByShortId(shortId: string): Promise<Organization | null> {
+  const collection = await getOrganizationsCollection();
+  return collection.findOne({ shortId });
 }
 
 export async function updateOrganizationName(

@@ -35,11 +35,10 @@ export default function MainLayoutClient({
         onToggle={toggleSidebar}
         userName={userName}
         userEmail={userEmail}
-        userId={userId}
       />
       
       {/* Right side - Navbar and content stacked */}
-      <div className="flex-1 flex flex-col overflow-hidden px-6">
+      <div className="flex-1 flex flex-col overflow-hidden px-16">
         {/* Navbar */}
         <DashboardNavbar 
           userEmail={userEmail} 

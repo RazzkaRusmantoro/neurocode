@@ -5,11 +5,11 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
 import { createRepository, getRepositoryByGithubIdAndOrganization, getRepositoriesByOrganization } from '@/lib/models/repository';
 import { addRepositoryToOrganization, getOrganizationById } from '@/lib/models/organization';
-import { ObjectId } from 'mongodb';
 
 interface AddRepositoryData {
   githubId?: number; // Optional - only for GitHub repos
   name: string;
+  urlName?: string; // Optional - will be auto-generated if not provided
   url: string;
   source: 'github' | 'bitbucket' | 'upload';
   description?: string; // Optional description
@@ -58,8 +58,11 @@ export async function addRepository(
       }
     }
 
-    // Create repository in repositories collection
-    const repository = await createRepository(organizationId, repositoryData);
+    // Create repository in repositories collection (include who added it)
+    const repository = await createRepository(organizationId, {
+      ...repositoryData,
+      addedBy: session.user.id, // Store who added the repository
+    });
 
     // Add repository reference to organization
     const success = await addRepositoryToOrganization(

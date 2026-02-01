@@ -26,7 +26,7 @@ interface MenuItem {
   subItems?: SubMenuItem[];
 }
 
-// Route mapping for menu items
+// Route mapping for menu items (will be built dynamically with orgShortId)
 const MENU_ITEM_ROUTES: Record<string, string> = {
   Repositories: '/repositories',
   Settings: '/settings',
@@ -47,7 +47,7 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
     id: 'Repositories',
     label: 'Repositories',
     iconPath: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-    route: '/repositories',
+    // route will be built dynamically
   },
   {
     id: 'management',
@@ -92,13 +92,20 @@ function Icon({ iconPath, className = 'w-5 h-5' }: { iconPath: string | string[]
 function SubMenuItem({ 
   item, 
   activeItem, 
-  setActiveItem 
+  setActiveItem,
+  onMinimizeSidebar
 }: { 
   item: SubMenuItem; 
   activeItem: string; 
   setActiveItem: (id: string) => void;
+  onMinimizeSidebar?: () => void;
 }) {
   const isActive = activeItem === item.id;
+  
+  const handleClick = () => {
+    setActiveItem(item.id);
+    onMinimizeSidebar?.();
+  };
   
   return (
     <li className="relative">
@@ -107,7 +114,7 @@ function SubMenuItem({
         <path d="M 0 -6 L 0 0 Q 0 6 11 6" stroke="#424242" strokeWidth="1" fill="none" strokeLinecap="round" />
       </svg>
       <button 
-        onClick={() => setActiveItem(item.id)}
+        onClick={handleClick}
         className={`w-full text-left pl-4 py-1.5 text-sm rounded-lg transition-colors duration-200 cursor-pointer ${
           isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
         }`}
@@ -125,6 +132,10 @@ interface MenuItemComponentProps {
   activeItem: string;
   setActiveItem: (id: string) => void;
   router: AppRouterInstance;
+  pathname: string;
+  isMinimized?: boolean;
+  onExpandSidebar?: () => void;
+  onMinimizeSidebar?: () => void;
 }
 
 // MenuItem component
@@ -134,18 +145,34 @@ function MenuItemComponent({
   onToggle, 
   activeItem, 
   setActiveItem, 
-  router 
+  router,
+  pathname,
+  isMinimized = false,
+  onExpandSidebar,
+  onMinimizeSidebar
 }: MenuItemComponentProps) {
   const hasSubItems = Boolean(item.subItems?.length);
   const isActive = activeItem === item.id || (hasSubItems && item.subItems?.some(sub => activeItem === sub.id));
 
   const handleMenuItemClick = useCallback(() => {
     setActiveItem(item.id);
-    const route = item.route || MENU_ITEM_ROUTES[item.id];
-    if (route) {
+    // Extract orgShortId from current pathname
+    const match = pathname.match(/\/org-([^/]+)/);
+    const orgShortId = match ? match[1] : null;
+    
+    const baseRoute = item.route || MENU_ITEM_ROUTES[item.id];
+    if (baseRoute) {
+      const route = orgShortId ? `/org-${orgShortId}${baseRoute}` : baseRoute;
       router.push(route);
     }
-  }, [item.id, item.route, setActiveItem, router]);
+  }, [item.id, item.route, setActiveItem, router, pathname]);
+
+  const handleParentClick = useCallback(() => {
+    if (isMinimized && hasSubItems) {
+      onExpandSidebar?.();
+    }
+    onToggle();
+  }, [isMinimized, hasSubItems, onExpandSidebar, onToggle]);
 
   if (hasSubItems) {
     const parentIsActive = item.subItems!.some(sub => activeItem === sub.id);
@@ -153,21 +180,23 @@ function MenuItemComponent({
     return (
       <div>
         <button 
-          onClick={onToggle}
-          className={`${BUTTON_BASE_CLASSES} pr-4 justify-between ${
+          onClick={handleParentClick}
+          className={`${BUTTON_BASE_CLASSES} ${isMinimized ? '' : 'pr-4 justify-between'} ${
             parentIsActive ? 'text-white hover:bg-[#2a2a2a]/50' : BUTTON_INACTIVE_CLASSES
           }`}
         >
           <div className="flex items-center gap-3">
             <Icon iconPath={item.iconPath} />
-            <span className={parentIsActive ? 'font-bold' : ''}>{item.label}</span>
+            <span className={`${parentIsActive ? 'font-bold' : ''} transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>{item.label}</span>
           </div>
-          <Icon 
-            iconPath="M19 9l-7 7-7-7" 
-            className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          />
+          <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>
+            <Icon 
+              iconPath="M19 9l-7 7-7-7" 
+              className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            />
+          </span>
         </button>
-        {isExpanded && (
+        {isExpanded && !isMinimized && (
           <div className="relative mt-1">
             {/* Vertical line */}
             <div className="absolute left-[26px] top-0 bottom-0 w-[1.5px] bg-[#424242]"></div>
@@ -178,6 +207,7 @@ function MenuItemComponent({
                   item={subItem}
                   activeItem={activeItem}
                   setActiveItem={setActiveItem}
+                  onMinimizeSidebar={onMinimizeSidebar}
                 />
               ))}
             </ul>
@@ -193,7 +223,7 @@ function MenuItemComponent({
       className={`${BUTTON_BASE_CLASSES} ${isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
     >
       <Icon iconPath={item.iconPath} />
-      <span>{item.label}</span>
+      <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>{item.label}</span>
     </button>
   );
 }
@@ -208,18 +238,36 @@ export default function Sidebar({
   const pathname = usePathname();
   const { data: session } = useSession();
   const [activeItem, setActiveItem] = useState<string>('');
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [wasAutoExpanded, setWasAutoExpanded] = useState(false);
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
     dashboard: true,
     management: true
   });
 
+  // Extract orgShortId from pathname (e.g., /org-x7k2/repositories -> x7k2)
+  const getOrgShortIdFromPath = useCallback(() => {
+    const match = pathname.match(/\/org-([^/]+)/);
+    return match ? match[1] : null;
+  }, [pathname]);
+
+  const orgShortId = getOrgShortIdFromPath();
+
+  // Helper to build route with org prefix
+  const buildRoute = useCallback((route: string) => {
+    if (orgShortId) {
+      return `/org-${orgShortId}${route}`;
+    }
+    return route;
+  }, [orgShortId]);
+
   // Set active item based on current pathname
   useEffect(() => {
-    if (pathname === '/settings') {
+    if (pathname.includes('/settings')) {
       setActiveItem('Settings');
-    } else if (pathname === '/repositories') {
+    } else if (pathname.includes('/repositories')) {
       setActiveItem('Repositories');
-    } else if (pathname === '/dashboard' || pathname === '/') {
+    } else if (pathname.includes('/dashboard') || pathname === '/') {
       setActiveItem('Overview');
       setExpandedStates(prev => ({ ...prev, dashboard: true }));
     }
@@ -259,23 +307,86 @@ export default function Sidebar({
     setActiveItem(itemId);
   }, []);
 
+  const handleExpandSidebar = useCallback(() => {
+    if (isMinimized) {
+      setIsMinimized(false);
+      setWasAutoExpanded(true);
+    }
+  }, [isMinimized]);
+
+  const handleMinimizeSidebar = useCallback(() => {
+    setIsMinimized(true);
+    setWasAutoExpanded(false);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (wasAutoExpanded) {
+      setIsMinimized(true);
+      setWasAutoExpanded(false);
+    }
+  }, [wasAutoExpanded]);
+
   return (
-    <aside className="h-full w-80">
+    <aside 
+      className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}
+      onMouseLeave={handleMouseLeave}
+    >
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="flex items-center p-4 pl-8">
-          <img 
-            src="/Full-logo.png" 
-            alt="Logo" 
-            className="h-12 w-auto"
-          />
+        <div className={`flex items-center ${isMinimized ? 'justify-center' : 'justify-between'} p-4 ${isMinimized ? 'px-4' : 'pl-8 pr-4'}`}>
+          {!isMinimized && (
+            <img 
+              src="/Full-logo.png" 
+              alt="Logo" 
+              className="h-10 w-auto"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="p-1.5 hover:bg-white/10 rounded-md transition-colors duration-200 cursor-pointer"
+            aria-label="Minimize sidebar"
+          >
+            <svg className="w-5 h-5 text-white/70 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMinimized ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} />
+            </svg>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[#262626]"></div>
+
+        {/* Search Bar */}
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
+          {isMinimized ? (
+            <button
+              type="button"
+              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded-lg hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
+              aria-label="Search"
+            >
+              <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          ) : (
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
+              />
+            </div>
+          )}
         </div>
 
         {/* Sidebar Content */}
-        <nav className="flex-1 px-4 flex flex-col overflow-y-auto sidebar-scrollbar">
+        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'}`}>
           {/* MAIN Section */}
-          <div className="pb-3">
-            <h3 className="text-xs text-white/60 pl-4 mb-2">MAIN</h3>
+          <div className="pt-4 pb-3">
+            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">MAIN</h3>}
             <ul className="space-y-1">
               {MAIN_MENU_ITEMS.map((item) => (
                 <li key={item.id}>
@@ -286,6 +397,10 @@ export default function Sidebar({
                     activeItem={activeItem}
                     setActiveItem={setActiveItem}
                     router={router}
+                    pathname={pathname}
+                    isMinimized={isMinimized}
+                    onExpandSidebar={handleExpandSidebar}
+                    onMinimizeSidebar={handleMinimizeSidebar}
                   />
                 </li>
               ))}
@@ -293,8 +408,9 @@ export default function Sidebar({
           </div>
 
           {/* ORGANIZATION Section */}
-          <div className="border-t border-[#424242] pt-3 pb-3">
-            <h3 className="text-xs text-white/60 pl-4 mb-2">ORGANIZATION</h3>
+          <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
+          <div className="pt-4 pb-3">
+            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">ORGANIZATION</h3>}
             <ul className="space-y-1">
               <li>
                 <button 
@@ -307,26 +423,27 @@ export default function Sidebar({
                     "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
                     "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                   ]} />
-                  <span>Configurations</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Configurations</span>
                 </button>
               </li>
               <li>
                 <button 
-                  onClick={() => handleOrgItemClick('Identity & Access')}
+                  onClick={() => handleOrgItemClick('Access')}
                   className={`${BUTTON_BASE_CLASSES} ${
-                    activeItem === 'Identity & Access' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
+                    activeItem === 'Access' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
                   }`}
                 >
                   <Icon iconPath="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  <span>Identity & Access</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Access</span>
                 </button>
               </li>
             </ul>
           </div>
 
           {/* CONFIGURATIONS Section */}
-          <div className="border-t border-[#424242] pt-3 pb-3">
-            <h3 className="text-xs text-white/60 pl-4 mb-2">CONFIGURATIONS</h3>
+          <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
+          <div className="pt-4 pb-3">
+            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">CONFIGURATIONS</h3>}
             <ul className="space-y-1">
               <li>
                 <button 
@@ -339,7 +456,7 @@ export default function Sidebar({
                     "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
                     "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                   ]} />
-                  <span>Settings</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Settings</span>
                 </button>
               </li>
               <li>
@@ -350,7 +467,7 @@ export default function Sidebar({
                   }`}
                 >
                   <Icon iconPath="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  <span>Help</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Help</span>
                 </button>
               </li>
               <li>
@@ -359,7 +476,7 @@ export default function Sidebar({
                   className={`${BUTTON_BASE_CLASSES} ${BUTTON_INACTIVE_CLASSES}`}
                 >
                   <Icon iconPath="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  <span>Logout</span>
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Logout</span>
                 </button>
               </li>
             </ul>
@@ -367,32 +484,36 @@ export default function Sidebar({
         </nav>
 
         {/* Profile Section */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-2.5 p-2.5">
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-3`}>
+          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-2.5'} p-2.5`}>
             {/* Profile Picture */}
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-lg bg-[#BC4918] flex items-center justify-center shadow-sm">
-                <span className="text-white text-sm font-semibold">
-                  {userInitials}
-                </span>
-              </div>
+              <img 
+                src="/Pfp-placeholder.png" 
+                alt="Profile" 
+                className="w-10 h-10 rounded-lg object-cover shadow-sm"
+              />
             </div>
             {/* Full Name */}
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">
-                {userName || 'User'}
-              </p>
-            </div>
+            {!isMinimized && (
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">
+                  {userName || 'User'}
+                </p>
+              </div>
+            )}
             {/* Settings Icon */}
-            <button 
-              onClick={handleSettingsClick}
-              className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group"
-            >
-              <Icon 
-                iconPath="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200"
-              />
-            </button>
+            {!isMinimized && (
+              <button 
+                onClick={handleSettingsClick}
+                className="flex-shrink-0 p-1.5 hover:bg-white/10 rounded-md transition-all duration-200 cursor-pointer group"
+              >
+                <Icon 
+                  iconPath="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  className="w-5 h-5 text-white/70 group-hover:text-white transition-colors duration-200"
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>

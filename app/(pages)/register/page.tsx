@@ -77,7 +77,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       {/* Centered Container */}
       <div className="w-full max-w-7xl flex flex-col lg:flex-row rounded-lg overflow-hidden">
-        <div className="hidden lg:flex lg:w-1/2 bg-gray-900/50 items-center justify-center">
+        <div className="hidden lg:flex lg:w-1/2 bg-gray-900/30 items-center justify-center">
           {/* Placeholder container */}
         </div>
 
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#5C42CE]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your first name"
               />
             </div>
@@ -163,7 +163,7 @@ export default function RegisterPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#5C42CE]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your last name"
               />
             </div>
@@ -181,7 +181,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full px-4 py-2.5 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#5C42CE]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your email"
               />
             </div>
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#5C42CE]/20 focus:border-gray-700 transition-all"
                   placeholder="Enter your password"
                 />
                 <button
@@ -236,7 +236,7 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#5C42CE]/20 focus:border-gray-700 transition-all"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -272,7 +272,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-[#BC4918] hover:bg-[#D85A2A] disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(188,73,24,0.8)]"
+              className="w-full py-2.5 px-4 bg-[#5C42CE] hover:bg-[#4A35B5] disabled:bg-[#5C42CE]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(92,66,206,0.5)]"
             >
               Register
             </button>
@@ -284,7 +284,7 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link 
                 href="/login" 
-                className="text-[#BC4918] hover:text-[#D85A2A] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#D85A2A] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+                className="text-[#5C42CE] hover:text-[#7B6DD9] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#5C42CE] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
               >
                 Sign in now!
               </Link>

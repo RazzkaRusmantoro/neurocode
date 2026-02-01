@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TextInput from '../../components/TextInput';
+import PasswordInput from '../../components/PasswordInput';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function LoginPage() {
         console.log(result.error);
         setError('Invalid email or password');
       } else {
-        router.push('/dashboard');
+        router.push('/organizations');
         router.refresh();
       }
     } catch (err) {
@@ -41,11 +42,11 @@ export default function LoginPage() {
   };
 
   const handleGithubLogin = () => {
-    signIn('github', { callbackUrl: '/dashboard' });
+    signIn('github', { callbackUrl: '/organizations' });
   };
 
   const handleGoogleLogin = () => {
-    signIn('google', { callbackUrl: '/dashboard' });
+    signIn('google', { callbackUrl: '/organizations' });
   };
 
   return (
@@ -104,67 +105,30 @@ export default function LoginPage() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="off"
-              className="w-full px-4 py-3 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
-              placeholder="Enter your email"
-            />
-          </div>
+          <TextInput
+            type="email"
+            id="email"
+            name="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="off"
+            placeholder="Enter your email"
+          />
 
           {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="off"
-                className="w-full px-4 py-3 pr-12 bg-transparent border border-[#424242] rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors duration-200 focus:outline-none cursor-pointer"
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            {/* Error Message */}
-            {error && (
-              <div className="mt-2 flex items-center gap-2 text-red-400 text-sm">
-                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="off"
+            placeholder="Enter your password"
+            error={error}
+          />
 
           {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between">
@@ -174,7 +138,7 @@ export default function LoginPage() {
                 id="rememberMe"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 accent-[#BC4918] bg-transparent border border-[#424242] rounded focus:outline-none focus:ring-0 focus:ring-offset-0 outline-none ring-0 ring-offset-0 cursor-pointer checked:bg-[#BC4918] checked:border-[#BC4918]"
+                className="w-4 h-4 bg-transparent border border-gray-800 rounded focus:outline-none focus:ring-0 focus:ring-offset-0 outline-none ring-0 ring-offset-0 cursor-pointer checked:bg-[#5C42CE] checked:border-[#5C42CE]"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               />
               <label htmlFor="rememberMe" className="ml-2 text-sm text-white/70 cursor-pointer">
@@ -183,7 +147,7 @@ export default function LoginPage() {
             </div>
             <Link 
               href="/forgot-password" 
-              className="text-sm text-[#BC4918] hover:text-[#D85A2A] transition-colors"
+              className="text-sm text-[#5C42CE] hover:text-[#7B6DD9] transition-colors"
             >
               Forgot password?
             </Link>
@@ -193,7 +157,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-[#BC4918] hover:bg-[#D85A2A] disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(188,73,24,0.8)]"
+            className="w-full py-3 px-4 bg-[#5C42CE] hover:bg-[#4A35B5] disabled:bg-[#5C42CE]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(92,66,206,0.5)]"
           >
             Sign In
           </button>
@@ -205,7 +169,7 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link 
               href="/register" 
-              className="text-[#BC4918] hover:text-[#D85A2A] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#D85A2A] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+              className="text-[#5C42CE] hover:text-[#7B6DD9] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#5C42CE] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
             >
               Sign up for free!
             </Link>

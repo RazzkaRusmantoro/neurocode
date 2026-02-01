@@ -9,8 +9,8 @@ export default function Navbar() {
   const [resourcesActive, setResourcesActive] = useState(false);
 
   return (
-    <nav className="w-full" style={{ fontFamily: 'var(--font-poppins)' }}>
-      <div className="flex items-center justify-center px-6 py-8 gap-8">
+    <nav className="w-full backdrop-blur-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
+      <div className="flex items-center justify-between px-6 py-6 gap-8 max-w-7xl mx-auto">
         <div className="flex items-center gap-12">
           {/* Logo */}
           <div className="pr-4 flex-shrink-0">
@@ -67,6 +67,7 @@ export default function Navbar() {
               Contact
             </a>
           </div>
+        </div>
           
           {/* Login button */}
           <a
@@ -79,7 +80,7 @@ export default function Navbar() {
               width="36px"
               height="36px"
             >
-              <rect width="36" height="36" x="0" y="0" fill="#fb923c"></rect>
+              <rect width="36" height="36" x="0" y="0" fill="#5C42CE"></rect>
               <path
                 fill="#e53935"
                 d="M38.67,42H11.52C11.27,40.62,11,38.57,11,36c0-5,0-11,0-11s1.44-7.39,3.22-9.59 c1.67-2.06,2.76-3.48,6.78-4.41c3-0.7,7.13-0.23,9,1c2.15,1.42,3.37,6.67,3.81,11.29c1.49-0.3,5.21,0.2,5.5,1.28 C40.89,30.29,39.48,38.31,38.67,42z"
@@ -116,7 +117,6 @@ export default function Navbar() {
             <span className="now">now!</span>
             <span className="play">login</span>
           </a>
-        </div>
       </div>
     </nav>
   );

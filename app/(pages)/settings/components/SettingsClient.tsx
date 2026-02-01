@@ -52,42 +52,59 @@ export default function SettingsClient({ userData }: SettingsClientProps) {
     }
   }, [searchParams, router]);
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="max-w-screen-2xl mx-auto w-full flex flex-col h-full">
-        {/* Header */}
-        <div className="mb-5 flex-shrink-0">
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-8 flex-shrink-0">
-          <div className="flex gap-1 border-b border-[#424242]">
-            {TABS.map((tab) => (
+    <div className="mx-auto max-w-screen-2xl px-40">
+      <div className="w-full h-full flex flex-col">
+        <div className="w-full flex flex-col h-full">
+          {/* Header */}
+          <div className="mb-5 flex-shrink-0">
+            <div className="flex items-center gap-4 mb-2">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 text-sm font-medium transition-colors duration-200 border-b-2 cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'text-[#BC4918] border-[#BC4918]'
-                    : 'text-white/60 border-transparent hover:text-white hover:border-white/30'
-                }`}
+                onClick={handleBack}
+                className="p-2 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 cursor-pointer"
+                aria-label="Go back"
               >
-                {tab.label}
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
-            ))}
+              <h1 className="text-3xl font-bold text-white">Settings</h1>
+            </div>
           </div>
-        </div>
 
-        {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-          <div className="p-4">
-            {activeTab === 'general' && <GeneralTab userData={userData} session={session} router={router} />}
-            {activeTab === 'applications' && <ApplicationsTab />}
-            {activeTab === 'billings' && <BillingsTab />}
-            {activeTab === 'preferences' && <PreferencesTab />}
-            {activeTab === 'notifications' && <NotificationsTab />}
-            {activeTab === 'sessions' && <SessionsTab />}
+          {/* Tabs */}
+          <div className="mb-8 flex-shrink-0">
+            <div className="flex gap-1 border-b border-[#424242]">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 py-3 text-sm font-medium transition-colors duration-200 border-b-2 cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'text-[#BC4918] border-[#BC4918]'
+                      : 'text-white/60 border-transparent hover:text-white hover:border-white/30'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+            <div className="p-4">
+              {activeTab === 'general' && <GeneralTab userData={userData} session={session} router={router} />}
+              {activeTab === 'applications' && <ApplicationsTab />}
+              {activeTab === 'billings' && <BillingsTab />}
+              {activeTab === 'preferences' && <PreferencesTab />}
+              {activeTab === 'notifications' && <NotificationsTab />}
+              {activeTab === 'sessions' && <SessionsTab />}
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { getCachedUserById } from '@/lib/models/user';
 import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
+import OrganizationsNavbar from '@/app/components/OrganizationsNavbar';
 import SettingsClient from './components/SettingsClient';
 
 export default async function SettingsPage() {
@@ -27,5 +28,14 @@ export default async function SettingsPage() {
     github: user.github || null,
   };
 
-  return <SettingsClient userData={userData} />;
+  return (
+    <>
+      <OrganizationsNavbar 
+        userEmail={session.user.email}
+        userName={session.user.name}
+      />
+      <SettingsClient userData={userData} />
+    </>
+  );
 }
+
