@@ -30,6 +30,7 @@ interface MenuItem {
 const MENU_ITEM_ROUTES: Record<string, string> = {
   Repositories: '/repositories',
   Settings: '/settings',
+  Onboarding: '/onboarding',
 };
 
 // Menu items configuration
@@ -267,6 +268,8 @@ export default function Sidebar({
       setActiveItem('Settings');
     } else if (pathname.includes('/repositories')) {
       setActiveItem('Repositories');
+    } else if (pathname.includes('/onboarding')) {
+      setActiveItem('Onboarding');
     } else if (pathname.includes('/dashboard') || pathname === '/') {
       setActiveItem('Overview');
       setExpandedStates(prev => ({ ...prev, dashboard: true }));
