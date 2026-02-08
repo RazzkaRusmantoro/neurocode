@@ -20,7 +20,7 @@
 }
 
 body {
-  background: #0a0a0a;
+  background: #0f0f11;
   background-image: radial-gradient(ellipse at bottom, rgba(124, 58, 237, 0.15) 0%, transparent 55%);
   background-attachment: fixed;
   color: var(--foreground);
@@ -63,6 +63,19 @@ body {
 }
 
 .sidebar-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+
+.hide-scrollbar {
   -ms-overflow-style: none;
   /* IE and Edge */
   scrollbar-width: none;

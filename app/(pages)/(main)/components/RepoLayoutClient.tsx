@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
 import RepoSidebar from '@/app/components/RepoSidebar';
+import DocumentationSidebar from '../[orgShortId]/repo/[repoName]/documentation/components/DocumentationSidebar';
 import { RepoCacheProvider } from '../[orgShortId]/repo/context/RepoCacheContext';
 import type { OrganizationWithId } from '@/actions/organization';
 import type { Repository } from '@/lib/models/repository';
@@ -44,16 +45,28 @@ export default function RepoLayoutClient({
     ? repositories.find(repo => repo.urlName === currentRepoName) || null
     : null;
 
+  // Hide sidebar on documentation title pages
+  const isDocumentationTitlePage = pathname.includes('/documentation/title');
+
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
   return (
     <RepoCacheProvider>
       <div className="h-screen flex bg-transparent">
         {/* Sidebar on the left - full height */}
-        <RepoSidebar 
-          isExpanded={isSidebarExpanded} 
-          onToggle={toggleSidebar}
-          userName={userName}
-          userEmail={userEmail}
-        />
+        {isDocumentationTitlePage ? (
+          <DocumentationSidebar 
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+          />
+        ) : (
+          <RepoSidebar 
+            isExpanded={isSidebarExpanded} 
+            onToggle={toggleSidebar}
+            userName={userName}
+            userEmail={userEmail}
+          />
+        )}
         
         {/* Right side - Navbar and content stacked */}
         <div className="flex-1 flex flex-col overflow-hidden px-16">
