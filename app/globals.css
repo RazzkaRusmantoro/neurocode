@@ -24,7 +24,9 @@ body {
   background-image: radial-gradient(ellipse at bottom, rgba(124, 58, 237, 0.15) 0%, transparent 55%);
   background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Use Red Hat Text (wired through --font-geist-sans) as the global font */
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 /* Custom Scrollbar Styling */
@@ -61,8 +63,10 @@ body {
 }
 
 .sidebar-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Modal Animation Keyframes */
@@ -70,6 +74,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -80,6 +85,7 @@ body {
     opacity: 0;
     transform: scale(0.9);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
