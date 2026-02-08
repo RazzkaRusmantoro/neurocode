@@ -69,6 +69,19 @@ body {
   /* Firefox */
 }
 
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
 /* Modal Animation Keyframes */
 @keyframes fadeIn {
   from {

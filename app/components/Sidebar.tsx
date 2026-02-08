@@ -28,6 +28,7 @@ interface MenuItem {
 
 // Route mapping for menu items (will be built dynamically with orgShortId)
 const MENU_ITEM_ROUTES: Record<string, string> = {
+  dashboard: '/dashboard',
   Repositories: '/repositories',
   Settings: '/settings',
   Onboarding: '/onboarding',
@@ -39,10 +40,6 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     iconPath: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
-    subItems: [
-      { id: 'Overview', label: 'Overview' },
-      { id: 'Analytics', label: 'Analytics' }
-    ]
   },
   {
     id: 'Repositories',
@@ -94,18 +91,21 @@ function SubMenuItem({
   item, 
   activeItem, 
   setActiveItem,
-  onMinimizeSidebar
+  onMinimizeSidebar,
+  router,
+  pathname
 }: { 
   item: SubMenuItem; 
   activeItem: string; 
   setActiveItem: (id: string) => void;
   onMinimizeSidebar?: () => void;
+  router?: AppRouterInstance;
+  pathname?: string;
 }) {
   const isActive = activeItem === item.id;
   
   const handleClick = () => {
     setActiveItem(item.id);
-    onMinimizeSidebar?.();
   };
   
   return (
@@ -209,6 +209,8 @@ function MenuItemComponent({
                   activeItem={activeItem}
                   setActiveItem={setActiveItem}
                   onMinimizeSidebar={onMinimizeSidebar}
+                  router={router}
+                  pathname={pathname}
                 />
               ))}
             </ul>
@@ -242,7 +244,6 @@ export default function Sidebar({
   const [isMinimized, setIsMinimized] = useState(false);
   const [wasAutoExpanded, setWasAutoExpanded] = useState(false);
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
-    dashboard: true,
     management: true
   });
 
@@ -271,8 +272,7 @@ export default function Sidebar({
     } else if (pathname.includes('/onboarding')) {
       setActiveItem('Onboarding');
     } else if (pathname.includes('/dashboard') || pathname === '/') {
-      setActiveItem('Overview');
-      setExpandedStates(prev => ({ ...prev, dashboard: true }));
+      setActiveItem('dashboard');
     }
     // Add more route mappings as pages are created
   }, [pathname]);
