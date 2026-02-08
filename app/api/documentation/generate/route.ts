@@ -5,12 +5,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { ObjectId } from 'mongodb';
 import { getCachedUserById } from '@/lib/models/user';
 import { getGitHubTokenWithFallback, testGitHubTokenAccess } from '@/lib/utils/github-token';
 import { getRepositoryByUrlNameAndOrganization } from '@/lib/models/repository';
 import { getOrganizationByShortId } from '@/lib/models/organization';
+import { createDocumentation } from '@/lib/models/documentation';
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || '';
 
 export async function POST(request: NextRequest) {
   try {
@@ -125,11 +128,58 @@ export async function POST(request: NextRequest) {
 
     const result = await pythonResponse.json();
     
-    // Print results for now (as requested)
-    // console.log('=== Documentation Generation Results ===');
-    // console.log(JSON.stringify(result, null, 2));
-    // console.log('=========================================');
+    // If S3 upload was successful, save metadata to MongoDB
+    if (result.success && result.s3) {
+      try {
+        // Determine scope - if custom, use 'custom', otherwise use the provided scope
+        const docScope = (scope === 'custom' && prompt) ? 'custom' : scope;
+        
+        // Get version number (check for existing docs with same scope/target/branch)
+        // For now, set version to 1 and isLatest to true
+        // TODO: Implement proper versioning logic later
+        const version = 1;
+        const isLatest = true;
+        
+        // Save to MongoDB
+        const documentation = await createDocumentation(
+          repository._id!.toString(),
+          {
+            organizationId: organization._id!.toString(),
+            scope: docScope as 'file' | 'module' | 'repository' | 'custom',
+            target: target || undefined,
+            prompt: prompt || undefined,
+            title: result.title || undefined, // Include title from Python service
+            s3Key: result.s3.s3_key,
+            s3Bucket: result.s3.s3_bucket,
+            contentSize: result.s3.content_size,
+            version: version,
+            isLatest: isLatest,
+            branch: branch,
+            createdBy: new ObjectId(session.user.id),
+          }
+        );
+        
+        console.log(`[Documentation] Saved to MongoDB with ID: ${documentation._id}`);
+        
+        // Return result with MongoDB document ID
+        return NextResponse.json({
+          success: true,
+          documentationId: documentation._id!.toString(),
+          ...result,
+        });
+      } catch (dbError) {
+        console.error('[Documentation] Failed to save to MongoDB:', dbError);
+        // Still return success if Python service succeeded, but log the error
+        // The documentation is in S3, MongoDB save can be retried later if needed
+        return NextResponse.json({
+          success: true,
+          warning: 'Documentation uploaded to S3 but failed to save metadata to MongoDB',
+          ...result,
+        });
+      }
+    }
 
+    // If no S3 upload (fallback or error), return as-is
     return NextResponse.json({
       success: true,
       ...result,
