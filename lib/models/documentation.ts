@@ -21,6 +21,11 @@ export interface Documentation {
   isLatest: boolean; // Mark latest version
   
   branch: string; // Git branch this was generated for (required)
+  
+  // Code references and glossary terms used in this documentation
+  code_reference_ids?: string[]; // Array of code reference IDs (referenceId strings)
+  glossary_term_ids?: string[]; // Array of glossary term IDs (termId strings)
+  
   createdAt: Date;
   updatedAt: Date;
   createdBy?: ObjectId; // User ID who generated this
@@ -116,6 +121,54 @@ export async function getDocumentationsByOrganization(
   
   if (isLatest !== undefined) {
     query.isLatest = isLatest;
+  }
+  
+  return collection
+    .find(query)
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+/**
+ * Get all documentations that use a specific code reference
+ */
+export async function getDocumentationsByCodeReference(
+  repositoryId: string,
+  referenceId: string,
+  organizationId?: string
+): Promise<Documentation[]> {
+  const collection = await getDocumentationCollection();
+  const query: any = {
+    repositoryId: new ObjectId(repositoryId),
+    code_reference_ids: referenceId
+  };
+  
+  if (organizationId) {
+    query.organizationId = new ObjectId(organizationId);
+  }
+  
+  return collection
+    .find(query)
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+/**
+ * Get all documentations that use a specific glossary term
+ */
+export async function getDocumentationsByGlossaryTerm(
+  repositoryId: string,
+  termId: string,
+  organizationId?: string
+): Promise<Documentation[]> {
+  const collection = await getDocumentationCollection();
+  const query: any = {
+    repositoryId: new ObjectId(repositoryId),
+    glossary_term_ids: termId
+  };
+  
+  if (organizationId) {
+    query.organizationId = new ObjectId(organizationId);
   }
   
   return collection

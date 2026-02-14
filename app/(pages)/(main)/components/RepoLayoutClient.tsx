@@ -6,8 +6,20 @@ import DashboardNavbar from '@/app/components/DashboardNavbar';
 import RepoSidebar from '@/app/components/RepoSidebar';
 import DocumentationSidebar from '../[orgShortId]/repo/[repoName]/documentation/components/DocumentationSidebar';
 import { RepoCacheProvider } from '../[orgShortId]/repo/context/RepoCacheContext';
+import { DocumentationProvider, useDocumentation } from '../[orgShortId]/repo/[repoName]/documentation/context/DocumentationContext';
 import type { OrganizationWithId } from '@/actions/organization';
 import type { Repository } from '@/lib/models/repository';
+
+// Wrapper component to use the context
+function DocumentationSidebarWrapper() {
+  const { activeSection, setActiveSection } = useDocumentation();
+  return (
+    <DocumentationSidebar 
+      activeSection={activeSection}
+      onSectionChange={setActiveSection}
+    />
+  );
+}
 
 interface RepositoryWithId extends Repository {
   id: string;
@@ -48,17 +60,13 @@ export default function RepoLayoutClient({
   // Hide sidebar on documentation title pages
   const isDocumentationTitlePage = pathname.includes('/documentation/title');
 
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-
   return (
     <RepoCacheProvider>
-      <div className="h-screen flex bg-transparent">
+      <DocumentationProvider>
+        <div className="h-screen flex bg-transparent">
         {/* Sidebar on the left - full height */}
         {isDocumentationTitlePage ? (
-          <DocumentationSidebar 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-          />
+          <DocumentationSidebarWrapper />
         ) : (
           <RepoSidebar 
             isExpanded={isSidebarExpanded} 
@@ -88,6 +96,7 @@ export default function RepoLayoutClient({
           </main>
         </div>
       </div>
+      </DocumentationProvider>
     </RepoCacheProvider>
   );
 }
