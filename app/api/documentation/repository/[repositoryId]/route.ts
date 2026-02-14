@@ -47,6 +47,7 @@ export async function GET(
         scope: doc.scope,
         target: doc.target || null,
         prompt: doc.prompt || null,
+        title: doc.title || null,
         s3Key: doc.s3Key,
         s3Bucket: doc.s3Bucket,
         contentSize: doc.contentSize,

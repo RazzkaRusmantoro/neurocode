@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useDocumentation } from '../context/DocumentationContext';
 
 interface SidebarItem {
   id: string;
@@ -17,7 +18,8 @@ interface DocumentationSidebarProps {
 export default function DocumentationSidebar({ activeSection, onSectionChange }: DocumentationSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['2', '4', '5']));
+  const { documentation } = useDocumentation();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Extract orgShortId and repoName from pathname
   const orgMatch = pathname.match(/\/org-([^/]+)/);
@@ -31,31 +33,56 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
     }
   }, [router, orgShortId, repoName]);
 
-  // Sidebar navigation items with hierarchical structure
-  const sidebarItems: SidebarItem[] = [
-    { id: '1', label: '1.', subItems: [{ id: '1.1', label: '1.1' }] },
-    { 
-      id: '2', 
-      label: '2.', 
-      subItems: [
-        { id: '2.1', label: '2.1' },
-        { id: '2.2', label: '2.2' },
-        { id: '2.3', label: '2.3' },
-      ] 
-    },
-    { id: '3', label: '3.' },
-    { id: '4', label: '4.', subItems: [{ id: '4.1', label: '4.1' }] },
-    { 
-      id: '5', 
-      label: '5.', 
-      subItems: [
-        { id: '5.1', label: '5.1' },
-        { id: '5.2', label: '5.2' },
-      ] 
-    },
-    { id: 'code-references', label: 'Code References' },
-    { id: 'glossary', label: 'Glossary' },
-  ];
+  // Build sidebar items from documentation sections
+  const sidebarItems: SidebarItem[] = documentation?.sections
+    ? documentation.sections.map((section) => ({
+        id: section.id,
+        label: `${section.id}. ${section.title}`,
+        subItems: section.subsections?.map((subsection) => ({
+          id: subsection.id,
+          label: `${subsection.id}. ${subsection.title}`,
+        })),
+      }))
+    : [];
+
+  // Add code references as a menu item with submenu items
+  if (documentation?.code_references && documentation.code_references.length > 0) {
+    const codeRefSubItems = documentation.code_references.map((ref) => {
+      // Handle both string and object types
+      const refName = typeof ref === 'string' ? ref : ref.name || ref.referenceId || 'Unknown';
+      const refId = typeof ref === 'string' ? ref : ref.referenceId || ref.name || 'unknown';
+      return {
+        id: `code-ref-${refId}`,
+        label: refName,
+      };
+    });
+    
+    sidebarItems.push({ 
+      id: 'code-references', 
+      label: 'Code References',
+      subItems: codeRefSubItems
+    });
+  }
+  sidebarItems.push({ id: 'glossary', label: 'Glossary' });
+
+  // Auto-expand sections that have subsections and code references
+  useEffect(() => {
+    const expanded = new Set<string>();
+    
+    if (documentation?.sections) {
+      const sectionsWithSubs = documentation.sections
+        .filter((s) => s.subsections && s.subsections.length > 0)
+        .map((s) => s.id);
+      sectionsWithSubs.forEach(id => expanded.add(id));
+    }
+    
+    // Auto-expand code references if they exist
+    if (documentation?.code_references && documentation.code_references.length > 0) {
+      expanded.add('code-references');
+    }
+    
+    setExpandedItems(expanded);
+  }, [documentation]);
 
   const toggleExpand = (itemId: string) => {
     setExpandedItems(prev => {
@@ -72,7 +99,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   const isExpanded = (itemId: string) => expandedItems.has(itemId);
 
   return (
-    <aside className="w-80 bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto">
+    <aside className="w-80 bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto hide-scrollbar">
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-between p-4 pl-8 pr-4">
@@ -119,7 +146,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
           <h2 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">
             Navigation
           </h2>
-          <nav className="space-y-1 flex-1 overflow-y-auto">
+          <nav className="space-y-1 flex-1 overflow-y-auto hide-scrollbar">
             {sidebarItems.map((item) => {
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isItemExpanded = isExpanded(item.id);
@@ -132,6 +159,21 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
                         toggleExpand(item.id);
                       } else {
                         onSectionChange(item.id);
+                        // Scroll to section or special sections
+                        if (item.id === 'code-references') {
+                          const element = document.getElementById('code-references-section');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        } else if (item.id === 'glossary') {
+                          // Handle glossary scroll if needed
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                          const element = document.getElementById(`section-${item.id}`);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }
                       }
                     }}
                     className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg flex items-center justify-between cursor-pointer ${
@@ -162,7 +204,24 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
                       {item.subItems!.map((subItem) => (
                         <button
                           key={subItem.id}
-                          onClick={() => onSectionChange(subItem.id)}
+                          onClick={() => {
+                            onSectionChange(subItem.id);
+                            // Scroll to subsection or code reference
+                            if (subItem.id.startsWith('code-ref-')) {
+                              // Code reference - extract the reference ID
+                              const refId = subItem.id.replace('code-ref-', '');
+                              const element = document.getElementById(`code-ref-${refId}`);
+                              if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                            } else {
+                              // Regular subsection
+                              const element = document.getElementById(`subsection-${subItem.id}`);
+                              if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                            }
+                          }}
                           className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg cursor-pointer ${
                             activeSection === subItem.id
                               ? 'bg-[#5C42CE]/20 text-white border-l-2 border-[#5C42CE] pl-2.5'

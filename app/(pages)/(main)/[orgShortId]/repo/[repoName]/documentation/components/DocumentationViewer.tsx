@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import GenerateDocumentationModal from './GenerateDocumentationModal';
 import TextInput from '@/app/components/TextInput';
 
@@ -33,6 +34,7 @@ export default function DocumentationViewer({
   repoUrlName,
   repoName,
 }: DocumentationViewerProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('documentation');
   const [documentations, setDocumentations] = useState<Documentation[]>([]);
@@ -82,9 +84,14 @@ export default function DocumentationViewer({
     }
   }, [activeTab, repositoryId]);
 
-  const handleDocumentationClick = (docId: string) => {
-    // Navigation will be implemented later
-    console.log('Clicked documentation:', docId);
+  const handleDocumentationClick = (doc: Documentation) => {
+    if (!doc.title) {
+      console.error('Documentation has no title');
+      return;
+    }
+    // Navigate to the documentation title page with title as query parameter
+    const encodedTitle = encodeURIComponent(doc.title);
+    router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/title?title=${encodedTitle}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -262,20 +269,20 @@ export default function DocumentationViewer({
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto pb-4">
-                    <div className="flex gap-6">
+                  <div className="pb-4">
+                    <div className="flex flex-col gap-6">
                       {filteredDocumentations.map((doc) => (
                         <div
                           key={doc._id}
-                          onClick={() => handleDocumentationClick(doc._id)}
-                          className="flex-shrink-0 flex-1 min-w-0 cursor-pointer group"
+                          onClick={() => handleDocumentationClick(doc)}
+                          className="w-full cursor-pointer group"
                         >
                           <div className="flex flex-col h-full hover:text-[#5C42CE] transition-colors">
 
                             {/* Title */}
-                            {(doc.title || doc.prompt) && (
+                            {doc.title && (
                               <h3 className="text-white/65 font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[#5C42CE] transition-colors">
-                                {doc.title || doc.prompt}
+                                {doc.title}
                               </h3>
                             )}
 

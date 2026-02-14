@@ -155,6 +155,8 @@ export async function POST(request: NextRequest) {
             version: version,
             isLatest: isLatest,
             branch: branch,
+            code_reference_ids: result.code_reference_ids || undefined, // Array of code reference IDs
+            glossary_term_ids: result.glossary_term_ids || undefined, // Array of glossary term IDs
             createdBy: new ObjectId(session.user.id),
           }
         );
