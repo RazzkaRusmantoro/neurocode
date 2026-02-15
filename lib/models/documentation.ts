@@ -10,6 +10,7 @@ export interface Documentation {
   target?: string; // file path, module name, or 'full' for repository
   prompt?: string; // For custom/RAG documentation
   title?: string; // Title extracted from documentation content
+  description?: string; // Brief description (2-3 sentences) of what this documentation is about
   slug?: string; // URL-safe slug derived from title
   
   // S3 storage fields

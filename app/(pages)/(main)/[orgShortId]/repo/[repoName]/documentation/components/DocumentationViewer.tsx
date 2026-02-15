@@ -22,6 +22,7 @@ interface Documentation {
   target?: string;
   prompt?: string;
   title?: string;
+  description?: string;
   slug?: string | null;
   branch: string;
   version: number;
@@ -339,6 +340,7 @@ export default function DocumentationViewer({
     const query = searchQuery.toLowerCase();
     return documentations.filter(doc => 
       doc.title?.toLowerCase().includes(query) ||
+      doc.description?.toLowerCase().includes(query) ||
       doc.prompt?.toLowerCase().includes(query) ||
       doc.target?.toLowerCase().includes(query) ||
       doc.branch.toLowerCase().includes(query)
@@ -560,6 +562,13 @@ export default function DocumentationViewer({
                               <h3 className="text-white/65 font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[#5C42CE] transition-colors">
                                 {doc.title}
                               </h3>
+                            )}
+
+                            {/* Description */}
+                            {doc.description && (
+                              <p className="text-white/50 text-sm mb-3 line-clamp-3">
+                                {doc.description}
+                              </p>
                             )}
 
                             {/* Target */}

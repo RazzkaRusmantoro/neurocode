@@ -149,6 +149,7 @@ export async function POST(request: NextRequest) {
             target: target || undefined,
             prompt: prompt || undefined,
             title: result.title || undefined, // Include title from Python service
+            description: result.description || undefined, // Include description from Python service
             s3Key: result.s3.s3_key,
             s3Bucket: result.s3.s3_bucket,
             contentSize: result.s3.content_size,
