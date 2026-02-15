@@ -58,3 +58,22 @@ export async function getCodeReferencesByIds(
   return collection.find(query).toArray();
 }
 
+/**
+ * Get all code references for a repository
+ */
+export async function getCodeReferencesByRepository(
+  repositoryId: string,
+  organizationId?: string
+): Promise<CodeReference[]> {
+  const collection = await getCodeReferencesCollection();
+  const query: any = {
+    repositoryId: new ObjectId(repositoryId),
+  };
+
+  if (organizationId) {
+    query.organizationId = new ObjectId(organizationId);
+  }
+
+  return collection.find(query).sort({ name: 1 }).toArray();
+}
+

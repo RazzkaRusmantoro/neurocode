@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import GenerateDocumentationModal from './GenerateDocumentationModal';
 import TextInput from '@/app/components/TextInput';
+import CodeSnippet from './CodeSnippet';
 
 interface DocumentationViewerProps {
   repositoryId: string;
@@ -27,6 +28,154 @@ interface Documentation {
   updatedAt: string;
 }
 
+interface CodeReference {
+  _id?: string;
+  referenceId: string;
+  name: string;
+  type?: 'function' | 'class' | 'method' | 'module';
+  module?: string;
+  filePath?: string;
+  description: string;
+  signature?: string;
+  parameters?: Array<{
+    name: string;
+    type: string;
+    required: boolean;
+    default?: any;
+    description: string;
+  }>;
+  returns?: {
+    type: string;
+    description: string;
+  };
+  examples?: Array<{
+    code: string;
+    description: string;
+  }>;
+  seeAlso?: string[];
+  code?: string; // Raw code snippet
+}
+
+// Optimized function to parse description with support for [[text]], `text`, and **text** (bold)
+function parseDescription(
+  description: string
+): (string | React.ReactElement)[] {
+  if (!description) return [description];
+  
+  const parts: (string | React.ReactElement)[] = [];
+  let key = 0;
+  
+  // Single pass regex to find all patterns: `[[text]]`, [[text]], `text`, and **text**
+  // Order matters: backticked links first, then links, then code, then bold
+  const patterns = [
+    { regex: /`\[\[([^\]]+)\]\]`/g, type: 'link', priority: 4 },
+    { regex: /\[\[([^\]]+)\]\]/g, type: 'link', priority: 3 },
+    { regex: /`([^`\n]+)`/g, type: 'code', priority: 2 },
+    { regex: /\*\*([^*\n]+?)\*\*/g, type: 'bold', priority: 1 },
+  ];
+  
+  const allMatches: Array<{ type: 'link' | 'code' | 'bold'; start: number; end: number; text: string; priority: number }> = [];
+  
+  // Find all matches with their positions
+  patterns.forEach(({ regex, type, priority }) => {
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(description)) !== null) {
+      allMatches.push({
+        type: type as 'link' | 'code' | 'bold',
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[1],
+        priority,
+      });
+    }
+  });
+  
+  // Sort by position, then by priority (higher priority wins)
+  allMatches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.priority - a.priority;
+  });
+  
+  // Remove overlapping matches (keep higher priority)
+  const filteredMatches: typeof allMatches = [];
+  for (const current of allMatches) {
+    let shouldAdd = true;
+    
+    for (let i = 0; i < filteredMatches.length; i++) {
+      const existing = filteredMatches[i];
+      // Check if overlaps
+      if (current.start < existing.end && current.end > existing.start) {
+        // If current has higher priority, replace existing
+        if (current.priority > existing.priority) {
+          filteredMatches[i] = current;
+        }
+        shouldAdd = false;
+        break;
+      }
+    }
+    
+    if (shouldAdd) {
+      filteredMatches.push(current);
+    }
+  }
+  
+  // Re-sort after filtering
+  filteredMatches.sort((a, b) => a.start - b.start);
+  
+  // Build the parts array
+  let lastIndex = 0;
+  for (const match of filteredMatches) {
+    if (match.start > lastIndex) {
+      parts.push(description.substring(lastIndex, match.start));
+    }
+    
+    const cleanText = match.text.replace(/[`\[\]]/g, '');
+    
+    if (match.type === 'link') {
+      parts.push(
+        <span
+          key={key++}
+          className="inline px-1.5 py-0.5 rounded text-[#3fb1c5]"
+          style={{ 
+            backgroundColor: 'rgba(128, 128, 128, 0.3)',
+            textDecoration: 'underline',
+            textDecorationThickness: '0.5px',
+            textUnderlineOffset: '2px'
+          }}
+        >
+          {cleanText}
+        </span>
+      );
+    } else if (match.type === 'code') {
+      parts.push(
+        <span
+          key={key++}
+          className="inline px-1.5 py-0.5 rounded text-white"
+          style={{ backgroundColor: 'rgba(128, 128, 128, 0.3)' }}
+        >
+          {cleanText}
+        </span>
+      );
+    } else if (match.type === 'bold') {
+      // For bold text, we don't need to clean brackets/backticks as they shouldn't be there
+      parts.push(
+        <strong key={key++} className="font-semibold text-white">
+          {match.text}
+        </strong>
+      );
+    }
+    
+    lastIndex = match.end;
+  }
+  
+  if (lastIndex < description.length) {
+    parts.push(description.substring(lastIndex));
+  }
+  
+  return parts.length > 0 ? parts : [description];
+}
+
 export default function DocumentationViewer({
   repositoryId,
   repoFullName,
@@ -38,9 +187,16 @@ export default function DocumentationViewer({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('documentation');
   const [documentations, setDocumentations] = useState<Documentation[]>([]);
+  const [codeReferences, setCodeReferences] = useState<CodeReference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [codeRefLoading, setCodeRefLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [codeRefError, setCodeRefError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [codeRefSearchQuery, setCodeRefSearchQuery] = useState('');
+  const [expandedRefs, setExpandedRefs] = useState<Set<string>>(new Set());
+  const [documentationsFetched, setDocumentationsFetched] = useState(false);
+  const [codeReferencesFetched, setCodeReferencesFetched] = useState(false);
 
   const handleGenerateDocumentation = () => {
     setIsModalOpen(true);
@@ -48,13 +204,19 @@ export default function DocumentationViewer({
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Refresh documentations after generating new one
+    // Refresh documentations after generating new one (force refresh)
     if (activeTab === 'documentation') {
-      fetchDocumentations();
+      fetchDocumentations(true);
     }
   };
 
-  const fetchDocumentations = async () => {
+  const fetchDocumentations = async (forceRefresh = false) => {
+    // Skip if already fetched and not forcing refresh
+    if (documentationsFetched && !forceRefresh) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -67,6 +229,7 @@ export default function DocumentationViewer({
       const data = await response.json();
       if (data.success) {
         setDocumentations(data.documentations || []);
+        setDocumentationsFetched(true);
       } else {
         throw new Error(data.error || 'Failed to fetch documentations');
       }
@@ -78,11 +241,75 @@ export default function DocumentationViewer({
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'documentation') {
-      fetchDocumentations();
+  const fetchCodeReferences = async (forceRefresh = false) => {
+    // Skip if already fetched and not forcing refresh
+    if (codeReferencesFetched && !forceRefresh) {
+      setCodeRefLoading(false);
+      return;
     }
-  }, [activeTab, repositoryId]);
+
+    try {
+      setCodeRefLoading(true);
+      setCodeRefError(null);
+      const response = await fetch(`/api/code-references/repository/${repositoryId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch code references');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setCodeReferences(data.codeReferences || []);
+        setCodeReferencesFetched(true);
+      } else {
+        throw new Error(data.error || 'Failed to fetch code references');
+      }
+    } catch (err) {
+      setCodeRefError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error fetching code references:', err);
+    } finally {
+      setCodeRefLoading(false);
+    }
+  };
+
+  const toggleRefExpansion = (refId: string) => {
+    setExpandedRefs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(refId)) {
+        newSet.delete(refId);
+      } else {
+        newSet.add(refId);
+      }
+      return newSet;
+    });
+  };
+
+  useEffect(() => {
+    // Only fetch if not already cached - set loading to false immediately if cached
+    if (activeTab === 'documentation') {
+      if (!documentationsFetched) {
+        fetchDocumentations();
+      } else {
+        // Data is cached, ensure loading is false immediately
+        setLoading(false);
+      }
+    } else if (activeTab === 'code-reference') {
+      if (!codeReferencesFetched) {
+        fetchCodeReferences();
+      } else {
+        // Data is cached, ensure loading is false immediately
+        setCodeRefLoading(false);
+      }
+    }
+  }, [activeTab, repositoryId, documentationsFetched, codeReferencesFetched]);
+
+  // Reset cache when repository changes
+  useEffect(() => {
+    setDocumentationsFetched(false);
+    setCodeReferencesFetched(false);
+    setDocumentations([]);
+    setCodeReferences([]);
+  }, [repositoryId]);
 
   const handleDocumentationClick = (doc: Documentation) => {
     if (!doc.title) {
@@ -105,16 +332,40 @@ export default function DocumentationViewer({
     });
   };
 
-  const filteredDocumentations = documentations.filter(doc => {
-    if (!searchQuery.trim()) return true;
+  const filteredDocumentations = useMemo(() => {
+    if (!searchQuery.trim()) return documentations;
     const query = searchQuery.toLowerCase();
-    return (
+    return documentations.filter(doc => 
       doc.title?.toLowerCase().includes(query) ||
       doc.prompt?.toLowerCase().includes(query) ||
       doc.target?.toLowerCase().includes(query) ||
       doc.branch.toLowerCase().includes(query)
     );
-  });
+  }, [documentations, searchQuery]);
+
+  // Persistent cache for parsed descriptions to avoid re-parsing on every render
+  const parsedDescriptionsCache = useRef(new Map<string, (string | React.ReactElement)[]>());
+
+  // Memoized function to get or parse description
+  const getParsedDescription = useCallback((text: string): (string | React.ReactElement)[] => {
+    if (!text) return [text];
+    const cache = parsedDescriptionsCache.current;
+    if (cache.has(text)) {
+      return cache.get(text)!;
+    }
+    const parsed = parseDescription(text);
+    cache.set(text, parsed);
+    return parsed;
+  }, []);
+
+  const filteredCodeReferences = useMemo(() => {
+    if (!codeRefSearchQuery.trim()) return codeReferences;
+    const query = codeRefSearchQuery.toLowerCase();
+    // Search only by name
+    return codeReferences.filter(ref => 
+      ref.name.toLowerCase().includes(query)
+    );
+  }, [codeReferences, codeRefSearchQuery]);
 
   return (
     <>
@@ -183,7 +434,7 @@ export default function DocumentationViewer({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6">
           {/* Header with Search and Generate Button */}
           <div className="flex justify-between items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold text-white">
@@ -223,6 +474,29 @@ export default function DocumentationViewer({
                   </span>
                   <span className="absolute inset-0 bg-gradient-to-r from-[#7B6DD9] to-[#5C42CE] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
                 </button>
+              </div>
+            )}
+            {activeTab === 'code-reference' && (
+              <div className="flex items-center gap-4">
+                {/* Search Bar */}
+                <div className="w-128 relative">
+                  <svg
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none z-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <TextInput
+                    type="text"
+                    id="codeReferenceSearch"
+                    value={codeRefSearchQuery}
+                    onChange={(e) => setCodeRefSearchQuery(e.target.value)}
+                    placeholder="Search code references..."
+                    className="w-full pl-10"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -324,9 +598,141 @@ export default function DocumentationViewer({
             )}
 
             {activeTab === 'code-reference' && (
-              <div className="text-white/60">
-                <p>Code Reference content will be displayed here.</p>
-                <p className="mt-4 text-sm">This section will show all classes, functions, and methods from the codebase.</p>
+              <div>
+                {codeRefLoading ? (
+                  <div className="flex flex-col gap-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="w-full"
+                      >
+                        <div className="flex flex-col w-full">
+                          <div className="h-6 bg-white/10 rounded mb-2 animate-pulse w-full"></div>
+                          <div className="h-4 bg-white/10 rounded mb-4 w-2/3 animate-pulse"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : codeRefError ? (
+                  <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+                    <p className="text-red-400 text-sm">{codeRefError}</p>
+                  </div>
+                ) : filteredCodeReferences.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-white/60 mb-2">
+                      {codeRefSearchQuery ? 'No code references match your search' : 'No code references found'}
+                    </p>
+                    <p className="text-white/40 text-sm">
+                      {codeRefSearchQuery ? 'Try a different search term' : 'Code references will appear here after documentation is generated.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {filteredCodeReferences.map((ref) => {
+                      const isExpanded = expandedRefs.has(ref.referenceId);
+                      return (
+                        <div key={ref.referenceId} className="scroll-mt-6 pb-8 border-b border-white/10 last:border-b-0">
+                          {/* Code Reference Header - Always visible, clickable to expand/collapse */}
+                          <button
+                            onClick={() => toggleRefExpansion(ref.referenceId)}
+                            className="w-full text-left cursor-pointer hover:opacity-80 transition-opacity"
+                          >
+                            <div className="flex items-center gap-3">
+                              <svg
+                                className={`w-5 h-5 text-white/60 flex-shrink-0 transition-transform duration-300 ease-in-out ${
+                                  isExpanded ? 'transform rotate-90' : ''
+                                }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              <h3 className="text-xl font-semibold text-white font-mono">
+                                {ref.name}
+                              </h3>
+                            </div>
+                          </button>
+                          
+                          {/* Expanded Content with Animation */}
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              isExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            <div className="ml-8 mt-4 space-y-4">
+                              {/* Signature - Now part of expanded content */}
+                              {ref.signature && (
+                                <div className="mb-4">
+                                  <div className="text-white/70 text-sm font-mono">
+                                    {ref.type && (
+                                      <span className="text-white/60 mr-2">
+                                        {ref.type}
+                                      </span>
+                                    )}
+                                    {ref.signature}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Code Reference Description */}
+                              {ref.description && (
+                                <div className="prose prose-invert max-w-none mb-4">
+                                  <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                                    {getParsedDescription(ref.description)}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Parameters Section */}
+                              {ref.parameters && ref.parameters.length > 0 && (
+                                <div className="mt-4 mb-4">
+                                  <h4 className="text-sm font-semibold text-white/60 mb-3">Parameters:</h4>
+                                  <div className="space-y-3 ml-4">
+                                    {ref.parameters.map((param, paramIdx) => (
+                                      <div key={paramIdx} className="border-l-2 border-white/10 pl-4">
+                                        <div className="flex items-baseline gap-2 flex-wrap">
+                                          <span className="font-mono text-[#3fb1c5]">{param.name}</span>
+                                        </div>
+                                        {param.description && (
+                                          <p className="text-white/60 text-sm mt-1 ml-0">
+                                            {getParsedDescription(param.description)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Code Snippet Section */}
+                              {ref.code && (
+                                <CodeSnippet code={ref.code} language={ref.type === 'class' ? 'typescript' : undefined} />
+                              )}
+                              
+                              {/* Returns Section */}
+                              {ref.returns && (
+                                <div className="mt-4 mb-4">
+                                  <h4 className="text-sm font-semibold text-white/60 mb-2">Returns:</h4>
+                                  <div className="ml-4">
+                                    {ref.returns.type && (
+                                      <span className="font-mono text-[#3fb1c5]">{ref.returns.type}</span>
+                                    )}
+                                    {ref.returns.description && (
+                                      <p className="text-white/60 text-sm mt-1">
+                                        {getParsedDescription(ref.returns.description)}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

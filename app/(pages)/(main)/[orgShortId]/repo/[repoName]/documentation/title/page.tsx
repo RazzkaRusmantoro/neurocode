@@ -5,315 +5,90 @@ import { useSearchParams } from 'next/navigation';
 import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
 
-// Function to parse description and convert markdown lists, [[text]] to styled links, `text` to styled text, and **text** to bold
+// Function to parse description and convert [[text]] to styled links, `text` to styled text, and **text** to bold
 function parseDescription(
   description: string,
   onCodeRefClick?: (codeRefId: string) => void
 ): (string | React.ReactElement)[] {
-  // First, parse lists (bullet points and numbered lists)
   const parts: (string | React.ReactElement)[] = [];
+  let processedText = description;
   let key = 0;
-  
-  // Split by lines to identify list items
-  const lines = description.split('\n');
-  let currentList: Array<{ type: 'bullet' | 'numbered'; content: string }> = [];
-  let listType: 'bullet' | 'numbered' | null = null;
-  let nonListParts: string[] = [];
-  
-  const flushNonList = () => {
-    if (nonListParts.length > 0) {
-      const nonListText = nonListParts.join('\n');
-      if (nonListText.trim()) {
-        // Split by double newlines (or more) to create paragraphs
-        // This preserves single \n within paragraphs and treats \n\n as paragraph breaks
-        const paragraphs = nonListText.split(/\n\s*\n+/);
-        
-        paragraphs.forEach((para, idx) => {
-          if (para.trim()) {
-            // Replace single newlines within paragraph with spaces (or keep them for line breaks)
-            // For now, we'll replace single \n with spaces to keep paragraphs flowing
-            const cleanedPara = para.replace(/\n/g, ' ').trim();
-            
-            // Parse the paragraph for other markdown (links, code, bold)
-            const parsed = parseMarkdown(cleanedPara, onCodeRefClick, key);
-            parts.push(...parsed.elements);
-            key = parsed.nextKey;
-            
-            // Add spacing between paragraphs (except for the last one)
-            if (idx < paragraphs.length - 1) {
-              parts.push(<br key={key++} />);
-              parts.push(<br key={key++} />);
-            }
-          }
-        });
-      }
-      nonListParts = [];
-    }
-  };
-  
-  const flushList = () => {
-    if (currentList.length > 0) {
-      flushNonList();
-      if (listType === 'bullet') {
-        parts.push(
-          <ul key={key++} className="list-disc list-inside space-y-2 my-4 text-white/80 ml-4">
-            {currentList.map((item, idx) => (
-              <li key={idx} className="leading-relaxed">
-                {parseMarkdown(item.content, onCodeRefClick, key).elements}
-              </li>
-            ))}
-          </ul>
-        );
-      } else if (listType === 'numbered') {
-        parts.push(
-          <ol key={key++} className="list-decimal list-inside space-y-2 my-4 text-white/80 ml-4">
-            {currentList.map((item, idx) => (
-              <li key={idx} className="leading-relaxed">
-                {parseMarkdown(item.content, onCodeRefClick, key).elements}
-              </li>
-            ))}
-          </ol>
-        );
-      }
-      currentList = [];
-      listType = null;
-    }
-  };
-  
-  for (const line of lines) {
-    // Check for bullet point (starts with - or * followed by space)
-    const bulletMatch = line.match(/^[\s]*[-*][\s]+(.+)$/);
-    // Check for numbered list (starts with number followed by . and space)
-    const numberedMatch = line.match(/^[\s]*\d+\.\s+(.+)$/);
-    
-    if (bulletMatch) {
-      if (listType === 'numbered') {
-        flushList();
-      }
-      listType = 'bullet';
-      currentList.push({ type: 'bullet', content: bulletMatch[1] });
-    } else if (numberedMatch) {
-      if (listType === 'bullet') {
-        flushList();
-      }
-      listType = 'numbered';
-      currentList.push({ type: 'numbered', content: numberedMatch[1] });
-    } else {
-      // Not a list item
-      // If it's an empty line and we're in a list, continue the list (don't break it)
-      if (line.trim() === '' && listType !== null) {
-        // Empty line within list - keep the list going
-        continue;
-      }
-      // If we have a list and hit non-empty non-list content, flush the list
-      if (listType !== null) {
-        flushList();
-      }
-      nonListParts.push(line);
-    }
-  }
-  
-  // Flush any remaining list or non-list content
-  flushList();
-  flushNonList();
-  
-  return parts.length > 0 ? parts : [description];
-}
-
-// Function to parse markdown (links, code, bold) - used by parseDescription
-function parseMarkdown(
-  text: string,
-  onCodeRefClick?: (codeRefId: string) => void,
-  startKey: number = 0
-): { elements: (string | React.ReactElement)[]; nextKey: number } {
-  const parts: (string | React.ReactElement)[] = [];
-  let key = startKey;
   let hasMatches = false;
 
-  // Find all matches for patterns: [[text]], `text`, and **text**
-  // Priority: First match `[[text]]` patterns (with or without backticks), then regular backticked text, then bold text
-  const allMatches: Array<{ type: 'link' | 'code' | 'bold'; start: number; end: number; text: string }> = [];
+  // Find all matches for patterns: `[[text]]`, [[text]], `text`, and **text**
+  // Priority: backticked links first, then links, then code, then bold
+  const allMatches: Array<{ type: 'link' | 'code' | 'bold'; start: number; end: number; text: string; priority: number }> = [];
   
-  // First, find `[[text]]` patterns (backticks around double brackets) - this takes priority
-  const backtickedLinkRegex = /`\[\[([^\]]+)\]\]`/g;
-  let match;
-  while ((match = backtickedLinkRegex.exec(text)) !== null) {
-    allMatches.push({
-      type: 'link',
-      start: match.index,
-      end: match.index + match[0].length,
-      text: match[1], // Just the text inside brackets, no backticks
-    });
-  }
+  // Single pass regex to find all patterns: `[[text]]`, [[text]], `text`, and **text**
+  // Order matters: backticked links first, then links, then code, then bold
+  const patterns = [
+    { regex: /`\[\[([^\]]+)\]\]`/g, type: 'link', priority: 4 },
+    { regex: /\[\[([^\]]+)\]\]/g, type: 'link', priority: 3 },
+    { regex: /`([^`\n]+)`/g, type: 'code', priority: 2 },
+    { regex: /\*\*([^*\n]+?)\*\*/g, type: 'bold', priority: 1 },
+  ];
   
-  // Then find [[text]] patterns without backticks (but not already matched)
-  const linkRegex = /\[\[([^\]]+)\]\]/g;
-  linkRegex.lastIndex = 0;
-  while ((match = linkRegex.exec(text)) !== null) {
-    // Check if this match is already covered by a backticked link match
-    let alreadyMatched = false;
-    for (const existingMatch of allMatches) {
-      if (existingMatch.type === 'link' &&
-          match.index >= existingMatch.start &&
-          match.index < existingMatch.end) {
-        alreadyMatched = true;
-        break;
-      }
-    }
-    
-    if (!alreadyMatched) {
+  // Find all matches with their positions
+  patterns.forEach(({ regex, type, priority }) => {
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(description)) !== null) {
       allMatches.push({
-        type: 'link',
+        type: type as 'link' | 'code' | 'bold',
         start: match.index,
         end: match.index + match[0].length,
         text: match[1],
+        priority,
       });
     }
-  }
+  });
   
-  // Finally, find `text` patterns (backticks) - but exclude those that wrap [[text]]
-  const codeRegex = /`([^`\n]+)`/g;
-  codeRegex.lastIndex = 0;
-  while ((match = codeRegex.exec(text)) !== null) {
-    // Make sure we're not inside a [[ ]] pattern or a backticked [[ ]] pattern
-    let isInsideLink = false;
-    for (const linkMatch of allMatches) {
-      if (linkMatch.type === 'link' && 
-          match.index >= linkMatch.start && 
-          match.index < linkMatch.end) {
-        isInsideLink = true;
-        break;
-      }
-    }
-    
-    if (!isInsideLink) {
-      allMatches.push({
-        type: 'code',
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[1].trim(), // Trim any whitespace
-      });
-    }
-  }
+  // Sort by position, then by priority (higher priority wins)
+  allMatches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.priority - a.priority;
+  });
   
-  // Find **text** patterns (bold) - but exclude those inside code blocks or links
-  const boldRegex = /\*\*([^*]+)\*\*/g;
-  boldRegex.lastIndex = 0;
-  while ((match = boldRegex.exec(text)) !== null) {
-    // Make sure we're not inside a link or code block
-    let isInsideOther = false;
-    for (const otherMatch of allMatches) {
-      if ((otherMatch.type === 'link' || otherMatch.type === 'code') &&
-          match.index >= otherMatch.start && 
-          match.index < otherMatch.end) {
-        isInsideOther = true;
-        break;
-      }
-    }
-    
-    if (!isInsideOther) {
-      allMatches.push({
-        type: 'bold',
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[1], // Text between the asterisks
-      });
-    }
-  }
-  
-  // Sort matches by position
-  allMatches.sort((a, b) => a.start - b.start);
-  
-  // Remove overlapping matches (prioritize links > code > bold)
-  // But allow bold to wrap other elements (bold can contain links/code)
+  // Remove overlapping matches (keep higher priority)
   const filteredMatches: typeof allMatches = [];
-  for (let i = 0; i < allMatches.length; i++) {
-    const current = allMatches[i];
-    let overlaps = false;
+  for (const current of allMatches) {
+    let shouldAdd = true;
     
-    for (let j = 0; j < filteredMatches.length; j++) {
-      const existing = filteredMatches[j];
-      // Check if they overlap
-      if (
-        (current.start < existing.end && current.end > existing.start) ||
-        (existing.start < current.end && existing.end > current.start)
-      ) {
-        // If current is bold and it fully contains existing, keep both (bold wraps the other)
-        if (current.type === 'bold' && current.start <= existing.start && current.end >= existing.end) {
-          // Keep both - bold will wrap the other element
-          overlaps = false;
-          break;
+    for (let i = 0; i < filteredMatches.length; i++) {
+      const existing = filteredMatches[i];
+      // Check if overlaps
+      if (current.start < existing.end && current.end > existing.start) {
+        // If current has higher priority, replace existing
+        if (current.priority > existing.priority) {
+          filteredMatches[i] = current;
         }
-        // If existing is bold and it fully contains current, keep both
-        if (existing.type === 'bold' && existing.start <= current.start && existing.end >= current.end) {
-          // Keep both - existing bold wraps current
-          overlaps = false;
-          break;
-        }
-        // Priority: link > code > bold (for same-level overlaps)
-        if (current.type === 'link' && (existing.type === 'code' || existing.type === 'bold')) {
-          filteredMatches[j] = current;
-        } else if (current.type === 'code' && existing.type === 'bold') {
-          filteredMatches[j] = current;
-        }
-        overlaps = true;
+        shouldAdd = false;
         break;
       }
     }
     
-    if (!overlaps) {
+    if (shouldAdd) {
       filteredMatches.push(current);
     }
   }
   
+  // Re-sort after filtering
+  filteredMatches.sort((a, b) => a.start - b.start);
+  
   // Build the parts array
-  // Identify bold matches that contain other matches (need special handling)
-  const boldMatches = filteredMatches.filter(m => m.type === 'bold');
-  const nonBoldMatches = filteredMatches.filter(m => m.type !== 'bold');
-  
-  // Find bold matches that contain other matches
-  const boldWithNested = new Set<number>();
-  for (let i = 0; i < filteredMatches.length; i++) {
-    const match = filteredMatches[i];
-    if (match.type === 'bold') {
-      for (const otherMatch of nonBoldMatches) {
-        if (match.start <= otherMatch.start && match.end >= otherMatch.end) {
-          boldWithNested.add(i);
-          break;
-        }
-      }
-    }
-  }
-  
   let lastIndex = 0;
-  for (let i = 0; i < filteredMatches.length; i++) {
-    const match = filteredMatches[i];
+  for (const match of filteredMatches) {
     hasMatches = true;
-    
-    // Skip non-bold matches that are inside a bold match (they'll be handled by recursive parsing)
-    if (match.type !== 'bold') {
-      let isInsideBold = false;
-      for (const boldIndex of boldWithNested) {
-        const boldMatch = filteredMatches[boldIndex];
-        if (match.start >= boldMatch.start && match.end <= boldMatch.end) {
-          isInsideBold = true;
-          break;
-        }
-      }
-      if (isInsideBold) {
-        continue; // Skip - will be handled by recursive parsing of the bold
-      }
-    }
     
     // Add text before the match
     if (match.start > lastIndex) {
-      parts.push(text.substring(lastIndex, match.start));
+      parts.push(description.substring(lastIndex, match.start));
     }
     
     // Add the styled element
+    const cleanText = match.text.replace(/[`\[\]]/g, '');
+    
     if (match.type === 'link') {
-      // Ensure text doesn't contain backticks or brackets
-      const cleanText = match.text.replace(/[`\[\]]/g, '');
       // Hyperlink with thin underline - scrolls to specific code reference or code references section
       const codeRefId = `code-ref-${cleanText}`;
       parts.push(
@@ -349,8 +124,6 @@ function parseMarkdown(
         </a>
       );
     } else if (match.type === 'code') {
-      // Ensure text doesn't contain backticks or brackets
-      const cleanText = match.text.replace(/[`\[\]]/g, '');
       // Code text without underline (not a link)
       parts.push(
         <span
@@ -362,11 +135,10 @@ function parseMarkdown(
         </span>
       );
     } else if (match.type === 'bold') {
-      // Bold text - always parse recursively to handle nested formatting
-      const boldContent = parseDescription(match.text, onCodeRefClick);
+      // Bold text
       parts.push(
-        <strong key={key++} className="font-semibold">
-          {boldContent}
+        <strong key={key++} className="font-semibold text-white">
+          {match.text}
         </strong>
       );
     }
@@ -375,12 +147,12 @@ function parseMarkdown(
   }
   
   // Add remaining text
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
+  if (lastIndex < description.length) {
+    parts.push(description.substring(lastIndex));
   }
   
-  // If no matches, return the original text as a string in an array
-  return { elements: hasMatches ? parts : [text], nextKey: key };
+  // If no matches, return the original description as a string in an array
+  return hasMatches ? parts : [description];
 }
 
 interface CodeReferenceDetail {
@@ -427,19 +199,11 @@ interface DocumentationContent {
       id: string;
       title: string;
       description: string;
-      code_snippet?: {
-        code: string;
-        language: string;
-      };
       code_references?: string[];
       subsections?: Array<{
         id: string;
         title: string;
         description: string;
-        code_snippet?: {
-          code: string;
-          language: string;
-        };
         code_references?: string[];
       }>;
     }>;
@@ -743,8 +507,13 @@ export default function DocumentationTitlePage() {
         {/* Sections */}
         {content.documentation?.sections && content.documentation.sections.length > 0 && (
           <div className="space-y-12">
-            {content.documentation.sections.map((section) => (
+            {content.documentation.sections.map((section, index) => (
               <div key={section.id} id={`section-${section.id}`} className="scroll-mt-6">
+                {/* Horizontal line break between sections */}
+                {index > 0 && (
+                  <div className="border-t-2 border-white/20 mb-16 mt-16"></div>
+                )}
+                
                 {/* Section Title */}
                 <h2 className="text-2xl font-semibold text-white mb-4">
                   {section.id}. {section.title}
@@ -752,17 +521,10 @@ export default function DocumentationTitlePage() {
 
                 {/* Section Description */}
                 <div className="prose prose-invert max-w-none mb-6">
-                  <div className="text-white/80 leading-relaxed">
+                  <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
                     {parseDescription(section.description, handleCodeRefClick)}
-                  </div>
+                  </p>
                 </div>
-
-                {/* Section Code Snippet */}
-                {section.code_snippet && (
-                  <div className="mb-6">
-                    <CodeSnippet code={section.code_snippet.code} language={section.code_snippet.language} />
-                  </div>
-                )}
 
                 {/* Subsections */}
                 {section.subsections && section.subsections.length > 0 && (
@@ -776,17 +538,10 @@ export default function DocumentationTitlePage() {
 
                         {/* Subsection Description */}
                         <div className="prose prose-invert max-w-none mb-4">
-                          <div className="text-white/80 leading-relaxed">
+                          <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
                             {parseDescription(subsection.description, handleCodeRefClick)}
-                          </div>
+                          </p>
                         </div>
-
-                        {/* Subsection Code Snippet */}
-                        {subsection.code_snippet && (
-                          <div className="mb-4">
-                            <CodeSnippet code={subsection.code_snippet.code} language={subsection.code_snippet.language} />
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -837,9 +592,9 @@ export default function DocumentationTitlePage() {
                     {/* Code Reference Description */}
                     {refDescription && (
                       <div className="prose prose-invert max-w-none mb-4">
-                        <div className="text-white/80 leading-relaxed">
+                        <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
                           {parseDescription(refDescription, handleCodeRefClick)}
-                        </div>
+                        </p>
                       </div>
                     )}
                     
@@ -854,9 +609,9 @@ export default function DocumentationTitlePage() {
                                 <span className="font-mono text-[#3fb1c5]">{param.name}</span>
                               </div>
                               {param.description && (
-                                <div className="text-white/60 text-sm mt-1 ml-0">
+                                <p className="text-white/60 text-sm mt-1 ml-0">
                                   {parseDescription(param.description, handleCodeRefClick)}
-                                </div>
+                                </p>
                               )}
                             </div>
                           ))}
@@ -878,9 +633,9 @@ export default function DocumentationTitlePage() {
                             <span className="font-mono text-[#3fb1c5]">{refReturns.type}</span>
                           )}
                           {refReturns.description && (
-                            <div className="text-white/60 text-sm mt-1">
+                            <p className="text-white/60 text-sm mt-1">
                               {parseDescription(refReturns.description, handleCodeRefClick)}
-                            </div>
+                            </p>
                           )}
                         </div>
                       </div>

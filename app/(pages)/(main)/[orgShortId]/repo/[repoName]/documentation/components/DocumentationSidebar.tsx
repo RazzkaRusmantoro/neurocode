@@ -99,7 +99,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   const isExpanded = (itemId: string) => expandedItems.has(itemId);
 
   return (
-    <aside className="w-80 bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto hide-scrollbar">
+    <aside className="w-80 bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto sidebar-scrollbar">
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-between p-4 pl-8 pr-4">
@@ -146,7 +146,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
           <h2 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">
             Navigation
           </h2>
-          <nav className="space-y-1 flex-1 overflow-y-auto hide-scrollbar">
+          <nav className="space-y-1 flex-1 overflow-y-auto sidebar-scrollbar">
             {sidebarItems.map((item) => {
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isItemExpanded = isExpanded(item.id);
