@@ -41,19 +41,19 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #7c3aed;
+  background-color: #3a3c40;
   border-radius: 10px;
   border: 2px solid #212121;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #8b5cf6;
+  background-color: #3a3c40;
 }
 
 /* Firefox scrollbar styling */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #7c3aed transparent;
+  scrollbar-color: #3a3c40 transparent;
 }
 
 /* Sidebar Scrollbar Styling - Hidden */
