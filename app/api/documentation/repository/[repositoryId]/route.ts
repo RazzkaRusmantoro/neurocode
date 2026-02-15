@@ -66,6 +66,7 @@ export async function GET(
         target: doc.target || null,
         prompt: doc.prompt || null,
         title: doc.title || null,
+        description: doc.description || null,
         slug: doc.slug || (doc.title ? slugify(doc.title) : null),
         s3Key: doc.s3Key,
         s3Bucket: doc.s3Bucket,
