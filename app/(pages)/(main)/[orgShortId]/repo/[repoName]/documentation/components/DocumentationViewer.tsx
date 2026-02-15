@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import GenerateDocumentationModal from './GenerateDocumentationModal';
 import TextInput from '@/app/components/TextInput';
 import CodeSnippet from './CodeSnippet';
+import { slugify } from '@/lib/utils/slug';
 
 interface DocumentationViewerProps {
   repositoryId: string;
@@ -21,6 +22,7 @@ interface Documentation {
   target?: string;
   prompt?: string;
   title?: string;
+  slug?: string | null;
   branch: string;
   version: number;
   isLatest: boolean;
@@ -316,9 +318,9 @@ export default function DocumentationViewer({
       console.error('Documentation has no title');
       return;
     }
-    // Navigate to the documentation title page with title as query parameter
-    const encodedTitle = encodeURIComponent(doc.title);
-    router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/title?title=${encodedTitle}`);
+    // Navigate to the documentation detail page using a slug in the path
+    const slug = doc.slug || slugify(doc.title);
+    router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/${encodeURIComponent(slug)}`);
   };
 
   const formatDate = (dateString: string) => {

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
+import { slugify } from '@/lib/utils/slug';
 
 // Function to parse description and convert [[text]] to styled links, `text` to styled text, and **text** to bold
 function parseDescription(
@@ -212,6 +213,12 @@ interface DocumentationContent {
 }
 
 export default function DocumentationTitlePage() {
+  const router = useRouter();
+  const params = useParams<{
+    orgShortId: string;
+    repoName: string;
+    title: string | string[];
+  }>();
   const searchParams = useSearchParams();
   const { setDocumentation, setActiveSection } = useDocumentation();
   const [loading, setLoading] = useState(true);
@@ -224,14 +231,33 @@ export default function DocumentationTitlePage() {
         setLoading(true);
         setError(null);
         
-        const title = searchParams.get('title');
-        if (!title) {
+        const legacyTitleQuery = searchParams.get('title');
+        const rawParamTitle = Array.isArray(params?.title) ? params.title[0] : params?.title;
+
+        // Prefer dynamic route param `[title]`, fallback to legacy `?title=`
+        const isLegacyPlaceholder = rawParamTitle === 'title' && !!legacyTitleQuery;
+        const rawTitle = isLegacyPlaceholder ? legacyTitleQuery : (rawParamTitle ?? legacyTitleQuery);
+        if (!rawTitle) {
           setError('No title provided');
           setLoading(false);
           return;
         }
 
-        const decodedTitle = decodeURIComponent(title);
+        let decodedTitle = rawTitle;
+        try {
+          decodedTitle = decodeURIComponent(rawTitle);
+        } catch {
+          // keep rawTitle as-is if decoding fails
+        }
+
+        // If user hit the legacy URL `/documentation/title?title=<realTitle>`,
+        // replace it with the canonical `/documentation/<realTitle>`.
+        if (isLegacyPlaceholder && params?.orgShortId && params?.repoName) {
+          const canonicalSlug = slugify(decodedTitle) || decodedTitle;
+          const canonicalPath = `/${params.orgShortId}/repo/${params.repoName}/documentation/${encodeURIComponent(canonicalSlug)}`;
+          router.replace(canonicalPath);
+        }
+
         const response = await fetch(`/api/documentation/content/${encodeURIComponent(decodedTitle)}`);
         
         if (!response.ok) {
@@ -241,6 +267,28 @@ export default function DocumentationTitlePage() {
         const data = await response.json();
         if (data.success) {
           setContent(data.documentation);
+
+          // Ensure the URL uses the slug derived from the real documentation title
+          const realTitle: string | undefined = data.documentation?.title;
+          const expectedSlug = realTitle ? slugify(realTitle) : '';
+          const currentParam = Array.isArray(params?.title) ? params.title[0] : params?.title;
+          let currentSlug = currentParam || '';
+          try {
+            currentSlug = currentParam ? decodeURIComponent(currentParam) : '';
+          } catch {
+            // keep currentParam as-is if decoding fails
+          }
+          if (
+            expectedSlug &&
+            currentParam &&
+            params?.orgShortId &&
+            params?.repoName &&
+            currentSlug !== expectedSlug
+          ) {
+            const canonicalPath = `/${params.orgShortId}/repo/${params.repoName}/documentation/${encodeURIComponent(expectedSlug)}`;
+            router.replace(canonicalPath);
+          }
+
           // Update context for sidebar
           setDocumentation({
             title: data.documentation.title,
@@ -258,10 +306,11 @@ export default function DocumentationTitlePage() {
       }
     };
 
-    if (searchParams.get('title')) {
+    // Fetch when we have either the dynamic param title or the legacy query param
+    if (params?.title || searchParams.get('title')) {
       fetchDocumentation();
     }
-  }, [searchParams, setDocumentation]);
+  }, [params?.orgShortId, params?.repoName, params?.title, router, searchParams, setDocumentation]);
 
   // Optimized scroll detection with throttling
   const observerRef = useRef<IntersectionObserver | null>(null);

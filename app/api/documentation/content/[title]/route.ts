@@ -8,6 +8,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
 import { getDocumentationCollection } from '@/lib/models/documentation';
 import { getCodeReferencesByIds } from '@/lib/models/code_reference';
+import { slugify } from '@/lib/utils/slug';
 
 export async function GET(
   request: NextRequest,
@@ -26,11 +27,54 @@ export async function GET(
     }
 
     const resolvedParams = await Promise.resolve(params);
-    const title = decodeURIComponent(resolvedParams.title);
+    const identifier = decodeURIComponent(resolvedParams.title);
 
-    // Get documentation by title
+    // Get documentation by slug (preferred) or title (legacy)
     const collection = await getDocumentationCollection();
-    const documentation = await collection.findOne({ title });
+    let documentation = await collection.findOne({ slug: identifier });
+    if (!documentation) {
+      documentation = await collection.findOne({ title: identifier });
+      // Backfill slug for older documents when we found by title
+      if (documentation?.title && !documentation.slug) {
+        const derived = slugify(documentation.title);
+        if (derived) {
+          await collection.updateOne(
+            { _id: documentation._id },
+            { $set: { slug: derived, updatedAt: new Date() } }
+          );
+          documentation = { ...documentation, slug: derived };
+        }
+      }
+    }
+
+    // Fallback: support slug URLs even for legacy docs that don't have `slug` stored yet.
+    // We only scan within organizations the user belongs to, then backfill the slug.
+    if (!documentation) {
+      const orgIds = (user.organizations || []).map((org: any) => org.organizationId).filter(Boolean);
+      if (orgIds.length > 0) {
+        const cursor = collection
+          .find(
+            { organizationId: { $in: orgIds }, title: { $exists: true, $ne: null } },
+            { projection: { _id: 1, title: 1, slug: 1 } }
+          )
+          .limit(2000);
+
+        for await (const doc of cursor) {
+          if (!doc?.title) continue;
+          if (slugify(doc.title) === identifier) {
+            documentation = await collection.findOne({ _id: doc._id });
+            if (documentation?.title && !documentation.slug) {
+              await collection.updateOne(
+                { _id: documentation._id },
+                { $set: { slug: identifier, updatedAt: new Date() } }
+              );
+              documentation = { ...documentation, slug: identifier };
+            }
+            break;
+          }
+        }
+      }
+    }
 
     if (!documentation) {
       return NextResponse.json({ error: 'Documentation not found' }, { status: 404 });

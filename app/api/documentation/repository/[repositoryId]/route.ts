@@ -6,8 +6,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
-import { getDocumentationsByRepository } from '@/lib/models/documentation';
+import { getDocumentationCollection, getDocumentationsByRepository } from '@/lib/models/documentation';
 import { getRepositoryById } from '@/lib/models/repository';
+import { slugify } from '@/lib/utils/slug';
 
 export async function GET(
   request: NextRequest,
@@ -37,6 +38,23 @@ export async function GET(
     // Get all documentations for this repository
     const documentations = await getDocumentationsByRepository(repositoryId);
 
+    // Backfill missing slugs for legacy documents (so slug URLs work reliably)
+    const collection = await getDocumentationCollection();
+    const backfillOps = documentations
+      .filter(doc => doc._id && doc.title && !doc.slug)
+      .map(doc => {
+        const derived = doc.title ? slugify(doc.title) : '';
+        if (!derived) return null;
+        return collection.updateOne(
+          { _id: doc._id },
+          { $set: { slug: derived, updatedAt: new Date() } }
+        );
+      })
+      .filter(Boolean) as Promise<any>[];
+    if (backfillOps.length > 0) {
+      await Promise.all(backfillOps);
+    }
+
     // Convert ObjectIds to strings for JSON serialization
     const serializedDocs = documentations
       .filter(doc => doc.organizationId && doc.repositoryId) // Filter out docs without required fields
@@ -48,6 +66,7 @@ export async function GET(
         target: doc.target || null,
         prompt: doc.prompt || null,
         title: doc.title || null,
+        slug: doc.slug || (doc.title ? slugify(doc.title) : null),
         s3Key: doc.s3Key,
         s3Bucket: doc.s3Bucket,
         contentSize: doc.contentSize,

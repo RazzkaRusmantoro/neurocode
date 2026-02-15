@@ -57,8 +57,9 @@ export default function RepoLayoutClient({
     ? repositories.find(repo => repo.urlName === currentRepoName) || null
     : null;
 
-  // Hide sidebar on documentation title pages
-  const isDocumentationTitlePage = pathname.includes('/documentation/title');
+  // Show documentation sidebar on documentation detail pages:
+  // `/.../documentation/<slug>`
+  const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname);
 
   return (
     <RepoCacheProvider>

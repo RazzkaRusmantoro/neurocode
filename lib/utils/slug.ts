@@ -1,4 +1,25 @@
 /**
+ * Convert a human-readable title into a URL-safe slug.
+ * Keeps output stable across client/server.
+ */
+export function slugify(input: string): string {
+  return input
+    .normalize('NFKD')
+    // Remove diacritics
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    // Remove quotes
+    .replace(/['"]/g, '')
+    // Replace any non-alphanumeric run with a dash
+    .replace(/[^a-z0-9]+/g, '-')
+    // Collapse multiple dashes
+    .replace(/-+/g, '-')
+    // Trim leading/trailing dashes
+    .replace(/^-|-$/g, '');
+}
+
+/**
  * Converts a string to a URL-friendly slug
  * Examples:
  * - "Citera's And World" -> "citeras-and-world"

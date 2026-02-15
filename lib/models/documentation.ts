@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDb } from '../db';
+import { slugify } from '@/lib/utils/slug';
 
 export interface Documentation {
   _id?: ObjectId;
@@ -9,6 +10,7 @@ export interface Documentation {
   target?: string; // file path, module name, or 'full' for repository
   prompt?: string; // For custom/RAG documentation
   title?: string; // Title extracted from documentation content
+  slug?: string; // URL-safe slug derived from title
   
   // S3 storage fields
   s3Key: string; // S3 object key/path
@@ -45,10 +47,16 @@ export async function createDocumentation(
   const collection = await getDocumentationCollection();
   const now = new Date();
 
+  const derivedSlug =
+    documentationData.title && documentationData.title.trim()
+      ? slugify(documentationData.title)
+      : undefined;
+
   const newDocumentation: Omit<Documentation, '_id'> = {
     ...documentationData,
     organizationId: new ObjectId(documentationData.organizationId),
     repositoryId: new ObjectId(repositoryId),
+    slug: documentationData.slug ?? derivedSlug,
     createdAt: now,
     updatedAt: now,
   };
