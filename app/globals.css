@@ -31,8 +31,8 @@
 }
 
 body {
-  background: #0f0f11;
-  background-image: radial-gradient(ellipse at bottom, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 55%);
+  background: #121215;
+  /* background-image: radial-gradient(ellipse at bottom, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 55%); */
   background-attachment: fixed;
   color: var(--foreground);
   /* Use Red Hat Text (wired through --font-geist-sans) as the global font */
@@ -114,4 +114,46 @@ body {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Grid Flow Animation */
+@keyframes grid-flow {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 24px);
+  }
+}
+
+.animate-grid-flow {
+  animation: grid-flow 20s linear infinite;
+}
+
+/* Diff line background extension */
+.diff-line-bg {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 100%;
+}
+
+.diff-line-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 100%;
+  min-width: 100%;
+}
+
+.diff-line-bg.bg-green-500\/20::before {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+.diff-line-bg.bg-red-500\/20::before {
+  background-color: rgba(239, 68, 68, 0.2);
 }

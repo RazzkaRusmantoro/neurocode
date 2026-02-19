@@ -331,7 +331,7 @@ export default function Sidebar({
 
   return (
     <aside 
-      className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}
+      className={`h-full bg-[#121215] border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}
       onMouseLeave={handleMouseLeave}
     >
       <div className="flex flex-col h-full">

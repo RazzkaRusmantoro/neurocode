@@ -99,7 +99,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   const isExpanded = (itemId: string) => expandedItems.has(itemId);
 
   return (
-    <aside className="w-80 bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto sidebar-scrollbar">
+    <aside className="w-80 bg-[#121215] border-r border-[#262626] flex-shrink-0 h-full overflow-y-auto sidebar-scrollbar">
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-between p-4 pl-8 pr-4">

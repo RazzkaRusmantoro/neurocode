@@ -99,7 +99,7 @@ export default function RepoSidebar({
   }, [userName]);
 
   return (
-    <aside className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
+    <aside className={`h-full bg-[#121215] border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className={`flex items-center ${isMinimized ? 'justify-center' : 'justify-between'} p-4 ${isMinimized ? 'px-4' : 'pl-8 pr-4'}`}>

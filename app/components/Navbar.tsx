@@ -9,7 +9,7 @@ export default function Navbar() {
   const [resourcesActive, setResourcesActive] = useState(false);
 
   return (
-    <nav className="w-full backdrop-blur-sm" style={{ fontFamily: 'var(--font-poppins)' }}>
+    <nav className="fixed top-0 left-0 right-0 w-full z-50 backdrop-blur-sm bg-[#0f0f11]/80 border-b border-white/5" style={{ fontFamily: 'var(--font-poppins)' }}>
       <div className="flex items-center justify-between px-6 py-6 gap-8 max-w-7xl mx-auto">
         <div className="flex items-center gap-12">
           {/* Logo */}
