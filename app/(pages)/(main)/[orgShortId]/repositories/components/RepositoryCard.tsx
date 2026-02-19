@@ -30,9 +30,9 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
   return (
     <div
       onClick={handleClick}
-      className="group relative border border-[#262626] rounded-lg p-6 hover:border-[#5C42CE]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#121215]"
+      className="group relative border border-[#262626] rounded-lg p-6 hover:border-[var(--color-primary)]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#121215]"
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 25px rgba(92, 66, 206, 0.3)';
+        e.currentTarget.style.boxShadow = `0 0 25px rgba(var(--color-primary-rgb), 0.3)`;
         e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
@@ -41,13 +41,13 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
       }}
     >
       {/* Repository Name - Headline */}
-      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[#5C42CE] transition-colors duration-300">
+      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[var(--color-primary)] transition-colors duration-300">
         {name}
       </h2>
 
       {/* Repository URL Name Badge */}
       <div 
-        className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3 bg-[#5C42CE]/20 text-[#5C42CE] border border-[#5C42CE]/30"
+        className="w-fit inline-block pl-3 pr-7 py-1 rounded-lg text-sm font-medium mt-2 mb-3 bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/30"
       >
         /{urlName}
       </div>
@@ -72,7 +72,7 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
       </div>
 
       {/* Hover Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#5C42CE]/0 to-[#5C42CE]/0 group-hover:from-[#5C42CE]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/0 to-[var(--color-primary)]/0 group-hover:from-[var(--color-primary)]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
     </div>
   );
 }

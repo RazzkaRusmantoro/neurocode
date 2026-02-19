@@ -68,7 +68,7 @@ export default function OrganizationsPageClient({ organizations: initialOrganiza
                   <div className="text-white font-medium text-lg">{org.name}</div>
                   {org.role === 'owner' && (
                     <span 
-                      className="inline-block px-3 py-1 rounded-lg text-xs font-medium capitalize bg-[#5C42CE]/20 text-[#5C42CE] border border-[#5C42CE]/30"
+                      className="inline-block px-3 py-1 rounded-lg text-xs font-medium capitalize bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/30"
                     >
                       {org.role}
                     </span>

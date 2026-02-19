@@ -122,7 +122,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
             <input
               type="text"
               placeholder="Search..."
-              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
                       hasSubItems
                         ? 'text-white/60 hover:text-white hover:bg-white/5'
                         : activeSection === item.id
-                        ? 'bg-[#5C42CE]/20 text-white border-l-2 border-[#5C42CE] pl-2.5'
+                        ? 'bg-[var(--color-primary)]/20 text-white border-l-2 border-[var(--color-primary)] pl-2.5'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   >
@@ -224,7 +224,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
                           }}
                           className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-lg cursor-pointer ${
                             activeSection === subItem.id
-                              ? 'bg-[#5C42CE]/20 text-white border-l-2 border-[#5C42CE] pl-2.5'
+                              ? 'bg-[var(--color-primary)]/20 text-white border-l-2 border-[var(--color-primary)] pl-2.5'
                               : 'text-white/60 hover:text-white hover:bg-white/5'
                           }`}
                         >

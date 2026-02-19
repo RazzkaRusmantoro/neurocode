@@ -379,7 +379,7 @@ export default function Sidebar({
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#5C42CE] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               />
             </div>
           )}

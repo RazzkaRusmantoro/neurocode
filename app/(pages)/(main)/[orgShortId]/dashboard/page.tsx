@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 // Interactive Line Chart Component using Recharts
-function InteractiveLineChart({ data, color = '#7c3aed', name = 'Value' }: { data: number[], color?: string, name?: string }) {
+function InteractiveLineChart({ data, color = 'var(--color-accent)', name = 'Value' }: { data: number[], color?: string, name?: string }) {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = new Date().getMonth();
   
@@ -161,7 +161,7 @@ export default function DashboardPage() {
               <p className="text-xs text-white/50 mt-1">This month</p>
             </div>
             <div className="flex-1 min-h-[200px] w-full -mb-2 pb-0">
-              <InteractiveLineChart data={commitData} color="#7c3aed" name="Commits" />
+              <InteractiveLineChart data={commitData} color="var(--color-accent)" name="Commits" />
             </div>
           </div>
 
@@ -206,15 +206,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Subscription Promotion Block */}
-          <div className="lg:col-span-1 bg-gradient-to-br from-[#7c3aed]/20 via-[#5C42CE]/15 to-[#7c3aed]/10 backdrop-blur-sm border border-[#7c3aed]/40 rounded-xl p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#7c3aed]/10 rounded-full blur-3xl"></div>
+          <div className="lg:col-span-1 bg-gradient-to-br from-[var(--color-accent)]/20 via-[var(--color-primary)]/15 to-[var(--color-accent)]/10 backdrop-blur-sm border border-[var(--color-accent)]/40 rounded-xl p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/10 rounded-full blur-3xl"></div>
             <div className="relative z-10">
               <div className="mb-4">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#7c3aed]/20 border border-[#7c3aed]/30 rounded-full mb-3">
-                  <svg className="w-3 h-3 text-[#7c3aed]" fill="currentColor" viewBox="0 0 20 20">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/30 rounded-full mb-3">
+                  <svg className="w-3 h-3 text-[var(--color-accent)]" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
                   </svg>
-                  <span className="text-xs font-semibold text-[#7c3aed]">PRO</span>
+                  <span className="text-xs font-semibold text-[var(--color-accent)]">PRO</span>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">Upgrade to Pro</h3>
                 <p className="text-sm text-white/70 leading-relaxed">
@@ -223,31 +223,31 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-2 text-sm text-white/80">
-                  <svg className="w-4 h-4 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>Advanced analytics & insights</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/80">
-                  <svg className="w-4 h-4 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>Unlimited repositories</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/80">
-                  <svg className="w-4 h-4 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>Priority support</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/80">
-                  <svg className="w-4 h-4 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>AI-powered code insights</span>
                 </div>
               </div>
-              <button className="w-full py-3 bg-[#7c3aed] hover:bg-[#8b5cf6] text-white rounded-lg font-semibold transition-colors text-sm">
+              <button className="w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-lg font-semibold transition-colors text-sm">
                 Upgrade Now
               </button>
             </div>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-white mb-1">Documentation Coverage</h3>
               <p className="text-sm text-white/50">Track documentation quality and coverage across repositories</p>
             </div>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] transition-colors font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors font-medium">
               View details
             </button>
           </div>
@@ -272,7 +272,7 @@ export default function DashboardPage() {
                 <span className="text-lg font-bold text-white">72%</span>
               </div>
               <div className="h-2 bg-[#212121] rounded-full overflow-hidden">
-                <div className="h-full bg-[#7c3aed] rounded-full" style={{ width: '72%' }}></div>
+                <div className="h-full bg-[var(--color-accent)] rounded-full" style={{ width: '72%' }}></div>
               </div>
               <p className="text-xs text-white/50 mt-2">+8% from last month</p>
             </div>
@@ -306,7 +306,7 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-white mb-1">Active Repositories</h3>
               <p className="text-sm text-white/50">Most active in the last 7 days</p>
             </div>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] transition-colors font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors font-medium">
               View all
             </button>
           </div>
@@ -354,9 +354,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
-            <div className="w-12 h-12 rounded-lg bg-[#7c3aed]/20 flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
+            <div className="w-12 h-12 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -364,12 +364,12 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Automatically generate comprehensive documentation for your codebase using AI-powered analysis.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>
 
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
             <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -379,12 +379,12 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Get intelligent insights about code quality, patterns, and potential improvements across your repositories.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>
 
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
             <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -394,12 +394,12 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Set up and manage automated test suites with intelligent test generation and coverage tracking.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>
 
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
             <div className="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -409,12 +409,12 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Interactive tutorials and guides to help your team understand and work with your codebase effectively.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>
 
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
             <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -424,12 +424,12 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Track and optimize your application performance with detailed metrics and recommendations.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>
 
-          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[#7c3aed]/50 transition-colors">
+          <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 hover:border-[var(--color-accent)]/50 transition-colors">
             <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -439,7 +439,7 @@ export default function DashboardPage() {
             <p className="text-sm text-white/60 mb-4">
               Automated security vulnerability detection and remediation suggestions for your codebase.
             </p>
-            <button className="text-sm text-[#7c3aed] hover:text-[#8b5cf6] font-medium">
+            <button className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium">
               Learn more →
             </button>
           </div>

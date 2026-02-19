@@ -27,7 +27,7 @@ export default function Home() {
             {/* Main Heading */}
             <h1 className="text-6xl md:text-7xl font-bold text-white leading-tight">
               Your Imagination,{" "}
-              <span className="text-[#5C42CE]">
+              <span className="text-[var(--color-primary)]">
                 Powered by AI
               </span>
             </h1>
@@ -40,7 +40,7 @@ export default function Home() {
 
             {/* CTA Button */}
             <button className="mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded-xl cursor-pointer transition-all duration-300 flex items-center gap-3">
-              <svg className="w-5 h-5 text-[#5C42CE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               Explore AI Studio

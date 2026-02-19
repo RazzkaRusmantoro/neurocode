@@ -6,7 +6,7 @@ export default function OnboardingPage() {
         <div className="flex items-center gap-8 border-b border-[#262626] pb-3 mb-8">
           <button className="relative pb-2 text-sm font-medium text-white cursor-pointer">
             Compass
-            <span className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-[#7c3aed]" />
+            <span className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-[var(--color-accent)]" />
           </button>
           <button className="pb-2 text-sm font-medium text-white/60 hover:text-white transition-colors cursor-pointer">
             Tasks
@@ -21,7 +21,7 @@ export default function OnboardingPage() {
           <section className="max-w-4xl">
             <button
               type="button"
-              className="w-full bg-gradient-to-r from-[#251438] to-[#1b0f25] border border-[#2a2a2f] rounded-2xl px-8 py-7 shadow-[0_0_40px_rgba(15,23,42,0.6)] cursor-pointer transition-colors text-left hover:border-[#7c3aed]/70"
+              className="w-full bg-gradient-to-r from-[#251438] to-[#1b0f25] border border-[#2a2a2f] rounded-2xl px-8 py-7 shadow-[0_0_40px_rgba(15,23,42,0.6)] cursor-pointer transition-colors text-left hover:border-[var(--color-accent)]/70"
               aria-label="Open project context"
             >
               <div className="flex items-center justify-between gap-6">
@@ -57,7 +57,7 @@ export default function OnboardingPage() {
             </div>
             <button
               type="button"
-              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[#7c3aed] hover:bg-[#7c3aed]/10 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-colors cursor-pointer"
             >
               Open
             </button>
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
             </div>
             <button
               type="button"
-              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[#7c3aed] hover:bg-[#7c3aed]/10 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-colors cursor-pointer"
             >
               View
             </button>
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
             </div>
             <button
               type="button"
-              className="px-5 py-2.5 rounded-full bg-[#7c3aed] hover:bg-[#8b5cf6] text-xs font-semibold text-white rounded-full shadow-lg shadow-[#7c3aed]/40 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-xs font-semibold text-white rounded-full shadow-lg shadow-[var(--color-accent)]/40 transition-colors cursor-pointer"
             >
               Start
             </button>
