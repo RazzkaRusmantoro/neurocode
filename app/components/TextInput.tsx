@@ -28,7 +28,7 @@ export default function TextInput({
       <div className="relative">
         <input
           id={inputId}
-          className={`w-full px-4 py-3 ${rightIcon ? 'pr-12' : ''} bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all ${className}`}
+          className={`w-full px-4 py-3 ${rightIcon ? 'pr-12' : ''} bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all ${className}`}
           {...inputProps}
         />
         {rightIcon && (

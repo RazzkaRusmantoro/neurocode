@@ -146,7 +146,7 @@ export default function RegisterPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your first name"
               />
             </div>
@@ -163,7 +163,7 @@ export default function RegisterPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your last name"
               />
             </div>
@@ -181,7 +181,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="off"
-                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all"
+                className="w-full px-4 py-2.5 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all"
                 placeholder="Enter your email"
               />
             </div>
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all"
                   placeholder="Enter your password"
                 />
                 <button
@@ -236,7 +236,7 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-gray-700 transition-all"
+                  className="w-full px-4 py-2.5 pr-12 bg-[#262626]/50 border border-[#262626] rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-gray-700 transition-all"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -272,7 +272,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--color-primary)]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(var(--color-primary-rgb),0.5)]"
+              className="w-full py-2.5 px-4 bg-[#FF8D28] hover:bg-[#E67E1F] disabled:bg-[#FF8D28]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(255,141,40,0.5)]"
             >
               Register
             </button>
@@ -284,7 +284,7 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link 
                 href="/login" 
-                className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[var(--color-primary)] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+                className="text-[#FF8D28] hover:text-[#FFA94D] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#FF8D28] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
               >
                 Sign in now!
               </Link>

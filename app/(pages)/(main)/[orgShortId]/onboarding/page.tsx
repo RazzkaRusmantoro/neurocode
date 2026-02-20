@@ -1,111 +1,166 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import TextInput from '@/app/components/TextInput';
+import OnboardingResultPage from './OnboardingResultPage';
+
+const DETAIL_OPTIONS = [
+  { value: 'High Level', label: 'High Level' },
+  { value: 'Technical', label: 'Technical' },
+  { value: 'Balanced', label: 'Balanced' },
+] as const;
+
+type DetailPreference = (typeof DETAIL_OPTIONS)[number]['value'];
+
+export type OnboardingPlan = {
+  id: string;
+  developerName: string;
+  role: string;
+  experience: string;
+  duration: string;
+  detailPreference: string;
+  generatedAt: string;
+};
+
+const PLAN_STORAGE_PREFIX = 'neurocode_onboarding_plan_';
+
+/** TODO: Replace with backend fetch by planId */
+function getStoredPlanById(planId: string | null): OnboardingPlan | null {
+  if (typeof window === 'undefined' || !planId) return null;
+  try {
+    const raw = sessionStorage.getItem(`${PLAN_STORAGE_PREFIX}${planId}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as OnboardingPlan;
+  } catch {
+    return null;
+  }
+}
+
+function storePlan(plan: OnboardingPlan): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(`${PLAN_STORAGE_PREFIX}${plan.id}`, JSON.stringify(plan));
+}
+
 export default function OnboardingPage() {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const orgShortId = params?.orgShortId as string | undefined;
+  const planId = searchParams.get('planId');
+
+  const plan = useMemo(() => getStoredPlanById(planId), [planId]);
+
+  const [developerName, setDeveloperName] = useState('');
+  const [role, setRole] = useState('');
+  const [experience, setExperience] = useState('');
+  const [duration, setDuration] = useState('');
+  const [detailPreference, setDetailPreference] = useState<DetailPreference>('High Level');
+
+  if (planId != null && planId !== '') {
+    return <OnboardingResultPage plan={plan} />;
+  }
+
+  const requiredFilled =
+    developerName.trim() !== '' &&
+    role.trim() !== '' &&
+    experience.trim() !== '' &&
+    duration.trim() !== '';
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requiredFilled || !orgShortId) return;
+
+    const mockPlan: OnboardingPlan = {
+      id: Date.now().toString(),
+      developerName: developerName.trim(),
+      role: role.trim(),
+      experience: experience.trim(),
+      duration: duration.trim(),
+      detailPreference,
+      generatedAt: new Date().toISOString(),
+    };
+
+    storePlan(mockPlan);
+
+    const path = orgShortId?.startsWith('org-') ? orgShortId : `org-${orgShortId}`;
+    router.push(`/${path}/onboarding?planId=${mockPlan.id}`);
+  };
+
   return (
     <div className="mx-auto max-w-screen-2xl">
       <div className="min-h-full py-10 text-white">
-        {/* Tabs */}
-        <div className="flex items-center gap-8 border-b border-[#262626] pb-3 mb-8">
-          <button className="relative pb-2 text-sm font-medium text-white cursor-pointer">
-            Compass
-            <span className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-[var(--color-accent)]" />
-          </button>
-          <button className="pb-2 text-sm font-medium text-white/60 hover:text-white transition-colors cursor-pointer">
-            Tasks
-          </button>
-          <button className="pb-2 text-sm font-medium text-white/60 hover:text-white transition-colors cursor-pointer">
-            Members
-          </button>
-        </div>
+        <div className="max-w-[650px] mx-auto">
+          <h1 className="text-3xl font-bold text-white text-center mb-10">
+            Create an onboarding plan
+          </h1>
 
-        <div className="space-y-10">
-          {/* Hero card */}
-          <section className="max-w-4xl">
-            <button
-              type="button"
-              className="w-full bg-gradient-to-r from-[#251438] to-[#1b0f25] border border-[#2a2a2f] rounded-2xl px-8 py-7 shadow-[0_0_40px_rgba(15,23,42,0.6)] cursor-pointer transition-colors text-left hover:border-[var(--color-accent)]/70"
-              aria-label="Open project context"
-            >
-              <div className="flex items-center justify-between gap-6">
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight">
-                    View Project Context
-                  </h1>
-                  <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-xl">
-                    Get oriented and understand how your organisation works, how the
-                    system fits together, and where everything lives before you start
-                    making changes.
-                  </p>
-                </div>
-                <div className="flex items-center justify-center text-[#a855f7] hover:text-[#c4b5fd] text-2xl font-semibold transition-colors">
-                  <span className="leading-none">&rarr;</span>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <TextInput
+              label="Developer Name"
+              value={developerName}
+              onChange={(e) => setDeveloperName(e.target.value)}
+              placeholder="e.g. Mahwan"
+              required
+            />
+            <TextInput
+              label="Role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder="e.g. Backend Engineer"
+              required
+            />
+            <TextInput
+              label="Experience"
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
+              placeholder="e.g. Junior"
+              required
+            />
+            <TextInput
+              label="Duration"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="e.g. 3 Weeks"
+              required
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-3">
+                Detail Preference
+              </label>
+              <div className="flex flex-wrap gap-4">
+                {DETAIL_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="detailPreference"
+                      value={opt.value}
+                      checked={detailPreference === opt.value}
+                      onChange={() => setDetailPreference(opt.value)}
+                      className="border-[#424242] bg-[#121215] text-[#FF8D28] focus:ring-[#FF8D28]"
+                    />
+                    <span className="text-sm text-white/80">{opt.label}</span>
+                  </label>
+                ))}
               </div>
-            </button>
-          </section>
-
-          {/* List sections */}
-          <section className="grid gap-6 max-w-4xl">
-          {/* Task Compass */}
-          <div className="flex items-center justify-between gap-8 border-b border-[#262626] pb-6">
-            <div>
-              <h2 className="text-base font-semibold tracking-tight">
-                Task Compass
-              </h2>
-              <p className="mt-2 text-sm text-white/65 max-w-2xl leading-relaxed">
-                See all files and areas relevant to your assigned tasks, track recent
-                changes, and understand who owns what.
-              </p>
             </div>
-            <button
-              type="button"
-              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-colors cursor-pointer"
-            >
-              Open
-            </button>
-          </div>
 
-          {/* Hot Zones */}
-          <div className="flex items-center justify-between gap-8 border-b border-[#262626] pb-6">
-            <div>
-              <h2 className="text-base font-semibold tracking-tight">
-                Hot Zones
-              </h2>
-              <p className="mt-2 text-sm text-white/65 max-w-2xl leading-relaxed">
-                Explore the most sensitive and high-impact parts of the codebase - 
-                areas that change often, break easily, or require extra caution
-                before touching.
-              </p>
+            <div className="flex justify-end pt-4 sm:pt-2">
+              <button
+                type="submit"
+                disabled={!requiredFilled}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#FF8D28] hover:bg-[#FFA94D] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors"
+              >
+                Generate Plan
+              </button>
             </div>
-            <button
-              type="button"
-              className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-xs font-medium text-white/80 hover:text-white hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-colors cursor-pointer"
-            >
-              View
-            </button>
-          </div>
-
-          {/* Personalized Guide */}
-          <div className="flex items-center justify-between gap-8 pb-2">
-            <div>
-              <h2 className="text-base font-semibold tracking-tight">
-                Get a personalized Guide
-              </h2>
-              <p className="mt-2 text-sm text-white/65 max-w-2xl leading-relaxed">
-                Generate a tailored onboarding plan based on your role, experience,
-                current work, and the parts of the system you are most likely to
-                interact with.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="px-5 py-2.5 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-xs font-semibold text-white rounded-full shadow-lg shadow-[var(--color-accent)]/40 transition-colors cursor-pointer"
-            >
-              Start
-            </button>
-          </div>
-        </section>
+          </form>
         </div>
       </div>
     </div>
   );
 }
-

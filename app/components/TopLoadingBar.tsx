@@ -174,10 +174,10 @@ export default function TopLoadingBar() {
     <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 bg-transparent pointer-events-none">
       {loading && (
         <div
-          className="h-full bg-gradient-to-r from-purple-700 via-purple-600 to-purple-500 transition-all duration-150 ease-linear"
+          className="h-full bg-gradient-to-r from-[#D97018] via-[#FF8D28] to-[#FFA94D] transition-all duration-150 ease-linear"
           style={{
             width: `${progress}%`,
-            boxShadow: '0 0 8px rgba(126, 34, 206, 0.7), 0 0 16px rgba(126, 34, 206, 0.5)',
+            boxShadow: '0 0 8px rgba(255, 141, 40, 0.7), 0 0 16px rgba(255, 141, 40, 0.5)',
           }}
         />
       )}

@@ -99,7 +99,7 @@ export default function RepoSidebar({
   }, [userName]);
 
   return (
-    <aside className={`h-full bg-[#121215] border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
+    <aside className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className={`flex items-center ${isMinimized ? 'justify-center' : 'justify-between'} p-4 ${isMinimized ? 'px-4' : 'pl-8 pr-4'}`}>
@@ -145,7 +145,7 @@ export default function RepoSidebar({
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
               />
             </div>
           )}

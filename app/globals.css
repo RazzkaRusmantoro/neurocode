@@ -4,16 +4,16 @@
   --background: #ffffff;
   --foreground: #171717;
   
-  /* Primary Color Palette */
-  --color-primary: #5C42CE;
-  --color-primary-hover: #4A35B5;
-  --color-primary-light: #7B6DD9;
-  --color-accent: #7c3aed;
-  --color-accent-hover: #8b5cf6;
+  /* Primary Color Palette (orange theme) */
+  --color-primary: #FF8D28;
+  --color-primary-hover: #E67E1F;
+  --color-primary-light: #FFA94D;
+  --color-accent: #F97316;
+  --color-accent-hover: #EA580C;
   
   /* RGB values for rgba() usage */
-  --color-primary-rgb: 92, 66, 206;
-  --color-accent-rgb: 124, 58, 237;
+  --color-primary-rgb: 255, 141, 40;
+  --color-accent-rgb: 249, 115, 22;
 }
 
 @theme inline {
