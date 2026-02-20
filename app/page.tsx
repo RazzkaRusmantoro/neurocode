@@ -102,7 +102,7 @@ export default function Home() {
                 <div className="grid gap-6">
                   {/* Card 1 */}
                   <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: 'radial-gradient(650px circle at 0px 0px, rgba(92, 66, 206, 0.1), transparent 80%)'}}></div>
+                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">
@@ -121,7 +121,7 @@ export default function Home() {
 
                   {/* Card 2 */}
                   <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: 'radial-gradient(650px circle at 0px 0px, rgba(92, 66, 206, 0.1), transparent 80%)'}}></div>
+                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">
@@ -143,7 +143,7 @@ export default function Home() {
 
                   {/* Card 3 */}
                   <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: 'radial-gradient(650px circle at 0px 0px, rgba(92, 66, 206, 0.1), transparent 80%)'}}></div>
+                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">

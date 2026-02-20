@@ -702,8 +702,8 @@ export default function PullRequestsViewer({
                                   </span>
                                 )}
                                 {(pr.state === 'merged' || pr.merged) && (
-                                  <span className="px-2.5 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded border border-purple-500/30 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                  <span className="px-2.5 py-1 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs font-medium rounded border border-[var(--color-primary)]/30 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full"></span>
                                     Merged
                                   </span>
                                 )}

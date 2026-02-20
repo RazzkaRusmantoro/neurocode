@@ -30,7 +30,7 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
   return (
     <div
       onClick={handleClick}
-      className="group relative border border-[#262626] rounded-lg p-6 hover:border-[var(--color-primary)]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#121215]"
+      className="group relative border border-[#262626] rounded-lg p-6 hover:border-[var(--color-primary)]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#262626]/50"
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = `0 0 25px rgba(var(--color-primary-rgb), 0.3)`;
         e.currentTarget.style.transform = 'translateY(-2px)';
