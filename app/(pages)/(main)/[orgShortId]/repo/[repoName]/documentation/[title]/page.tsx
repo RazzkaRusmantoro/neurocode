@@ -527,7 +527,7 @@ export default function DocumentationTitlePage() {
     return (
       <div className="h-full overflow-y-auto custom-scrollbar py-6">
         <div className="max-w-screen-2xl mx-auto w-full px-6">
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+          <div className="bg-red-500/10 border border-red-500/50 rounded p-4">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         </div>

@@ -63,7 +63,7 @@ function ImpactChartTooltip({ active, payload }: { active?: boolean; payload?: A
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="bg-[#212121] border border-[#424242] rounded-lg p-3 shadow-lg">
+    <div className="bg-[#212121] border border-[#424242] rounded p-3 shadow-lg">
       <p className="text-white/60 text-xs mb-1">{p.day}</p>
       <p className="text-white font-semibold">
         Impact score: <span style={{ color: ACCENT }}>{p.score}</span>
@@ -81,7 +81,7 @@ function ImpactBadgeVariant({ level }: { level: 'Stable' | 'Moderate Activity' |
         ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30'
         : 'bg-white/10 text-white/80 border-[#262626]';
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${styles}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium border ${styles}`}>
       {level}
     </span>
   );
@@ -95,7 +95,7 @@ function ImpactBadge({ impact }: { impact: 'Low' | 'Medium' | 'High' }) {
         ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
         : 'bg-white/10 text-white/70 border-[#262626]';
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${styles}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium border ${styles}`}>
       {impact}
     </span>
   );
@@ -119,7 +119,7 @@ export default function DashboardPage() {
 
       {/* 2. Impact Activity (Last 7 Days) */}
       <section className="mb-8">
-        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6">
+        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-white mb-1">Impact Activity</h3>
             <p className="text-sm text-white/50">Trend of changes affecting your assigned features</p>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           {ATTENTION_ITEMS.map((item, idx) => (
             <div
               key={idx}
-              className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl p-6 flex flex-col"
+              className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded p-6 flex flex-col"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <h4 className="text-base font-bold text-white">{item.module}</h4>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
               <p className="text-xs text-white/50 mb-4">Affects your feature: {item.feature}</p>
               <button
                 type="button"
-                className="mt-auto w-fit py-2 px-4 rounded-lg text-sm font-medium bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white transition-colors"
+                className="mt-auto w-fit py-2 px-4 rounded text-sm font-medium bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white transition-colors"
               >
                 View Change
               </button>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
       {/* 4. Recent Changes Relevant to You */}
       <section>
         <h3 className="text-lg font-semibold text-white mb-4">Recent Changes Relevant to You</h3>
-        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-xl overflow-hidden">
+        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded overflow-hidden">
           <div className="divide-y divide-[#262626]">
             {RECENT_CHANGES.map((row, idx) => (
               <div

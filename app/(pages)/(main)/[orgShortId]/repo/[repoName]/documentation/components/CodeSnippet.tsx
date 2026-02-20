@@ -47,7 +47,7 @@ export default function CodeSnippet({ code, language = 'typescript' }: CodeSnipp
   return (
     <div className="mt-4">
       <div
-        className="relative border border-white/20 rounded-lg bg-[#1a1a1a] overflow-hidden transition-all duration-300 ease-in-out"
+        className="relative border border-white/20 rounded bg-[#1a1a1a] overflow-hidden transition-all duration-300 ease-in-out"
         style={{
           maxHeight: isExpanded ? `${fullHeight}px` : `${maxCollapsedHeight}px`,
         }}

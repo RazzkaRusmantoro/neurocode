@@ -39,7 +39,7 @@ export default function Dropdown({
         type="button"
         id={id}
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="w-full px-4 py-2.5 pr-5 bg-[#212121] border border-[#424242] rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all cursor-pointer flex items-center justify-between"
+        className="w-full px-4 py-2.5 pr-5 bg-[#212121] border border-[#424242] rounded text-white text-left focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all cursor-pointer flex items-center justify-between"
       >
         <span className={value ? 'text-white' : 'text-white/60'}>
           {value || placeholder}
@@ -54,7 +54,7 @@ export default function Dropdown({
         </svg>
       </button>
       {isDropdownOpen && (
-        <div className="absolute z-10 w-full mt-2 bg-[#212121] backdrop-blur-sm border border-[#424242] rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-10 w-full mt-2 bg-[#212121] backdrop-blur-sm border border-[#424242] rounded shadow-lg overflow-hidden">
           <div className="py-2 px-2 max-h-80 overflow-y-auto custom-scrollbar">
             {options.map((option, index) => (
               <button

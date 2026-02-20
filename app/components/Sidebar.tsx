@@ -70,7 +70,7 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
 ];
 
 // Common class names
-const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer';
+const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer';
 const BUTTON_ACTIVE_CLASSES = 'text-white bg-[#2a2a2a]/50 font-bold';
 const BUTTON_INACTIVE_CLASSES = 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50';
 
@@ -116,7 +116,7 @@ function SubMenuItem({
       </svg>
       <button 
         onClick={handleClick}
-        className={`w-full text-left pl-4 py-1.5 text-sm rounded-lg transition-colors duration-200 cursor-pointer ${
+        className={`w-full text-left pl-4 py-1.5 text-sm rounded transition-colors duration-200 cursor-pointer ${
           isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES
         }`}
       >
@@ -347,7 +347,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1.5 hover:bg-white/10 rounded-md transition-colors duration-200 cursor-pointer"
+            className="p-1.5 hover:bg-white/10 rounded transition-colors duration-200 cursor-pointer"
             aria-label="Minimize sidebar"
           >
             <svg className="w-5 h-5 text-white/70 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,7 +364,7 @@ export default function Sidebar({
           {isMinimized ? (
             <button
               type="button"
-              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded-lg hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
+              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
               aria-label="Search"
             >
               <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,7 +379,7 @@ export default function Sidebar({
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               />
             </div>
           )}
@@ -494,7 +494,7 @@ export default function Sidebar({
               <img 
                 src="/Pfp-placeholder.png" 
                 alt="Profile" 
-                className="w-10 h-10 rounded-lg object-cover shadow-sm"
+                className="w-10 h-10 rounded object-cover shadow-sm"
               />
             </div>
             {/* Full Name */}

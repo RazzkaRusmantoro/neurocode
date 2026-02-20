@@ -481,7 +481,7 @@ export default function PullRequestsViewer({
       {/* Notification Toast */}
       {notification && (
         <div className="fixed top-4 right-4 z-[100] animate-[fadeIn_0.15s_ease-out]">
-          <div className={`px-6 py-4 rounded-lg border shadow-2xl flex items-center gap-3 min-w-[300px] max-w-[500px] backdrop-blur-sm ${
+          <div className={`px-6 py-4 rounded border shadow-2xl flex items-center gap-3 min-w-[300px] max-w-[500px] backdrop-blur-sm ${
             notification.type === 'success' 
               ? 'bg-[#121215] border-green-500/50 text-green-400 shadow-green-500/20' 
               : notification.type === 'warning'
@@ -563,7 +563,7 @@ export default function PullRequestsViewer({
           <div>
             {/* Pull Requests List Container */}
             <div className="w-full">
-              <div className="bg-[#121215] border border-[#262626] rounded-lg overflow-hidden">
+              <div className="bg-[#121215] border border-[#262626] rounded overflow-hidden">
                 {/* Container Header */}
                 <div className="px-6 py-4 border-b border-[#262626] bg-[#121215]">
                   <div className="flex items-center justify-between">
@@ -589,7 +589,7 @@ export default function PullRequestsViewer({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-3">
                                 <div className="h-6 bg-white/10 rounded w-3/4"></div>
-                                <div className="h-5 bg-white/10 rounded-full w-16"></div>
+                                <div className="h-5 bg-white/10 rounded w-16"></div>
                               </div>
                               <div className="space-y-2 mb-3">
                                 <div className="h-4 bg-white/10 rounded w-full"></div>
@@ -611,7 +611,7 @@ export default function PullRequestsViewer({
                     </div>
                   ) : error ? (
                     <div className="flex flex-col items-center justify-center h-full py-20 px-6">
-                      <div className="mb-6 p-6 bg-red-500/10 rounded-full border border-red-500/30">
+                      <div className="mb-6 p-6 bg-red-500/10 rounded border border-red-500/30">
                         <svg
                           className="w-16 h-16 text-red-400"
                           fill="none"
@@ -631,7 +631,7 @@ export default function PullRequestsViewer({
                     </div>
                   ) : filteredPullRequests.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-20 px-6">
-                      <div className="mb-6 p-6 bg-[#121215] rounded-full border border-[#262626]">
+                      <div className="mb-6 p-6 bg-[#121215] rounded border border-[#262626]">
                         <svg
                           className="w-16 h-16 text-white/20"
                           fill="none"
@@ -656,7 +656,7 @@ export default function PullRequestsViewer({
                         }
                       </p>
                       {activeFilter === 'open' && (
-                        <div className="flex items-center gap-2 px-4 py-2 bg-[#121215] border border-[#262626] rounded-lg text-white/40 text-sm">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#121215] border border-[#262626] rounded text-white/40 text-sm">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
@@ -691,19 +691,19 @@ export default function PullRequestsViewer({
                               <div className="flex items-center gap-3 mb-3">
                                 {pr.state === 'open' && (
                                   <span className="px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded border border-green-500/30 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                                    <span className="w-1.5 h-1.5 bg-green-400 rounded"></span>
                                     Open
                                   </span>
                                 )}
                                 {pr.state === 'closed' && !pr.merged && (
                                   <span className="px-2.5 py-1 bg-red-500/20 text-red-400 text-xs font-medium rounded border border-red-500/30 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span>
+                                    <span className="w-1.5 h-1.5 bg-red-400 rounded"></span>
                                     Closed
                                   </span>
                                 )}
                                 {(pr.state === 'merged' || pr.merged) && (
                                   <span className="px-2.5 py-1 bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-xs font-medium rounded border border-[var(--color-primary)]/30 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full"></span>
+                                    <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded"></span>
                                     Merged
                                   </span>
                                 )}
@@ -778,7 +778,7 @@ export default function PullRequestsViewer({
           
           {/* Modal Content */}
           <div 
-            className="relative z-10 bg-[#121215] rounded-xl border border-[#262626] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden max-w-7xl"
+            className="relative z-10 bg-[#121215] rounded border border-[#262626] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden max-w-7xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
@@ -865,7 +865,7 @@ export default function PullRequestsViewer({
                       {loadingFiles ? (
                         <div className="space-y-4">
                           {[...Array(4)].map((_, idx) => (
-                            <div key={idx} className="border border-[#262626] rounded-lg overflow-hidden animate-pulse">
+                            <div key={idx} className="border border-[#262626] rounded overflow-hidden animate-pulse">
                               <div className="px-6 py-4 bg-[#121215] border-b border-[#262626]">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
@@ -895,7 +895,7 @@ export default function PullRequestsViewer({
                           {prFiles.map((file, index) => {
                             const isExpanded = selectedFile === file.filename;
                             return (
-                              <div key={index} className="border border-[#262626] rounded-lg overflow-hidden">
+                              <div key={index} className="border border-[#262626] rounded overflow-hidden">
                                 {/* File Header */}
                                 <div 
                                   className="px-6 py-4 bg-[#121215] border-b border-[#262626] cursor-pointer hover:bg-[#1a1a1a] transition-colors"
@@ -1054,7 +1054,7 @@ export default function PullRequestsViewer({
                       ) : (
                         <div className="divide-y divide-[#262626]">
                           {prCommits.map((commit, index) => (
-                            <div key={index} className="py-4 hover:bg-[#121215] transition-colors rounded-lg px-2">
+                            <div key={index} className="py-4 hover:bg-[#121215] transition-colors rounded px-2">
                               <div className="flex items-start gap-3">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -1063,7 +1063,7 @@ export default function PullRequestsViewer({
                                   </div>
                                   <div className="flex items-center gap-4 text-sm text-white/60">
                                     {commit.author.avatarUrl && (
-                                      <img src={commit.author.avatarUrl} alt={commit.author.name} className="w-5 h-5 rounded-full" />
+                                      <img src={commit.author.avatarUrl} alt={commit.author.name} className="w-5 h-5 rounded" />
                                     )}
                                     <span>{commit.author.name || commit.author.login}</span>
                                     <span>{new Date(commit.author.date).toLocaleDateString()}</span>
@@ -1093,9 +1093,9 @@ export default function PullRequestsViewer({
                   }}
                 >
                   <div className="flex gap-1">
-                    <div className="w-0.5 h-3 bg-white/30 rounded-full"></div>
-                    <div className="w-0.5 h-3 bg-white/30 rounded-full"></div>
-                    <div className="w-0.5 h-3 bg-white/30 rounded-full"></div>
+                    <div className="w-0.5 h-3 bg-white/30 rounded"></div>
+                    <div className="w-0.5 h-3 bg-white/30 rounded"></div>
+                    <div className="w-0.5 h-3 bg-white/30 rounded"></div>
                   </div>
                 </div>
                 {/* Wider hit area for easier dragging */}
@@ -1137,7 +1137,7 @@ export default function PullRequestsViewer({
                             onClick={() => {
                               setShowSuggestions(true);
                             }}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#171717] hover:bg-[#1a1a1a] rounded-lg transition-all border border-[#262626] hover:border-[#3a3a3a] cursor-pointer"
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#171717] hover:bg-[#1a1a1a] rounded transition-all border border-[#262626] hover:border-[#3a3a3a] cursor-pointer"
                           >
                             <span>View Suggestions</span>
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1162,7 +1162,7 @@ export default function PullRequestsViewer({
                             const isExpanded = expandedIssues.has(idx);
                             
                             return (
-                              <div key={idx} className={`p-4 rounded-lg border-2 transition-all ${
+                              <div key={idx} className={`p-4 rounded border-2 transition-all ${
                                 issue.severity === 'critical' ? 'bg-red-500/10 border-red-500/50' :
                                 issue.severity === 'high' ? 'bg-orange-500/10 border-orange-500/50' :
                                 issue.severity === 'medium' ? 'bg-yellow-500/10 border-yellow-500/50' :
@@ -1300,7 +1300,7 @@ export default function PullRequestsViewer({
                                           const lines = snippet.code.split('\n');
                                           
                                           return (
-                                            <div key={snippetIdx} className="bg-white/5 rounded-lg border border-white/10 overflow-x-auto">
+                                            <div key={snippetIdx} className="bg-white/5 rounded border border-white/10 overflow-x-auto">
                                               <div className="min-w-full">
                                                 {lines.map((line: string, lineIdx: number) => {
                                                   const isAdded = line.startsWith('+') && !line.startsWith('+++');
@@ -1468,7 +1468,7 @@ export default function PullRequestsViewer({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <div className="mb-4 p-4 bg-[#171717]/50 rounded-full border border-[#262626]">
+                    <div className="mb-4 p-4 bg-[#171717]/50 rounded border border-[#262626]">
                       <svg className="w-8 h-8 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -1513,7 +1513,7 @@ export default function PullRequestsViewer({
                                 setSelectedComments(new Set(selectableIndices));
                               }
                             }}
-                            className="px-4 py-2 text-sm font-medium text-white bg-[#171717] hover:bg-[#1a1a1a] rounded-lg transition-all border border-[#262626] hover:border-[#3a3a3a] cursor-pointer"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[#171717] hover:bg-[#1a1a1a] rounded transition-all border border-[#262626] hover:border-[#3a3a3a] cursor-pointer"
                           >
                             {(() => {
                               const selectableCount = prAnalysis.reviewComments.filter((comment: any, idx: number) => {
@@ -1603,7 +1603,7 @@ export default function PullRequestsViewer({
                               }
                             }}
                             disabled={selectedComments.size === 0 || postingComments}
-                            className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {postingComments ? 'Posting...' : `Post ${selectedComments.size} Comment(s)`}
                           </button>
@@ -1618,7 +1618,7 @@ export default function PullRequestsViewer({
                           return (
                             <div
                               key={idx}
-                              className={`p-4 rounded-lg border transition-all ${
+                              className={`p-4 rounded border transition-all ${
                                 isPosted
                                   ? 'border-green-500/50 bg-green-500/5 opacity-75'
                                   : selectedComments.has(idx)
@@ -1821,7 +1821,7 @@ export default function PullRequestsViewer({
                     </div>
                   ) : prAnalysis?.processingStatus === 'completed' ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <div className="mb-4 p-4 bg-[#171717]/50 rounded-full border border-[#262626]">
+                      <div className="mb-4 p-4 bg-[#171717]/50 rounded border border-[#262626]">
                         <svg className="w-8 h-8 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
@@ -1834,7 +1834,7 @@ export default function PullRequestsViewer({
                     <div className="flex flex-col items-center justify-center h-full p-8">
                       <div className="w-full space-y-6">
                         {[...Array(3)].map((_, idx) => (
-                          <div key={idx} className="p-4 rounded-lg border border-[#262626] bg-[#171717]/50 animate-pulse">
+                          <div key={idx} className="p-4 rounded border border-[#262626] bg-[#171717]/50 animate-pulse">
                             <div className="flex items-start gap-3">
                               <div className="mt-1 w-5 h-5 bg-[#262626]/50 rounded flex-shrink-0"></div>
                               <div className="flex-1 space-y-3">

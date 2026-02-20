@@ -153,7 +153,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={!requiredFilled}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors"
+                className="w-full sm:w-auto px-5 py-2.5 rounded bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors"
               >
                 Generate Plan
               </button>

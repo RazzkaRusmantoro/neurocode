@@ -53,7 +53,7 @@ export default function GlowButton({
 
   return (
     <button
-      className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-all duration-300 ease-in-out cursor-pointer ${className}`}
+      className={`px-4 py-2 rounded text-sm font-medium text-white transition-all duration-300 ease-in-out cursor-pointer ${className}`}
       style={{
         backgroundColor: color,
         borderColor: color,

@@ -140,7 +140,7 @@ export default function GenerateDocumentationModal({
       />
       
       {/* Modal Content */}
-      <div className="relative z-10 bg-[#1a1a1a] rounded-xl border border-[#424242] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out max-w-5xl min-h-[500px] overflow-hidden">
+      <div className="relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out max-w-5xl min-h-[500px] overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             {(showCustomOptions || showCustomDetails) && (
@@ -178,7 +178,7 @@ export default function GenerateDocumentationModal({
               {/* Complete Documentation Box */}
               <div
                 onClick={handleCompleteDocumentation}
-                className="group relative border border-white/10 rounded-lg p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
+                className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
                 style={{ backgroundColor: '#212121' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
@@ -196,13 +196,13 @@ export default function GenerateDocumentationModal({
                   Generate comprehensive documentation including API reference, architecture, and guides
                 </p>
                 <div className="flex-grow"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
               </div>
 
               {/* Custom Documentation Box */}
               <div
                 onClick={handleCustomDocumentation}
-                className="group relative border border-white/10 rounded-lg p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
+                className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
                 style={{ backgroundColor: '#212121' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
@@ -220,7 +220,7 @@ export default function GenerateDocumentationModal({
                   Choose specific documentation types to generate
                 </p>
                 <div className="flex-grow"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
               </div>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function GenerateDocumentationModal({
                         setTarget('');
                         setShowCustomDetails(true);
                       }}
-                      className="group relative border border-white/10 rounded-lg p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
+                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
                       style={{ backgroundColor: '#212121' }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
@@ -263,7 +263,7 @@ export default function GenerateDocumentationModal({
                     >
                       <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">Module</div>
                       <div className="text-sm opacity-80 text-white/70">Specific module/folder</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
                     </div>
                     <div
                       onClick={() => {
@@ -271,7 +271,7 @@ export default function GenerateDocumentationModal({
                         setTarget('');
                         setShowCustomDetails(true);
                       }}
-                      className="group relative border border-white/10 rounded-lg p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
+                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
                       style={{ backgroundColor: '#212121' }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
@@ -284,11 +284,11 @@ export default function GenerateDocumentationModal({
                     >
                       <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">File</div>
                       <div className="text-sm opacity-80 text-white/70">Single file</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
                     </div>
                     <div
                       onClick={handleCustomScope}
-                      className="group relative border border-white/10 rounded-lg p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden col-span-2"
+                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden col-span-2"
                       style={{ backgroundColor: '#212121' }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
@@ -301,7 +301,7 @@ export default function GenerateDocumentationModal({
                     >
                       <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">Custom</div>
                       <div className="text-sm opacity-80 text-white/70">Custom documentation</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-lg" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
                     </div>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export default function GenerateDocumentationModal({
                     onChange={(e) => setTarget(e.target.value)}
                     placeholder="Describe what you want documented. For example: 'Explain the payment processing flow' or 'Document the authentication system' or 'How does the API handle user requests?'"
                     rows={8}
-                    className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
+                    className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
                   />
                 </div>
 
@@ -334,7 +334,7 @@ export default function GenerateDocumentationModal({
                   <button
                     onClick={() => handleGenerate()}
                     disabled={isGenerating || !target.trim()}
-                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded transition-all duration-200 cursor-pointer"
                   >
                     {isGenerating ? 'Generating Documentation...' : 'Generate Documentation'}
                   </button>
@@ -342,7 +342,7 @@ export default function GenerateDocumentationModal({
 
                 {/* Error Display */}
                 {error && (
-                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
                     <p className="text-red-400 text-sm">{error}</p>
                   </div>
                 )}

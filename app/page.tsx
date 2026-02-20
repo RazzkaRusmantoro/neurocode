@@ -31,7 +31,7 @@ export default function Home() {
             </p>
 
             {/* CTA Button */}
-            <button className="mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded-xl cursor-pointer transition-all duration-300 flex items-center gap-3">
+            <button className="mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded cursor-pointer transition-all duration-300 flex items-center gap-3">
               <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -57,7 +57,7 @@ export default function Home() {
               <div className="grid lg:grid-cols-2 gap-16 items-center">
                 {/* Left Column - Content */}
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-semibold mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-semibold mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
                       <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
                       <path d="M20 2v4"></path>
@@ -101,12 +101,12 @@ export default function Home() {
                 {/* Right Column - Feature Cards */}
                 <div className="grid gap-6">
                   {/* Card 1 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
+                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                    <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">
-                        <div className="p-3 rounded-xl flex-shrink-0 bg-[var(--color-primary)]/10">
+                        <div className="p-3 rounded flex-shrink-0 bg-[var(--color-primary)]/10">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-[var(--color-primary)]" aria-hidden="true">
                             <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
                           </svg>
@@ -120,12 +120,12 @@ export default function Home() {
                   </div>
 
                   {/* Card 2 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
+                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                    <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">
-                        <div className="p-3 rounded-xl flex-shrink-0 bg-[var(--color-accent)]/10">
+                        <div className="p-3 rounded flex-shrink-0 bg-[var(--color-accent)]/10">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-[var(--color-accent)]" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
@@ -142,12 +142,12 @@ export default function Home() {
                   </div>
 
                   {/* Card 3 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded-xl overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
-                    <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
+                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                    <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
                       <div className="flex items-start gap-5">
-                        <div className="p-3 rounded-xl flex-shrink-0 bg-green-500/10">
+                        <div className="p-3 rounded flex-shrink-0 bg-green-500/10">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-green-500" aria-hidden="true">
                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                           </svg>

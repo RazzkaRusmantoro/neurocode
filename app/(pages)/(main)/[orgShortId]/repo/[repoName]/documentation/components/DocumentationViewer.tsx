@@ -471,7 +471,7 @@ export default function DocumentationViewer({
                 <button
                   type="button"
                   onClick={handleGenerateDocumentation}
-                  className="relative px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="relative px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.4)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span className="relative z-[1]">
                     Generate Documentation
@@ -534,7 +534,7 @@ export default function DocumentationViewer({
                     ))}
                   </div>
                 ) : error ? (
-                  <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+                  <div className="bg-red-500/10 border border-red-500/50 rounded p-4">
                     <p className="text-red-400 text-sm">{error}</p>
                   </div>
                 ) : filteredDocumentations.length === 0 ? (
@@ -625,7 +625,7 @@ export default function DocumentationViewer({
                     ))}
                   </div>
                 ) : codeRefError ? (
-                  <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+                  <div className="bg-red-500/10 border border-red-500/50 rounded p-4">
                     <p className="text-red-400 text-sm">{codeRefError}</p>
                   </div>
                 ) : filteredCodeReferences.length === 0 ? (

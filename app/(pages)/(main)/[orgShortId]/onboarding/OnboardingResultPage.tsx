@@ -92,7 +92,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
     <div className="mx-auto max-w-screen-2xl">
       <div className="min-h-full py-10 text-white">
         <div className="space-y-8 max-w-4xl mx-auto">
-          <section className="bg-[#171717]/50 border border-[#262626] rounded-xl p-8 text-center">
+          <section className="bg-[#171717]/50 border border-[#262626] rounded p-8 text-center">
             <h1 className="text-3xl font-bold text-white mb-6">Hi {header.name}!</h1>
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70">
               <span><span className="text-white/50">Role:</span> {header.role}</span>
@@ -102,12 +102,12 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
             </div>
           </section>
 
-          <section className="bg-[#171717]/50 border border-[#262626] rounded-xl p-5">
+          <section className="bg-[#171717]/50 border border-[#262626] rounded p-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white mb-2">{progress}% Complete</p>
-                <div className="h-2 bg-[#262626] rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                <div className="h-2 bg-[#262626] rounded overflow-hidden">
+                  <div className="h-full bg-[var(--color-primary)] rounded transition-all duration-300" style={{ width: `${progress}%` }} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-6 text-sm text-white/70 shrink-0">
@@ -121,7 +121,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
             <h2 className="text-lg font-semibold text-white mb-4">Milestones</h2>
             <div className="flex gap-4 overflow-x-auto pb-2 md:flex-row md:flex-wrap md:overflow-visible">
               {MILESTONES.map((m, i) => (
-                <div key={i} className="flex-shrink-0 w-[280px] md:w-auto md:flex-1 min-w-0 bg-[#171717]/50 border border-[#262626] rounded-xl p-5">
+                <div key={i} className="flex-shrink-0 w-[280px] md:w-auto md:flex-1 min-w-0 bg-[#171717]/50 border border-[#262626] rounded p-5">
                   <p className="text-xs font-medium text-[var(--color-primary)] mb-1">Milestone {i + 1}</p>
                   <p className="text-sm text-white/60 mb-1">{m.week}</p>
                   <p className="text-base font-medium text-white">{m.title}</p>
@@ -133,7 +133,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <h2 className="text-lg font-semibold text-white mb-4">Onboarding Modules</h2>
-              <div className="bg-[#171717]/50 border border-[#262626] rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
+              <div className="bg-[#171717]/50 border border-[#262626] rounded overflow-hidden max-h-[420px] overflow-y-auto">
                 <div className="divide-y divide-[#262626]">
                   {MODULES.map((mod, i) => (
                     <div key={mod.id}>
@@ -143,10 +143,10 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
                           <p className="text-xs text-white/50 mt-0.5">Estimated Time: {mod.estimatedTime}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button type="button" onClick={() => toggleModule(i)} className="py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                          <button type="button" onClick={() => toggleModule(i)} className="py-1.5 px-3 rounded text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
                             {moduleCompletion[i] ? 'Done' : 'Mark complete'}
                           </button>
-                          <button type="button" onClick={() => toggleModuleExpanded(i)} className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors text-sm" aria-label={moduleExpanded[i] ? 'Collapse' : 'Expand'}>
+                          <button type="button" onClick={() => toggleModuleExpanded(i)} className="p-1.5 rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors text-sm" aria-label={moduleExpanded[i] ? 'Collapse' : 'Expand'}>
                             {moduleExpanded[i] ? '−' : '+'}
                           </button>
                         </div>
@@ -166,13 +166,13 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white mb-4">Timeline</h2>
-              <div className="bg-[#171717]/50 border border-[#262626] rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
+              <div className="bg-[#171717]/50 border border-[#262626] rounded overflow-hidden max-h-[420px] overflow-y-auto">
                 <div className="divide-y divide-[#262626]">
                   {TIMELINE_DAYS.map((day, i) => (
                     <div key={day.id} className="p-5">
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <p className="text-sm font-medium text-[var(--color-primary)]">Day {day.day} – {day.title}</p>
-                        <button type="button" onClick={() => toggleTimeline(i)} className="shrink-0 py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                        <button type="button" onClick={() => toggleTimeline(i)} className="shrink-0 py-1.5 px-3 rounded text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
                           {timelineCompletion[i] ? 'Done' : 'Mark complete'}
                         </button>
                       </div>
@@ -189,7 +189,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
 
           <section>
             <h2 className="text-lg font-semibold text-white mb-4">Success Criteria</h2>
-            <div className="bg-[#171717]/50 border border-[#262626] rounded-xl p-5">
+            <div className="bg-[#171717]/50 border border-[#262626] rounded p-5">
               <ul className="space-y-3">
                 {SUCCESS_CRITERIA.map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
@@ -202,8 +202,8 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
           </section>
 
           <section className="flex justify-center gap-4 pt-4">
-            <button type="button" className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-sm font-medium text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">Edit</button>
-            <button type="button" className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-sm font-semibold text-white transition-colors">Export</button>
+            <button type="button" className="px-5 py-2.5 rounded border border-[#3f3f46] text-sm font-medium text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">Edit</button>
+            <button type="button" className="px-5 py-2.5 rounded bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-sm font-semibold text-white transition-colors">Export</button>
           </section>
         </div>
       </div>

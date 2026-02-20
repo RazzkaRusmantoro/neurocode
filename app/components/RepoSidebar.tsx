@@ -12,7 +12,7 @@ interface RepoSidebarProps {
 }
 
 // Common class names
-const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer';
+const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer';
 const BUTTON_ACTIVE_CLASSES = 'text-white bg-[#2a2a2a]/50 font-bold';
 const BUTTON_INACTIVE_CLASSES = 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50';
 
@@ -99,7 +99,7 @@ export default function RepoSidebar({
   }, [userName]);
 
   return (
-    <aside className={`h-full bg-[#121215] rounded-tr-lg rounded-br-lg border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
+    <aside className={`h-full bg-[#121215] border-r border-[#262626] transition-all duration-300 ${isMinimized ? 'w-20' : 'w-80'}`}>
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className={`flex items-center ${isMinimized ? 'justify-center' : 'justify-between'} p-4 ${isMinimized ? 'px-4' : 'pl-8 pr-4'}`}>
@@ -113,7 +113,7 @@ export default function RepoSidebar({
           <button
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1.5 hover:bg-white/10 rounded-md transition-colors duration-200 cursor-pointer"
+            className="p-1.5 hover:bg-white/10 rounded transition-colors duration-200 cursor-pointer"
             aria-label="Minimize sidebar"
           >
             <svg className="w-5 h-5 text-white/70 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +130,7 @@ export default function RepoSidebar({
           {isMinimized ? (
             <button
               type="button"
-              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded-lg hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
+              className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer"
               aria-label="Search"
             >
               <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ export default function RepoSidebar({
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               />
             </div>
           )}
@@ -156,7 +156,7 @@ export default function RepoSidebar({
           <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4 pb-3`}>
             <button
               onClick={handleBackToRepositories}
-              className="w-full text-left pl-4 py-2.5 text-sm rounded-lg transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
+              className="w-full text-left pl-4 py-2.5 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50"
             >
               <Icon iconPath="M10 19l-7-7m0 0l7-7m-7 7h18" />
               <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Back to Repositories</span>
@@ -209,7 +209,7 @@ export default function RepoSidebar({
               <img 
                 src="/Pfp-placeholder.png" 
                 alt="Profile" 
-                className="w-10 h-10 rounded-lg object-cover shadow-sm"
+                className="w-10 h-10 rounded object-cover shadow-sm"
               />
             </div>
             {/* Full Name */}

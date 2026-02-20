@@ -88,7 +88,7 @@ export default function RepositoryDropdown({
         </div>
       </button>
       <div
-        className={`absolute z-10 mt-2 bg-[#121215] border border-[#262626] rounded-lg shadow-lg overflow-hidden min-w-[280px] transition-all duration-200 ease-in-out ${
+        className={`absolute z-10 mt-2 bg-[#121215] border border-[#262626] rounded shadow-lg overflow-hidden min-w-[280px] transition-all duration-200 ease-in-out ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -105,7 +105,7 @@ export default function RepositoryDropdown({
               placeholder="Find a repository"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -119,7 +119,7 @@ export default function RepositoryDropdown({
                 key={repo.id}
                 type="button"
                 onClick={() => handleRepositoryChange(repo)}
-                className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
+                className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded ${
                   selectedRepository?.id === repo.id
                     ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/30'
                     : 'text-white hover:bg-[#2a2a2a]'

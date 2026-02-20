@@ -110,7 +110,7 @@ export default async function RepositoriesPage({
             ))}
           </div>
         ) : (
-          <div className="mt-6 p-8 bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-lg text-center">
+          <div className="mt-6 p-8 bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded text-center">
             <p className="text-white/70">
               {selectedOrganization 
                 ? 'No repositories found. Add a repository to get started.'
