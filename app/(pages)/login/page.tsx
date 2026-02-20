@@ -138,7 +138,7 @@ export default function LoginPage() {
                 id="rememberMe"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 bg-transparent border border-gray-800 rounded focus:outline-none focus:ring-0 focus:ring-offset-0 outline-none ring-0 ring-offset-0 cursor-pointer checked:bg-[#FF8D28] checked:border-[#FF8D28]"
+                className="w-4 h-4 bg-transparent border border-gray-800 rounded focus:outline-none focus:ring-0 focus:ring-offset-0 outline-none ring-0 ring-offset-0 cursor-pointer checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)]"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               />
               <label htmlFor="rememberMe" className="ml-2 text-sm text-white/70 cursor-pointer">
@@ -147,7 +147,7 @@ export default function LoginPage() {
             </div>
             <Link 
               href="/forgot-password" 
-              className="text-sm text-[#FF8D28] hover:text-[#FFA94D] transition-colors"
+              className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors"
             >
               Forgot password?
             </Link>
@@ -157,7 +157,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-[#FF8D28] hover:bg-[#E67E1F] disabled:bg-[#FF8D28]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(255,141,40,0.5)]"
+            className="w-full py-3 px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--color-primary)]/50 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:shadow-[0_0_25px_rgba(var(--color-primary-rgb),0.5)]"
           >
             Sign In
           </button>
@@ -169,7 +169,7 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link 
               href="/register" 
-              className="text-[#FF8D28] hover:text-[#FFA94D] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[#FF8D28] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+              className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] font-medium transition-colors duration-300 relative inline-block after:content-[''] after:absolute after:w-0 after:h-[1.5px] after:bottom-[-1.5px] after:left-0 after:bg-[var(--color-primary)] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
             >
               Sign up for free!
             </Link>

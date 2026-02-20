@@ -28,7 +28,7 @@ export default function OrganizationSearch({
       <button
         type="button"
         onClick={onAddOrganization}
-        className="relative px-18 py-2.5 bg-transparent border-2 border-[#FF8D28] rounded-xl text-[#FF8D28] text-sm font-medium overflow-hidden transition-all duration-300 cursor-pointer group ml-auto z-0 hover:border-[#FFA94D]"
+        className="relative px-18 py-2.5 bg-transparent border-2 border-[var(--color-primary)] rounded-xl text-[var(--color-primary)] text-sm font-medium overflow-hidden transition-all duration-300 cursor-pointer group ml-auto z-0 hover:border-[var(--color-primary-light)]"
       >
         <span className="relative z-[1] flex items-center gap-2 transition-colors duration-300 group-hover:text-white">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +36,7 @@ export default function OrganizationSearch({
           </svg>
           New Organization
         </span>
-        <span className="absolute inset-0 bg-[#FF8D28] transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
+        <span className="absolute inset-0 bg-[var(--color-primary)] transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
       </button>
     </div>
   );

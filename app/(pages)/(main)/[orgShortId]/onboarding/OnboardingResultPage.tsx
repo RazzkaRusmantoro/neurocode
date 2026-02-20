@@ -107,7 +107,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white mb-2">{progress}% Complete</p>
                 <div className="h-2 bg-[#262626] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#FF8D28] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                  <div className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-6 text-sm text-white/70 shrink-0">
@@ -122,7 +122,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
             <div className="flex gap-4 overflow-x-auto pb-2 md:flex-row md:flex-wrap md:overflow-visible">
               {MILESTONES.map((m, i) => (
                 <div key={i} className="flex-shrink-0 w-[280px] md:w-auto md:flex-1 min-w-0 bg-[#171717]/50 border border-[#262626] rounded-xl p-5">
-                  <p className="text-xs font-medium text-[#FF8D28] mb-1">Milestone {i + 1}</p>
+                  <p className="text-xs font-medium text-[var(--color-primary)] mb-1">Milestone {i + 1}</p>
                   <p className="text-sm text-white/60 mb-1">{m.week}</p>
                   <p className="text-base font-medium text-white">{m.title}</p>
                 </div>
@@ -139,11 +139,11 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
                     <div key={mod.id}>
                       <div className="flex items-center justify-between gap-3 p-5">
                         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleModuleExpanded(i)} onKeyDown={(e) => e.key === 'Enter' && toggleModuleExpanded(i)} role="button" tabIndex={0} aria-expanded={moduleExpanded[i]}>
-                          <p className="text-sm font-medium text-[#FF8D28]">{mod.title}</p>
+                          <p className="text-sm font-medium text-[var(--color-primary)]">{mod.title}</p>
                           <p className="text-xs text-white/50 mt-0.5">Estimated Time: {mod.estimatedTime}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button type="button" onClick={() => toggleModule(i)} className="py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[#FF8D28] hover:bg-[#FF8D28]/10 transition-colors">
+                          <button type="button" onClick={() => toggleModule(i)} className="py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
                             {moduleCompletion[i] ? 'Done' : 'Mark complete'}
                           </button>
                           <button type="button" onClick={() => toggleModuleExpanded(i)} className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors text-sm" aria-label={moduleExpanded[i] ? 'Collapse' : 'Expand'}>
@@ -171,8 +171,8 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
                   {TIMELINE_DAYS.map((day, i) => (
                     <div key={day.id} className="p-5">
                       <div className="flex items-center justify-between gap-3 mb-2">
-                        <p className="text-sm font-medium text-[#FF8D28]">Day {day.day} – {day.title}</p>
-                        <button type="button" onClick={() => toggleTimeline(i)} className="shrink-0 py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[#FF8D28] hover:bg-[#FF8D28]/10 transition-colors">
+                        <p className="text-sm font-medium text-[var(--color-primary)]">Day {day.day} – {day.title}</p>
+                        <button type="button" onClick={() => toggleTimeline(i)} className="shrink-0 py-1.5 px-3 rounded-lg text-xs font-medium border border-[#3f3f46] text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
                           {timelineCompletion[i] ? 'Done' : 'Mark complete'}
                         </button>
                       </div>
@@ -193,7 +193,7 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
               <ul className="space-y-3">
                 {SUCCESS_CRITERIA.map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
-                    <input type="checkbox" checked={successCriteriaCompletion[i]} onChange={() => toggleSuccessCriteria(i)} className="rounded border-[#424242] bg-[#121215] text-[#FF8D28] focus:ring-[#FF8D28]" />
+                    <input type="checkbox" checked={successCriteriaCompletion[i]} onChange={() => toggleSuccessCriteria(i)} className="rounded border-[#424242] bg-[#121215] text-[var(--color-primary)] focus:ring-[var(--color-primary)]" />
                     <span className="text-sm text-white/80">{item}</span>
                   </li>
                 ))}
@@ -202,8 +202,8 @@ export default function OnboardingResultPage({ plan }: OnboardingResultPageProps
           </section>
 
           <section className="flex justify-center gap-4 pt-4">
-            <button type="button" className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-sm font-medium text-white/80 hover:text-white hover:border-[#FF8D28] hover:bg-[#FF8D28]/10 transition-colors">Edit</button>
-            <button type="button" className="px-5 py-2.5 rounded-full bg-[#FF8D28] hover:bg-[#FFA94D] text-sm font-semibold text-white transition-colors">Export</button>
+            <button type="button" className="px-5 py-2.5 rounded-full border border-[#3f3f46] text-sm font-medium text-white/80 hover:text-white hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">Edit</button>
+            <button type="button" className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-sm font-semibold text-white transition-colors">Export</button>
           </section>
         </div>
       </div>

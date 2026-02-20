@@ -536,7 +536,7 @@ export default function AddRepositoryModal({
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-white group-hover:text-[#FF8D28] transition-colors">
+                            <h3 className="font-medium text-white group-hover:text-[var(--color-primary)] transition-colors">
                               {repo.name}
                             </h3>
                             {repo.private && (
@@ -564,7 +564,7 @@ export default function AddRepositoryModal({
                             <span>Updated {new Date(repo.updatedAt).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <svg className="w-5 h-5 text-white/70 group-hover:text-[#FF8D28] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-white/70 group-hover:text-[var(--color-primary)] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
@@ -656,7 +656,7 @@ export default function AddRepositoryModal({
             <button
               onClick={handleAddRepository}
               disabled={!selectedOrganization}
-              className="w-full px-6 py-3 bg-[#FF8D28] hover:bg-[#E67E1F] disabled:bg-[#FF8D28]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
+              className="w-full px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--color-primary)]/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 cursor-pointer"
             >
               Add Repository
             </button>

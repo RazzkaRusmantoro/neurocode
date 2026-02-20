@@ -389,7 +389,7 @@ export default function DocumentationViewer({
               >
                 Documentation
                 {activeTab === 'documentation' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF8D28]"></span>
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]"></span>
                 )}
               </button>
               <button
@@ -403,7 +403,7 @@ export default function DocumentationViewer({
               >
                 Visual Tree
                 {activeTab === 'visual-tree' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF8D28]"></span>
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]"></span>
                 )}
               </button>
               <button
@@ -417,7 +417,7 @@ export default function DocumentationViewer({
               >
                 Code Reference
                 {activeTab === 'code-reference' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF8D28]"></span>
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]"></span>
                 )}
               </button>
               <button
@@ -431,7 +431,7 @@ export default function DocumentationViewer({
               >
                 Glossary
                 {activeTab === 'glossary' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF8D28]"></span>
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]"></span>
                 )}
               </button>
             </div>
@@ -471,12 +471,12 @@ export default function DocumentationViewer({
                 <button
                   type="button"
                   onClick={handleGenerateDocumentation}
-                  className="relative px-6 py-3 bg-[#FF8D28] hover:bg-[#E67E1F] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-[0_0_20px_rgba(255,141,40,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="relative px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.4)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span className="relative z-[1]">
                     Generate Documentation
                   </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-[#FFA94D] to-[#FF8D28] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
                 </button>
               </div>
             )}
@@ -555,11 +555,11 @@ export default function DocumentationViewer({
                           onClick={() => handleDocumentationClick(doc)}
                           className="w-full cursor-pointer group"
                         >
-                          <div className="flex flex-col h-full hover:text-[#FF8D28] transition-colors">
+                          <div className="flex flex-col h-full hover:text-[var(--color-primary)] transition-colors">
 
                             {/* Title */}
                             {doc.title && (
-                              <h3 className="text-white/65 font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[#FF8D28] transition-colors">
+                              <h3 className="text-white/65 font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
                                 {doc.title}
                               </h3>
                             )}

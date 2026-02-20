@@ -38,7 +38,7 @@ export default function RepositorySearch({ githubAccount, selectedOrganization }
       <button
         type="button"
         onClick={handleAddRepository}
-        className="relative px-18 py-3 bg-[#FF8D28] hover:bg-[#E67E1F] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group ml-auto shadow-lg hover:shadow-[0_0_20px_rgba(255,141,40,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+        className="relative px-18 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-xl text-white text-sm font-semibold overflow-hidden transition-all duration-300 cursor-pointer group ml-auto shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.4)] hover:scale-[1.02] active:scale-[0.98]"
       >
         <span className="relative z-[1] flex items-center gap-2.5">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +46,7 @@ export default function RepositorySearch({ githubAccount, selectedOrganization }
           </svg>
           Add Repository
         </span>
-        <span className="absolute inset-0 bg-gradient-to-r from-[#FFA94D] to-[#FF8D28] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
+        <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
       </button>
     </div>
 

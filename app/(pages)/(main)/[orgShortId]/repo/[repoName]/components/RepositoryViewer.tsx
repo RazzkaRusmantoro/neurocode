@@ -251,7 +251,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   <input
                     type="text"
                     placeholder="Search files..."
-                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   />
                 </div>
                 {/* Recent Commit */}
@@ -301,7 +301,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           placeholder="Find a branch"
                           value={branchSearchQuery}
                           onChange={(e) => setBranchSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
+                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -320,7 +320,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                             }}
                             className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                               selectedBranch === branch.name
-                                ? 'bg-[#FF8D28]/20 text-[#FF8D28] hover:bg-[#FF8D28]/30'
+                                ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/30'
                                 : 'text-white hover:bg-[#2a2a2a]'
                             }`}
                           >
@@ -387,7 +387,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                   <input
                     type="text"
                     placeholder="Search files..."
-                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-3 py-1.5 bg-[#1a1a1a] border border-[#262626] rounded-md text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   />
                 </div>
                 {/* Recent Commit */}
@@ -437,7 +437,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                           placeholder="Find a branch"
                           value={branchSearchQuery}
                           onChange={(e) => setBranchSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
+                          className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -456,7 +456,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
                             }}
                             className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                               selectedBranch === branch.name
-                                ? 'bg-[#FF8D28]/20 text-[#FF8D28] hover:bg-[#FF8D28]/30'
+                                ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/30'
                                 : 'text-white hover:bg-[#2a2a2a]'
                             }`}
                           >
@@ -502,7 +502,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
             onClick={() => setActiveTab('documentation')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
               activeTab === 'documentation'
-                ? 'text-white border-b-2 border-[#FF8D28]'
+                ? 'text-white border-b-2 border-[var(--color-primary)]'
                 : 'text-white/60 hover:text-white/80'
             }`}
           >
@@ -512,7 +512,7 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
             onClick={() => setActiveTab('ai-chat')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
               activeTab === 'ai-chat'
-                ? 'text-white border-b-2 border-[#FF8D28]'
+                ? 'text-white border-b-2 border-[var(--color-primary)]'
                 : 'text-white/60 hover:text-white/80'
             }`}
           >

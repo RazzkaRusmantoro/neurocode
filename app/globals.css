@@ -5,10 +5,10 @@
   --foreground: #171717;
   
   /* Primary Color Palette (orange theme) */
-  --color-primary: #FF8D28;
-  --color-primary-hover: #E67E1F;
-  --color-primary-light: #FFA94D;
-  --color-accent: #F97316;
+  --color-primary: #d56707;
+  --color-primary-hover: #ed8a2e;
+  --color-primary-light: #f59f43;
+  --color-accent: #ea680c;
   --color-accent-hover: #EA580C;
   
   /* RGB values for rgba() usage */

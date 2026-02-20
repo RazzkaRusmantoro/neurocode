@@ -74,7 +74,7 @@ export default function OrganizationDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className="flex flex-col items-start cursor-pointer"
       >
-        <span className="text-sm font-bold text-[#FF8D28] mb-1">ORGANIZATION</span>
+        <span className="text-sm font-bold text-[var(--color-primary)] mb-1">ORGANIZATION</span>
         <div className="flex items-center gap-2">
           <span className="text-sm text-white">
             {selectedOrganization?.name || 'No organization'}
@@ -106,7 +106,7 @@ export default function OrganizationDropdown({
               placeholder="Find an organization"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#FF8D28] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -122,7 +122,7 @@ export default function OrganizationDropdown({
                 onClick={() => handleOrganizationChange(org)}
                 className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded-lg ${
                   selectedOrganization?.id === org.id
-                    ? 'bg-[#FF8D28]/20 text-[#FF8D28] hover:bg-[#FF8D28]/30'
+                    ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/30'
                     : 'text-white hover:bg-[#2a2a2a]'
                 }`}
               >
@@ -144,7 +144,7 @@ export default function OrganizationDropdown({
               console.log('Create new organization clicked');
               setIsOpen(false);
             }}
-            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#FF8D28] hover:text-[#FF8D28]/80 hover:bg-[#FF8D28]/10 transition-colors duration-200 cursor-pointer flex items-center gap-2 rounded-lg"
+            className="w-full px-4 py-2.5 text-left text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 hover:bg-[var(--color-primary)]/10 transition-colors duration-200 cursor-pointer flex items-center gap-2 rounded-lg"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -10,7 +10,7 @@ import {
   Line,
 } from 'recharts';
 
-const ACCENT = '#FF8D28';
+const ACCENT = 'var(--color-primary)';
 
 // Impact activity mock data (Last 7 Days)
 const IMPACT_DATA = [
@@ -78,7 +78,7 @@ function ImpactBadgeVariant({ level }: { level: 'Stable' | 'Moderate Activity' |
     level === 'High Activity'
       ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
       : level === 'Moderate Activity'
-        ? 'bg-[#FF8D28]/20 text-[#FF8D28] border-[#FF8D28]/30'
+        ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30'
         : 'bg-white/10 text-white/80 border-[#262626]';
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${styles}`}>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
               <p className="text-xs text-white/50 mb-4">Affects your feature: {item.feature}</p>
               <button
                 type="button"
-                className="mt-auto w-fit py-2 px-4 rounded-lg text-sm font-medium bg-[#FF8D28] hover:bg-[#FFA94D] text-white transition-colors"
+                className="mt-auto w-fit py-2 px-4 rounded-lg text-sm font-medium bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white transition-colors"
               >
                 View Change
               </button>

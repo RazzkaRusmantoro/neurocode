@@ -141,7 +141,7 @@ export default function OnboardingPage() {
                       value={opt.value}
                       checked={detailPreference === opt.value}
                       onChange={() => setDetailPreference(opt.value)}
-                      className="border-[#424242] bg-[#121215] text-[#FF8D28] focus:ring-[#FF8D28]"
+                      className="border-[#424242] bg-[#121215] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-white/80">{opt.label}</span>
                   </label>
@@ -153,7 +153,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={!requiredFilled}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#FF8D28] hover:bg-[#FFA94D] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-colors"
               >
                 Generate Plan
               </button>
