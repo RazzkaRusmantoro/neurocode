@@ -2,11 +2,24 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import "../css/login-button.css";
 
 export default function Navbar() {
   const [solutionsActive, setSolutionsActive] = useState(false);
   const [resourcesActive, setResourcesActive] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleLoginClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (session?.user) {
+      router.push('/organizations');
+    } else {
+      router.push('/login');
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 w-full z-50 backdrop-blur-sm bg-[#0f0f11]/80 border-b border-white/5" style={{ fontFamily: 'var(--font-poppins)' }}>
@@ -73,6 +86,7 @@ export default function Navbar() {
           <a
             href="/login"
             className="ml-25 login-play-button"
+            onClick={handleLoginClick}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
