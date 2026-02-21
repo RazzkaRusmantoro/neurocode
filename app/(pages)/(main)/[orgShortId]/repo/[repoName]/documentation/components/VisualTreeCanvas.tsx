@@ -25,6 +25,8 @@ import {
   type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import Dagre from '@dagrejs/dagre';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -140,6 +142,44 @@ function buildGridGraph(
   }
 
   return { nodes, edges };
+}
+
+// ── Dagre layout for full-tree mode ─────────────────────────────
+
+function buildFullTreeGraph(root: TreeNodeData) {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  const addNode = (item: TreeNodeData, parentId: string | null, idx: number) => {
+    const id = parentId ? `${parentId}-${idx}` : 'root';
+    nodes.push({
+      id,
+      type: 'treeNode',
+      position: { x: 0, y: 0 },
+      data: { ...item, childCount: item.children?.length || 0, children: item.children || [] },
+    });
+    if (parentId) {
+      edges.push({ id: `e-${parentId}-${id}`, source: parentId, target: id, type: 'animated' });
+    }
+    (item.children || []).forEach((child, i) => addNode(child, id, i));
+  };
+
+  addNode(root, null, 0);
+
+  // Dagre layout tuned for a tall, narrow tree
+  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: 'TB', nodesep: 14, ranksep: 180, marginx: 20, marginy: 20 });
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
+  Dagre.layout(g);
+
+  return {
+    nodes: nodes.map((n) => {
+      const pos = g.node(n.id);
+      return { ...n, position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 } };
+    }),
+    edges,
+  };
 }
 
 // ── Custom animated dashed edge ────────────────────────────────
@@ -523,9 +563,12 @@ export default function VisualTreeCanvas({
   const [maxVisible, setMaxVisible] = useState(8);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
+  const [showAllChildren, setShowAllChildren] = useState(false);
+  const [expandFullTree, setExpandFullTree] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const rfRef = useRef<ReactFlowInstance | null>(null);
   const fitViewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -539,29 +582,43 @@ export default function VisualTreeCanvas({
     }, 60);
   }, []);
 
-  // Build grid graph from current root
+  // Build graph from current root, respecting filter modes
   const rebuildGraph = useCallback(
-    (root: TreeNodeData | null, maxVis: number) => {
+    (root: TreeNodeData | null, maxVis: number, allChildren: boolean, fullTree: boolean) => {
       if (!root) {
         setNodes([]);
         setEdges([]);
         return;
       }
-      const { nodes: n, edges: e } = buildGridGraph(root, maxVis);
-      setNodes(n);
-      setEdges(e);
+      if (fullTree) {
+        const { nodes: n, edges: e } = buildFullTreeGraph(root);
+        setNodes(n);
+        setEdges(e);
+      } else {
+        const effectiveMax = allChildren ? Infinity : maxVis;
+        const { nodes: n, edges: e } = buildGridGraph(root, effectiveMax);
+        setNodes(n);
+        setEdges(e);
+      }
     },
     [setNodes, setEdges]
   );
 
   useEffect(() => {
-    rebuildGraph(currentRoot ?? null, maxVisible);
-  }, [currentRoot, maxVisible, rebuildGraph]);
+    const root = expandFullTree ? treeData : currentRoot;
+    rebuildGraph(root ?? null, maxVisible, showAllChildren, expandFullTree);
+  }, [treeData, currentRoot, maxVisible, showAllChildren, expandFullTree, rebuildGraph]);
 
   // Fit view whenever nodes change or sidebar opens/closes (resizes canvas)
+  // In full-tree mode, only fit when the graph itself changes — not on node selection
+  const prevNodesLen = useRef(0);
   useEffect(() => {
-    if (nodes.length > 0) doFitView();
-  }, [nodes, selectedNode, doFitView]);
+    if (nodes.length === 0) return;
+    const graphChanged = nodes.length !== prevNodesLen.current;
+    prevNodesLen.current = nodes.length;
+    if (expandFullTree && !graphChanged) return;
+    doFitView();
+  }, [nodes, selectedNode, expandFullTree, doFitView]);
 
   // Poll the status endpoint; drives both initial load and generation tracking
   useEffect(() => {
@@ -711,7 +768,8 @@ export default function VisualTreeCanvas({
 
       const d = node.data as unknown as TreeNodeData & { childCount: number };
 
-      if (event.shiftKey) {
+      // In full-tree mode, every click opens the detail sidebar
+      if (expandFullTree || event.shiftKey) {
         setSelectedNode(d);
         return;
       }
@@ -736,7 +794,7 @@ export default function VisualTreeCanvas({
         setSelectedNode(d);
       }
     },
-    [breadcrumb.length]
+    [breadcrumb.length, expandFullTree]
   );
 
   const onNodeContextMenu = useCallback(
@@ -793,11 +851,15 @@ export default function VisualTreeCanvas({
 
   const [searchFocused, setSearchFocused] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as HTMLElement)) {
         setSearchFocused(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(e.target as HTMLElement)) {
+        setShowFilters(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -905,7 +967,144 @@ export default function VisualTreeCanvas({
           </div>
         )}
 
-        <div ref={searchContainerRef} style={{ marginLeft: 'auto', position: 'relative', width: 280 }}>
+        {/* Go to root (full-tree mode only) */}
+        {expandFullTree && (
+          <button
+            type="button"
+            onClick={() => {
+              const rootNode = nodes.find((n) => n.id === 'root');
+              if (rootNode && rfRef.current) {
+                rfRef.current.setCenter(
+                  rootNode.position.x + NODE_W / 2,
+                  rootNode.position.y + NODE_H / 2,
+                  { zoom: 0.85, duration: 400 }
+                );
+              }
+            }}
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '6px 10px',
+              borderRadius: 6,
+              border: '1px solid #333',
+              background: '#1a1a1d',
+              color: '#d56707',
+              fontSize: 12,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12l9-9 9 9" />
+              <path d="M5 10v10h14V10" />
+            </svg>
+            Go to Root
+          </button>
+        )}
+
+        {/* Filter toggle */}
+        <div ref={filterRef} style={{ marginLeft: expandFullTree ? undefined : 'auto', position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '6px 10px',
+              borderRadius: 6,
+              border: `1px solid ${showAllChildren || expandFullTree ? '#d56707' : '#333'}`,
+              background: showAllChildren || expandFullTree ? '#d5670715' : '#1a1a1d',
+              color: showAllChildren || expandFullTree ? '#d56707' : '#999',
+              fontSize: 12,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+            </svg>
+            Filters
+          </button>
+
+          {showFilters && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: 4,
+                background: '#1e1e21',
+                border: '1px solid #333',
+                borderRadius: 8,
+                padding: '12px 14px',
+                zIndex: 110,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                width: 250,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  marginBottom: 10,
+                }}
+                onClick={() => {
+                  const next = !showAllChildren;
+                  setShowAllChildren(next);
+                  if (next) setExpandFullTree(false);
+                }}
+              >
+                <Checkbox
+                  id="filter-all-children"
+                  checked={showAllChildren}
+                  onCheckedChange={(checked) => {
+                    const val = !!checked;
+                    setShowAllChildren(val);
+                    if (val) setExpandFullTree(false);
+                  }}
+                />
+                <label htmlFor="filter-all-children" className="text-xs text-[#ccc] cursor-pointer select-none flex-1">
+                  Show all children
+                </label>
+                <span className="text-[10px] text-[#666]">No truncation</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  const next = !expandFullTree;
+                  setExpandFullTree(next);
+                  if (next) setShowAllChildren(false);
+                }}
+              >
+                <Checkbox
+                  id="filter-full-tree"
+                  checked={expandFullTree}
+                  onCheckedChange={(checked) => {
+                    const val = !!checked;
+                    setExpandFullTree(val);
+                    if (val) setShowAllChildren(false);
+                  }}
+                />
+                <label htmlFor="filter-full-tree" className="text-xs text-[#ccc] cursor-pointer select-none flex-1">
+                  Expand full tree
+                </label>
+                <span className="text-[10px] text-[#666]">All levels</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div ref={searchContainerRef} style={{ position: 'relative', width: 280 }}>
           <svg
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none"
             fill="none"
