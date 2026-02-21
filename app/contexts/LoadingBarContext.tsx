@@ -19,8 +19,28 @@ export function LoadingBarProvider({ children }: { children: ReactNode }) {
   const progressRef = useRef(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isNavigatingRef = useRef(false);
   const previousPathnameRef = useRef(pathname);
+
+  // Helper function to complete loading (shared by stopLoading and fallback timeout)
+  const completeLoading = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (fallbackTimeoutRef.current) {
+      clearTimeout(fallbackTimeoutRef.current);
+      fallbackTimeoutRef.current = null;
+    }
+    setProgress(100);
+    completionTimeoutRef.current = setTimeout(() => {
+      setLoading(false);
+      setProgress(0);
+      progressRef.current = 0;
+      isNavigatingRef.current = false;
+    }, 300);
+  }, []);
 
   // Function to start loading
   const startLoading = useCallback(() => {
@@ -36,6 +56,9 @@ export function LoadingBarProvider({ children }: { children: ReactNode }) {
     if (completionTimeoutRef.current) {
       clearTimeout(completionTimeoutRef.current);
     }
+    if (fallbackTimeoutRef.current) {
+      clearTimeout(fallbackTimeoutRef.current);
+    }
 
     // Simulate progress (slow down as it approaches 90%)
     intervalRef.current = setInterval(() => {
@@ -45,22 +68,19 @@ export function LoadingBarProvider({ children }: { children: ReactNode }) {
       );
       setProgress(progressRef.current);
     }, 100);
-  }, []);
+
+    // Set fallback timeout to auto-complete after 30 seconds
+    fallbackTimeoutRef.current = setTimeout(() => {
+      if (isNavigatingRef.current) {
+        completeLoading();
+      }
+    }, 30000);
+  }, [completeLoading]);
 
   // Function to stop loading
   const stopLoading = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setProgress(100);
-    completionTimeoutRef.current = setTimeout(() => {
-      setLoading(false);
-      setProgress(0);
-      progressRef.current = 0;
-      isNavigatingRef.current = false;
-    }, 300);
-  }, []);
+    completeLoading();
+  }, [completeLoading]);
 
   // Start loading bar on link clicks (for <Link> components)
   useEffect(() => {
@@ -182,6 +202,21 @@ export function LoadingBarProvider({ children }: { children: ReactNode }) {
     };
   }, [pathname, startLoading]);
 
+  // Handle browser back/forward navigation (popstate event)
+  useEffect(() => {
+    const handlePopState = () => {
+      // If we're currently loading, complete it
+      if (isNavigatingRef.current) {
+        stopLoading();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [stopLoading]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -190,6 +225,9 @@ export function LoadingBarProvider({ children }: { children: ReactNode }) {
       }
       if (completionTimeoutRef.current) {
         clearTimeout(completionTimeoutRef.current);
+      }
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current);
       }
     };
   }, []);
