@@ -761,7 +761,70 @@ export default function VisualTreeCanvas({
     []
   );
 
-  // Search filter
+  // Global search: recursively search entire tree and compute the breadcrumb path to each result
+  interface SearchResult {
+    node: TreeNodeData;
+    path: TreeNodeData[];  // breadcrumb trail (parents) to reach the view containing this node
+  }
+
+  const globalSearchResults = useMemo<SearchResult[]>(() => {
+    if (!searchQuery.trim() || !treeData) return [];
+    const q = searchQuery.toLowerCase();
+    const results: SearchResult[] = [];
+
+    const walk = (node: TreeNodeData, ancestors: TreeNodeData[]) => {
+      const matches =
+        node.name?.toLowerCase().includes(q) ||
+        node.description?.toLowerCase().includes(q) ||
+        node.purpose?.toLowerCase().includes(q) ||
+        node.type?.toLowerCase().includes(q);
+
+      if (matches) {
+        results.push({ node, path: [...ancestors] });
+      }
+      for (const child of node.children || []) {
+        walk(child, [...ancestors, node]);
+      }
+    };
+
+    walk(treeData, []);
+    return results.slice(0, 30);
+  }, [searchQuery, treeData]);
+
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as HTMLElement)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const navigateToResult = useCallback((result: SearchResult) => {
+    // The path contains ancestors. We need to set the breadcrumb so the
+    // result's PARENT becomes the currentRoot (so the result node is visible as a child).
+    // path = [treeData, ...intermediaries, parentOfResult]
+    // Skip the first element (treeData itself, which is the root — no breadcrumb entry for it).
+    const crumbs = result.path.slice(1); // remove treeData root
+
+    setBreadcrumb(crumbs);
+    setMaxVisible(8);
+    setSearchQuery('');
+    setSearchFocused(false);
+
+    // If the result node is a leaf, open the detail sidebar
+    if (!result.node.children?.length) {
+      setSelectedNode({ ...result.node, childCount: 0 });
+    } else {
+      setSelectedNode(null);
+    }
+  }, []);
+
+  // Filter visible nodes in the current view (dims non-matching nodes)
   const filteredNodeIds = useMemo(() => {
     if (!searchQuery.trim()) return null;
     const q = searchQuery.toLowerCase();
@@ -842,12 +905,13 @@ export default function VisualTreeCanvas({
           </div>
         )}
 
-        <div style={{ marginLeft: 'auto', position: 'relative', width: 220 }}>
+        <div ref={searchContainerRef} style={{ marginLeft: 'auto', position: 'relative', width: 280 }}>
           <svg
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            style={{ zIndex: 1 }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -855,7 +919,8 @@ export default function VisualTreeCanvas({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search nodes..."
+            onFocus={() => setSearchFocused(true)}
+            placeholder="Search all nodes..."
             style={{
               width: '100%',
               padding: '6px 10px 6px 30px',
@@ -867,6 +932,119 @@ export default function VisualTreeCanvas({
               outline: 'none',
             }}
           />
+
+          {/* Global search results dropdown */}
+          {searchFocused && searchQuery.trim() && globalSearchResults.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: 4,
+                background: '#1e1e21',
+                border: '1px solid #333',
+                borderRadius: 8,
+                maxHeight: 320,
+                overflowY: 'auto',
+                zIndex: 100,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}
+              className="custom-scrollbar"
+            >
+              {globalSearchResults.map((result, i) => {
+                const pathLabel = result.path
+                  .slice(1)
+                  .map((p) => p.name)
+                  .join(' › ');
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => navigateToResult(result)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '8px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: i < globalSearchResults.length - 1 ? '1px solid #262626' : 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.1s',
+                    }}
+                    className="hover:!bg-[#2a2a2d]"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '1px 5px',
+                          borderRadius: 3,
+                          background: `${typeColour(result.node.type)}22`,
+                          color: typeColour(result.node.type),
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {result.node.type}
+                      </span>
+                      <span
+                        style={{
+                          color: '#fff',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {result.node.name}
+                      </span>
+                    </div>
+                    {pathLabel && (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: '#666',
+                          marginTop: 2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {pathLabel}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {searchFocused && searchQuery.trim() && globalSearchResults.length === 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: 4,
+                background: '#1e1e21',
+                border: '1px solid #333',
+                borderRadius: 8,
+                padding: '12px 16px',
+                zIndex: 100,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                color: '#666',
+                fontSize: 12,
+                textAlign: 'center',
+              }}
+            >
+              No nodes found
+            </div>
+          )}
         </div>
       </div>
 
