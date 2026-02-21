@@ -15,7 +15,7 @@ export interface PullRequestAnalysis {
   
   // PR Metadata (from GitHub)
   title: string;
-  description?: string;
+  body?: string;  // PR description/body from GitHub
   state: 'open' | 'closed' | 'merged';
   author: string;
   authorAvatar?: string;

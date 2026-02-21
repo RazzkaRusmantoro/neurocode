@@ -3,6 +3,7 @@
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
+import { useLoadingBar } from '../contexts/LoadingBarContext';
 
 interface ProfileDropdownProps {
   userEmail?: string | null;
@@ -11,6 +12,7 @@ interface ProfileDropdownProps {
 
 export default function ProfileDropdown({ userEmail, userName }: ProfileDropdownProps) {
   const router = useRouter();
+  const { startLoading } = useLoadingBar();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +31,7 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
+    startLoading();
     router.push('/login');
     router.refresh();
   };
@@ -112,6 +115,7 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
             type="button"
             onClick={() => {
               setIsOpen(false);
+              startLoading();
               router.push('/settings');
             }}
             className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors cursor-pointer flex items-center gap-3 rounded"

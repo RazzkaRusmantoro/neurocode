@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useLoadingBar } from '../contexts/LoadingBarContext';
 
 interface RepoSidebarProps {
   isExpanded: boolean;
@@ -37,6 +38,7 @@ export default function RepoSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { startLoading } = useLoadingBar();
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Use props if available, fallback to session
@@ -71,49 +73,57 @@ export default function RepoSidebar({
 
   const handleBackToRepositories = useCallback(() => {
     if (orgShortId) {
+      startLoading();
       router.push(`/${orgShortId}/repositories`);
     }
-  }, [router, orgShortId]);
+  }, [router, orgShortId, startLoading]);
 
   const handleSettingsClick = useCallback(() => {
+    startLoading();
     router.push('/settings');
-  }, [router]);
+  }, [router, startLoading]);
 
   const handleCodeViewerClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   const handleDocumentationClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/documentation`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   const handleVisualTreeClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/visual-tree`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   const handleCodeReferenceClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/code-reference`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   const handleGlossaryClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/glossary`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   const handlePullRequestsClick = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/pull-requests`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   // Get initials from name - memoized since it depends on userName
   const userInitials = useMemo(() => {

@@ -17,6 +17,22 @@ export interface Repository {
   addedBy?: ObjectId; // User ID who added this repository
 }
 
+// Serialized version for client-side use (ObjectIds and Dates converted to strings)
+export interface SerializedRepository {
+  _id: string;
+  organizationId: string;
+  githubId?: number;
+  name: string;
+  urlName?: string;
+  url: string;
+  source: 'github' | 'bitbucket' | 'upload';
+  description?: string;
+  size?: number;
+  lastUpdate?: string; // ISO string
+  addedAt: string; // ISO string
+  addedBy?: string;
+}
+
 export async function getRepositoriesCollection() {
   const db = await getDb();
   return db.collection<Repository>('repositories');

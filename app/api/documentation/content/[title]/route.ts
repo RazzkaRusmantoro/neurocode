@@ -54,7 +54,7 @@ export async function GET(
       if (orgIds.length > 0) {
         const cursor = collection
           .find(
-            { organizationId: { $in: orgIds }, title: { $exists: true, $ne: null } },
+            { organizationId: { $in: orgIds }, title: { $exists: true } },
             { projection: { _id: 1, title: 1, slug: 1 } }
           )
           .limit(2000);

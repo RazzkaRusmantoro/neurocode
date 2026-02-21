@@ -129,7 +129,7 @@ export async function POST(
         prNumber: prNumber,
         prId: prData.id.toString(),
         title: prData.title || '',
-        description: prData.body || '',
+        body: prData.body || '',
         state: prData.merged ? 'merged' : (prData.state as 'open' | 'closed'),
         author: prData.user?.login || 'Unknown',
         authorAvatar: prData.user?.avatar_url || '',

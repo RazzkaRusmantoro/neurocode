@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { useLoadingBar } from '../contexts/LoadingBarContext';
 
 interface SidebarProps {
   isExpanded: boolean;
@@ -152,6 +153,7 @@ function MenuItemComponent({
   onExpandSidebar,
   onMinimizeSidebar
 }: MenuItemComponentProps) {
+  const { startLoading } = useLoadingBar();
   const hasSubItems = Boolean(item.subItems?.length);
   const isActive = activeItem === item.id || (hasSubItems && item.subItems?.some(sub => activeItem === sub.id));
 
@@ -164,9 +166,10 @@ function MenuItemComponent({
     const baseRoute = item.route || MENU_ITEM_ROUTES[item.id];
     if (baseRoute) {
       const route = orgShortId ? `/org-${orgShortId}${baseRoute}` : baseRoute;
+      startLoading();
       router.push(route);
     }
-  }, [item.id, item.route, setActiveItem, router, pathname]);
+  }, [item.id, item.route, setActiveItem, router, pathname, startLoading]);
 
   const handleParentClick = useCallback(() => {
     if (isMinimized && hasSubItems) {
@@ -240,6 +243,7 @@ export default function Sidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { startLoading } = useLoadingBar();
   const [activeItem, setActiveItem] = useState<string>('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [wasAutoExpanded, setWasAutoExpanded] = useState(false);
@@ -287,9 +291,10 @@ export default function Sidebar({
 
   const handleLogout = useCallback(async () => {
     await signOut({ redirect: false });
+    startLoading();
     router.push('/login');
     router.refresh();
-  }, [router]);
+  }, [router, startLoading]);
 
   // Get initials from name - memoized since it depends on userName
   const userInitials = useMemo(() => {
@@ -303,8 +308,9 @@ export default function Sidebar({
 
   const handleSettingsClick = useCallback(() => {
     setActiveItem('Settings');
+    startLoading();
     router.push('/settings');
-  }, [router]);
+  }, [router, startLoading]);
 
   const handleOrgItemClick = useCallback((itemId: string) => {
     setActiveItem(itemId);
