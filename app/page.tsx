@@ -1,12 +1,56 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
 import Navbar from "./components/Navbar";
 
 export default function Home() {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const featuresRef = useRef<HTMLElement | null>(null);
+  const [isVisible, setIsVisible] = useState({
+    hero: false,
+    features: false,
+  });
+
+  useEffect(() => {
+    // Animate hero section on page load - trigger immediately
+    setIsVisible((prev) => ({ ...prev, hero: true }));
+
+    const observers: IntersectionObserver[] = [];
+
+    const createObserver = (ref: React.RefObject<HTMLElement | null>, key: keyof typeof isVisible) => {
+      if (!ref.current) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible((prev) => ({ ...prev, [key]: true }));
+          }
+        },
+        { threshold: 0.05, rootMargin: '0px 0px -300px 0px' }
+      );
+
+      observer.observe(ref.current);
+      observers.push(observer);
+    };
+
+    createObserver(featuresRef, 'features');
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, []);
+
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-[#0f0f11]">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-56 md:pt-72 pb-12">
+        <section 
+          ref={heroRef}
+          className={`relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-40 md:pt-56 pb-12 transition-all duration-1000 ${
+            isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           {/* Grid Background */}
           <div className="absolute inset-0 z-0 hidden md:block bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:24px_24px] animate-grid-flow motion-reduce:animate-none">
             {/* Gradient Overlay */}
@@ -19,19 +63,25 @@ export default function Home() {
           <div className="container relative z-10 px-4 mx-auto max-w-7xl">
             <div className="flex flex-col items-center text-center space-y-6">
             {/* Main Heading */}
-            <h1 className="text-6xl md:text-7xl font-bold leading-tight">
+            <h1 className={`text-6xl md:text-7xl font-bold leading-tight transition-all duration-700 ${
+              isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`} style={{ transitionDelay: isVisible.hero ? '50ms' : '0ms' }}>
               <span className="block text-white">Understand Your Codebase</span>
               <span className="block text-[var(--color-primary)]">With AI Intelligence</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xl text-white/70 max-w-2xl">
+            <p className={`text-xl text-white/70 max-w-2xl transition-all duration-700 ${
+              isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`} style={{ transitionDelay: isVisible.hero ? '100ms' : '0ms' }}>
               Autonomous documentation, onboarding services, and repository-wide insights. 
               From code to comprehension in seconds.
             </p>
 
             {/* CTA Button */}
-            <button className="mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded cursor-pointer transition-all duration-300 flex items-center gap-3">
+            <button className={`mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded cursor-pointer transition-all duration-300 flex items-center gap-3 ${
+              isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`} style={{ transitionDelay: isVisible.hero ? '150ms' : '0ms' }}>
               <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -40,12 +90,33 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </button>
+
+            {/* Video */}
+            <div className={`mt-12 w-full max-w-4xl relative transition-all duration-700 ${
+              isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`} style={{ transitionDelay: isVisible.hero ? '200ms' : '0ms' }}>
+              {/* Glow Effect */}
+              <div className="absolute inset-0 bg-[var(--color-primary)]/40 rounded-2xl blur-[80px] -z-10 opacity-75"></div>
+              <video
+                src="/videos/landing-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full rounded-2xl border border-[#262626] shadow-2xl relative z-10"
+              />
+            </div>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-24 relative overflow-hidden bg-[#0f0f11]">
+        <section 
+          ref={featuresRef}
+          className={`py-24 relative overflow-hidden bg-[#0f0f11] transition-all duration-700 ${
+            isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+          }`}
+        >
           {/* Background Blur Effects */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden">
             <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[var(--color-primary)]/5 rounded-full blur-[128px]"></div>
@@ -56,7 +127,9 @@ export default function Home() {
             <div className="max-w-6xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-16 items-center">
                 {/* Left Column - Content */}
-                <div>
+                <div className={`transition-all duration-700 delay-100 ${
+                  isVisible.features ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
+                }`}>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-semibold mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
                       <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
@@ -99,9 +172,13 @@ export default function Home() {
                 </div>
 
                 {/* Right Column - Feature Cards */}
-                <div className="grid gap-6">
+                <div className={`grid gap-6 transition-all duration-700 delay-200 ${
+                  isVisible.features ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
+                }`}>
                   {/* Card 1 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                  <div className={`relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6 ${
+                    isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`} style={{ transitionDelay: isVisible.features ? '300ms' : '0ms' }}>
                     <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
@@ -120,7 +197,9 @@ export default function Home() {
                   </div>
 
                   {/* Card 2 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                  <div className={`relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6 ${
+                    isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`} style={{ transitionDelay: isVisible.features ? '400ms' : '0ms' }}>
                     <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">
@@ -142,7 +221,9 @@ export default function Home() {
                   </div>
 
                   {/* Card 3 */}
-                  <div className="relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6">
+                  <div className={`relative bg-[#171717]/50 border border-[#262626] backdrop-blur-sm rounded overflow-hidden group hover:border-[var(--color-primary)]/50 transition-all duration-500 p-6 ${
+                    isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`} style={{ transitionDelay: isVisible.features ? '500ms' : '0ms' }}>
                     <div className="pointer-events-none absolute -inset-px rounded opacity-0 transition duration-300 group-hover:opacity-100" style={{background: `radial-gradient(650px circle at 0px 0px, rgba(var(--color-primary-rgb), 0.1), transparent 80%)`}}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 pointer-events-none"></div>
                     <div className="relative z-10">

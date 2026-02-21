@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NeuroCode",
+  title: "NeuroCode: AI-Powered Documentation & Onboarding",
   description: "Next Level AI-Powered Documentation & Onboarding for Developers",
 };
 
