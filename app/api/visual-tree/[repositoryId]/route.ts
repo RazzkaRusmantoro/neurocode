@@ -191,7 +191,7 @@ async function fetchTreeFromS3(doc: { s3Key?: string; s3Bucket?: string }) {
   if (!doc.s3Key) return null;
   try {
     const pythonBackendUrl =
-      process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8000';
+      process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
     const s3Response = await fetch(`${pythonBackendUrl}/api/get-documentation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

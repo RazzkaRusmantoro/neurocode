@@ -90,7 +90,7 @@ export async function GET(
     }
 
     // Fetch content from S3 via Python backend
-    const pythonBackendUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8000';
+    const pythonBackendUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
     
     try {
       const response = await fetch(`${pythonBackendUrl}/api/get-documentation`, {
