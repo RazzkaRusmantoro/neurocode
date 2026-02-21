@@ -6,6 +6,7 @@ import { getRepositoryById } from '@/lib/models/repository';
 import {
   getLatestVisualTree,
   getLatestCompletedVisualTree,
+  deleteAllVisualTreesForRepository,
 } from '@/lib/models/visual_tree';
 
 export async function GET(
@@ -68,6 +69,10 @@ export async function GET(
 
     // If the most recent job failed, still try to return the last completed tree
     if (latest.status === 'failed') {
+      // User cancellation is not an error — treat as no tree so UI shows empty state
+      if (latest.errorMessage === 'Cancelled by user') {
+        return NextResponse.json({ success: true, status: 'none', tree: null });
+      }
       const completed = await getLatestCompletedVisualTree(repositoryId);
       if (completed && completed.s3Key) {
         const tree = await fetchTreeFromS3(completed);
@@ -120,6 +125,51 @@ export async function GET(
     return NextResponse.json(
       {
         error: 'Failed to fetch visual tree',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ repositoryId: string }> | { repositoryId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const user = await getCachedUserById(session.user.id);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const resolvedParams = await Promise.resolve(params);
+    const repositoryId = resolvedParams.repositoryId;
+
+    const repository = await getRepositoryById(repositoryId);
+    if (!repository) {
+      return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
+    }
+
+    const userOrg = user.organizations?.find(
+      (org: { organizationId: { toString: () => string } }) =>
+        org.organizationId.toString() === repository.organizationId.toString()
+    );
+    if (!userOrg) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    const { deletedCount } = await deleteAllVisualTreesForRepository(repositoryId);
+    return NextResponse.json({ success: true, deletedCount });
+  } catch (error) {
+    console.error('[Visual Tree API] Delete error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to delete documentation',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

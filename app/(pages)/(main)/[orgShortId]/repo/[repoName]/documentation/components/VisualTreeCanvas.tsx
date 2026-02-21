@@ -563,6 +563,9 @@ export default function VisualTreeCanvas({
   const [maxVisible, setMaxVisible] = useState(8);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [holdProgress, setHoldProgress] = useState(0);
   const [showAllChildren, setShowAllChildren] = useState(false);
   const [expandFullTree, setExpandFullTree] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -572,6 +575,10 @@ export default function VisualTreeCanvas({
 
   const rfRef = useRef<ReactFlowInstance | null>(null);
   const fitViewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdStartRef = useRef<number>(0);
+  const cancelGenerationRef = useRef(false);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
 
   const currentRoot = breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1] : treeData;
 
@@ -672,8 +679,11 @@ export default function VisualTreeCanvas({
           setError(data.error || 'Generation failed');
           if (data.tree) setTreeData(data.tree);
         } else {
+          // status 'none' or no tree (e.g. after cancel) — show empty state
           setGenerating(false);
           setProgress(0);
+          setTreeData(null);
+          setError(null);
         }
       } catch {
         // silent
@@ -694,6 +704,7 @@ export default function VisualTreeCanvas({
 
   // Generate handler
   const handleGenerate = useCallback(async () => {
+    cancelGenerationRef.current = false;
     setGenerating(true);
     setProgress(0);
     setError(null);
@@ -717,9 +728,20 @@ export default function VisualTreeCanvas({
         // eslint-disable-next-line no-constant-condition
         while (true) {
           await new Promise((r) => setTimeout(r, 3000));
+          if (cancelGenerationRef.current) {
+            setGenerating(false);
+            setProgress(0);
+            return;
+          }
           try {
             const r = await fetch(`/api/visual-tree/${repositoryId}`);
             const d = await r.json();
+
+            if (cancelGenerationRef.current) {
+              setGenerating(false);
+              setProgress(0);
+              return;
+            }
 
             if (d.status === 'generating') {
               const elapsed = d.elapsedMs ?? 0;
@@ -756,6 +778,75 @@ export default function VisualTreeCanvas({
       setProgress(0);
     }
   }, [repoFullName, orgShortId, repoUrlName, repositoryId]);
+
+  const handleCancelGeneration = useCallback(async () => {
+    cancelGenerationRef.current = true;
+    setShowCancelConfirmModal(false);
+    setGenerating(false);
+    setProgress(0);
+    setTreeData(null);
+    setError(null);
+    try {
+      await fetch(`/api/visual-tree/${repositoryId}/cancel`, { method: 'POST' });
+    } catch {
+      // best-effort; UI already reset
+    }
+  }, [repositoryId]);
+
+  const handleDelete = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/visual-tree/${repositoryId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Delete failed');
+      }
+      setTreeData(null);
+      setBreadcrumb([]);
+      setSelectedNode(null);
+      setMaxVisible(8);
+      setShowDeleteModal(false);
+      setDeleteConfirmInput('');
+      setHoldProgress(0);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete documentation');
+    }
+  }, [repositoryId]);
+
+  const HOLD_DURATION_MS = 750;
+  const clearHold = useCallback(() => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setHoldProgress(0);
+  }, []);
+
+  const onDeleteHoldStart = useCallback(() => {
+    if (deleteConfirmInput !== repoFullName) return;
+    clearHold();
+    holdStartRef.current = Date.now();
+    holdIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - holdStartRef.current;
+      const pct = Math.min(100, (elapsed / HOLD_DURATION_MS) * 100);
+      setHoldProgress(pct);
+      if (pct >= 100) {
+        if (holdIntervalRef.current) {
+          clearInterval(holdIntervalRef.current);
+          holdIntervalRef.current = null;
+        }
+        handleDelete();
+      }
+    }, 50);
+  }, [deleteConfirmInput, repoFullName, clearHold, handleDelete]);
+
+  const onDeleteHoldEnd = useCallback(() => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setHoldProgress(0);
+  }, []);
 
   // Node click: shift+click → details, viewMore → expand,
   // root node → go back, child with children → drill down, leaf → details
@@ -937,6 +1028,28 @@ export default function VisualTreeCanvas({
           </span>
           <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0" />
         </button>
+
+        {treeData && (
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteConfirmInput('');
+              setHoldProgress(0);
+              setShowDeleteModal(true);
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 6,
+              border: '1px solid #444',
+              background: 'transparent',
+              color: '#999',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Delete documentation
+          </button>
+        )}
 
         {breadcrumb.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888', flexWrap: 'wrap' }}>
@@ -1249,16 +1362,34 @@ export default function VisualTreeCanvas({
 
       {/* Orange loading bar */}
       {generating && (
-        <div style={{ width: '100%', height: 3, background: '#262626', borderRadius: 2, marginBottom: 8, overflow: 'hidden' }}>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <div style={{ flex: 1, height: 3, background: '#262626', borderRadius: 2, overflow: 'hidden' }}>
+            <div
+              style={{
+                height: '100%',
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, #d56707, #f59e0b)',
+                borderRadius: 2,
+                transition: 'width 0.4s ease',
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCancelConfirmModal(true)}
             style={{
-              height: '100%',
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #d56707, #f59e0b)',
-              borderRadius: 2,
-              transition: 'width 0.4s ease',
+              padding: '4px 12px',
+              borderRadius: 6,
+              border: '1px solid #444',
+              background: 'transparent',
+              color: '#999',
+              fontSize: 12,
+              cursor: 'pointer',
+              flexShrink: 0,
             }}
-          />
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -1276,14 +1407,35 @@ export default function VisualTreeCanvas({
                 {error}
               </div>
             ) : !treeData ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666', gap: 8 }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <span style={{ fontSize: 14 }}>No visual tree yet</span>
-                <span style={{ fontSize: 12, color: '#555' }}>Click &quot;Generate Visual Tree&quot; to create one</span>
+              <div
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666', gap: 4 }}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                {generating ? (
+                  <>
+                    <img
+                      src="/layers.gif"
+                      alt=""
+                      width={192}
+                      height={192}
+                      draggable={false}
+                      style={{ display: 'block', userSelect: 'none' }}
+                    />
+                    <span style={{ fontSize: 14, textAlign: 'center', whiteSpace: 'pre-line' }}>
+                      Generating tree...{'\n'}This may take some time.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5" />
+                      <path d="M2 12l10 5 10-5" />
+                    </svg>
+                    <span style={{ fontSize: 14 }}>No visual tree yet</span>
+                    <span style={{ fontSize: 12, color: '#555' }}>Click &quot;Generate Visual Tree&quot; to create one</span>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -1460,6 +1612,194 @@ export default function VisualTreeCanvas({
                 }}
               >
                 Regenerate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete documentation confirmation modal */}
+      {showDeleteModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => {
+            onDeleteHoldEnd();
+            setShowDeleteModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: '#1e1e21',
+              border: '1px solid #333',
+              borderRadius: 12,
+              padding: '28px 32px',
+              width: 460,
+              maxWidth: '90vw',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>
+              Delete documentation?
+            </h3>
+            <p style={{ color: '#999', fontSize: 13, lineHeight: 1.5, margin: '0 0 20px' }}>
+              This will remove all generated visual tree data for this repository. To confirm, type{' '}
+              <span style={{ color: '#d56707', fontWeight: 600 }}>{repoFullName}</span>{' '}
+              below, then hold the confirm button for 0.75 seconds.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmInput}
+              onChange={(e) => setDeleteConfirmInput(e.target.value)}
+              placeholder={repoFullName}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  onDeleteHoldEnd();
+                  setShowDeleteModal(false);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid #444',
+                background: '#141416',
+                color: '#fff',
+                fontSize: 14,
+                outline: 'none',
+                marginBottom: 20,
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteHoldEnd();
+                  setShowDeleteModal(false);
+                }}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 6,
+                  border: '1px solid #444',
+                  background: 'transparent',
+                  color: '#aaa',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmInput !== repoFullName}
+                onMouseDown={onDeleteHoldStart}
+                onMouseUp={onDeleteHoldEnd}
+                onMouseLeave={onDeleteHoldEnd}
+                style={{
+                  position: 'relative',
+                  padding: '8px 20px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: deleteConfirmInput === repoFullName ? '#333' : '#2a2a2a',
+                  color: deleteConfirmInput === repoFullName ? '#fff' : '#666',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: deleteConfirmInput === repoFullName ? 'pointer' : 'not-allowed',
+                  overflow: 'hidden',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${holdProgress}%`,
+                    background: '#d56707',
+                    transition: 'width 0.05s linear',
+                  }}
+                />
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  Hold to confirm
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel generation confirmation modal */}
+      {showCancelConfirmModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setShowCancelConfirmModal(false)}
+        >
+          <div
+            style={{
+              background: '#1e1e21',
+              border: '1px solid #333',
+              borderRadius: 12,
+              padding: '28px 32px',
+              width: 380,
+              maxWidth: '90vw',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>
+              Cancel generation?
+            </h3>
+            <p style={{ color: '#999', fontSize: 13, lineHeight: 1.5, margin: '0 0 24px' }}>
+              The current tree generation will be stopped. You can start a new one anytime.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirmModal(false)}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 6,
+                  border: '1px solid #444',
+                  background: 'transparent',
+                  color: '#aaa',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelGeneration}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: '#d56707',
+                  color: '#fff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel generation
               </button>
             </div>
           </div>

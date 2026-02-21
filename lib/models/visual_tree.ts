@@ -102,3 +102,24 @@ export async function getLatestCompletedVisualTree(
     { sort: { createdAt: -1 } }
   );
 }
+
+export async function deleteAllVisualTreesForRepository(
+  repositoryId: string
+): Promise<{ deletedCount: number }> {
+  const collection = await getVisualTreeCollection();
+  const result = await collection.deleteMany({
+    repositoryId: new ObjectId(repositoryId),
+  });
+  return { deletedCount: result.deletedCount };
+}
+
+export async function cancelVisualTreeGeneration(
+  repositoryId: string
+): Promise<{ cancelled: boolean }> {
+  const latest = await getLatestVisualTree(repositoryId);
+  if (!latest || latest.status !== 'generating' || !latest._id) {
+    return { cancelled: false };
+  }
+  await failVisualTree(latest._id.toString(), 'Cancelled by user');
+  return { cancelled: true };
+}
