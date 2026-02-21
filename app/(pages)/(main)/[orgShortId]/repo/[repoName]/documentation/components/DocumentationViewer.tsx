@@ -268,7 +268,13 @@ export default function DocumentationViewer({
             )}
 
             {activeTab === 'visual-tree' && (
-              <VisualTreeCanvas />
+              <VisualTreeCanvas
+                repositoryId={repositoryId}
+                repoFullName={repoFullName}
+                orgShortId={orgShortId}
+                repoUrlName={repoUrlName}
+                repoName={repoName}
+              />
             )}
 
             {activeTab === 'code-reference' && (
