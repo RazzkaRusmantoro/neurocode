@@ -174,11 +174,21 @@ function AnimatedDashedEdge(props: EdgeProps) {
 function TreeNodeCard({ data }: NodeProps) {
   const d = data as unknown as TreeNodeData & { childCount: number };
   const colour = typeColour(d.type);
+  const nameRef = useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    const el = nameRef.current;
+    if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
+  }, [d.name]);
 
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 1, height: 1 }} />
       <div
+        onMouseEnter={() => isTruncated && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
         style={{
           width: NODE_W,
           background: '#1e1e21',
@@ -188,6 +198,7 @@ function TreeNodeCard({ data }: NodeProps) {
           padding: '10px 12px',
           cursor: 'pointer',
           transition: 'border-color 0.15s',
+          position: 'relative',
         }}
         className="hover:!border-[var(--color-primary)]"
       >
@@ -213,6 +224,7 @@ function TreeNodeCard({ data }: NodeProps) {
           )}
         </div>
         <div
+          ref={nameRef}
           style={{
             color: '#fff',
             fontSize: 13,
@@ -224,6 +236,33 @@ function TreeNodeCard({ data }: NodeProps) {
         >
           {d.name}
         </div>
+
+        {showTooltip && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: -4,
+              transform: 'translateY(-100%)',
+              background: '#111',
+              border: '1px solid #444',
+              borderRadius: 6,
+              padding: '6px 10px',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              maxWidth: 400,
+              zIndex: 50,
+              pointerEvents: 'none',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            }}
+          >
+            {d.name}
+          </div>
+        )}
+
         <div
           style={{
             color: 'rgba(255,255,255,0.5)',
