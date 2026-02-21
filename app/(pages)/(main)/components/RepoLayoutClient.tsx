@@ -58,8 +58,11 @@ export default function RepoLayoutClient({
     : null;
 
   // Show documentation sidebar on documentation detail pages:
-  // `/.../documentation/<slug>`
-  const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname);
+  // `/.../documentation/<slug>` (but not visual-tree, code-reference, or glossary)
+  const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname) && 
+    !pathname.includes('/documentation/visual-tree') &&
+    !pathname.includes('/documentation/code-reference') &&
+    !pathname.includes('/documentation/glossary');
 
   return (
     <RepoCacheProvider>

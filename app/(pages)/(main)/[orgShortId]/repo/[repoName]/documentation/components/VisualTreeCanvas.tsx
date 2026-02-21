@@ -1292,6 +1292,29 @@ export default function VisualTreeCanvas({
                     to { stroke-dashoffset: -16; }
                   }
                   .react-flow__attribution { display: none !important; }
+                  .react-flow__controls {
+                    background: #1e1e21 !important;
+                    border: 1px solid #333 !important;
+                    border-radius: 6px !important;
+                  }
+                  .react-flow__controls-button {
+                    background: #1e1e21 !important;
+                    border-bottom: 1px solid #333 !important;
+                    color: #ccc !important;
+                  }
+                  .react-flow__controls-button:hover {
+                    background: #262626 !important;
+                    color: #fff !important;
+                  }
+                  .react-flow__controls-button:first-child {
+                    border-top-left-radius: 6px !important;
+                    border-top-right-radius: 6px !important;
+                  }
+                  .react-flow__controls-button:last-child {
+                    border-bottom-left-radius: 6px !important;
+                    border-bottom-right-radius: 6px !important;
+                    border-bottom: none !important;
+                  }
                 `}</style>
                 <ReactFlow
                   nodes={styledNodes}

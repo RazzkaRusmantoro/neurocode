@@ -1,25 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import GenerateDocumentationModal from './GenerateDocumentationModal';
+import CodeReferenceList from './CodeReferenceList';
 import DocumentationHeader from './DocumentationHeader';
-import DocumentationList from './DocumentationList';
+import GenerateDocumentationModal from './GenerateDocumentationModal';
 
-interface Documentation {
-  _id: string;
-  target?: string;
-  prompt?: string;
-  title?: string;
-  description?: string;
-  slug?: string | null;
-  branch: string;
-  version: number;
-  isLatest: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface DocumentationViewerProps {
+interface CodeReferenceViewerProps {
   repositoryId: string;
   repoFullName: string;
   orgShortId: string;
@@ -27,19 +13,41 @@ interface DocumentationViewerProps {
   repoName: string;
 }
 
-export default function DocumentationViewer({
+interface CodeReference {
+  _id?: string;
+  referenceId: string;
+  name: string;
+  type?: 'function' | 'class' | 'method' | 'module';
+  module?: string;
+  filePath?: string;
+  description: string;
+  signature?: string;
+  parameters?: Array<{
+    name: string;
+    type: string;
+    required: boolean;
+    default?: any;
+    description: string;
+  }>;
+  returns?: {
+    type: string;
+    description: string;
+  };
+}
+
+export default function CodeReferenceViewer({
   repositoryId,
   repoFullName,
   orgShortId,
   repoUrlName,
   repoName,
-}: DocumentationViewerProps) {
+}: CodeReferenceViewerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [documentations, setDocumentations] = useState<Documentation[]>([]);
+  const [codeReferences, setCodeReferences] = useState<CodeReference[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [documentationsFetched, setDocumentationsFetched] = useState(false);
+  const [codeReferencesFetched, setCodeReferencesFetched] = useState(false);
 
   const handleGenerateDocumentation = () => {
     setIsModalOpen(true);
@@ -47,13 +55,11 @@ export default function DocumentationViewer({
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Refresh documentations after generating new one (force refresh)
-    fetchDocumentations(true);
   };
 
-  const fetchDocumentations = async (forceRefresh = false) => {
+  const fetchCodeReferences = async (forceRefresh = false) => {
     // Skip if already fetched and not forcing refresh
-    if (documentationsFetched && !forceRefresh) {
+    if (codeReferencesFetched && !forceRefresh) {
       setLoading(false);
       return;
     }
@@ -61,43 +67,40 @@ export default function DocumentationViewer({
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/documentation/repository/${repositoryId}`);
+      const response = await fetch(`/api/code-references/repository/${repositoryId}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch documentations');
+        throw new Error('Failed to fetch code references');
       }
 
       const data = await response.json();
       if (data.success) {
-        setDocumentations(data.documentations || []);
-        setDocumentationsFetched(true);
+        setCodeReferences(data.codeReferences || []);
+        setCodeReferencesFetched(true);
       } else {
-        throw new Error(data.error || 'Failed to fetch documentations');
+        throw new Error(data.error || 'Failed to fetch code references');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error fetching documentations:', err);
+      console.error('Error fetching code references:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Only fetch if not already cached - set loading to false immediately if cached
-    if (!documentationsFetched) {
-      fetchDocumentations();
+    if (!codeReferencesFetched) {
+      fetchCodeReferences();
     } else {
-      // Data is cached, ensure loading is false immediately
       setLoading(false);
     }
-  }, [repositoryId, documentationsFetched]);
+  }, [repositoryId, codeReferencesFetched]);
 
   // Reset cache when repository changes
   useEffect(() => {
-    setDocumentationsFetched(false);
-    setDocumentations([]);
+    setCodeReferencesFetched(false);
+    setCodeReferences([]);
   }, [repositoryId]);
-
 
   return (
     <>
@@ -107,22 +110,20 @@ export default function DocumentationViewer({
           <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6">
             {/* Header with Search and Generate Button */}
             <DocumentationHeader
-              activeTab="documentation"
+              activeTab="code-reference"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               onGenerateClick={handleGenerateDocumentation}
             />
 
-            {/* Documentation Content */}
+            {/* Code Reference Content */}
             <div className="mt-12">
-              <DocumentationList
-                documentations={documentations}
+              <CodeReferenceList
+                codeReferences={codeReferences}
                 loading={loading}
                 error={error}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                orgShortId={orgShortId}
-                repoUrlName={repoUrlName}
               />
             </div>
           </div>
