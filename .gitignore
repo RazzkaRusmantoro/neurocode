@@ -42,3 +42,8 @@ next-env.d.ts
 
 # parsed data (temporary storage before DB)
 /parsed-data
+
+.agents
+skills-lock.json
+src
+remotion.config.ts
