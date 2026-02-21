@@ -31,8 +31,11 @@ interface MenuItem {
 const MENU_ITEM_ROUTES: Record<string, string> = {
   dashboard: '/dashboard',
   Repositories: '/repositories',
+  management: '/management',
   Settings: '/settings',
   Onboarding: '/onboarding',
+  'Hot Zones': '/hot-zones',
+  'Task Compass': '/task-compass',
 };
 
 // Menu items configuration
@@ -51,12 +54,17 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     id: 'management',
     label: 'Management',
-    iconPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
-    subItems: [
-      { id: 'Members', label: 'Members' },
-      { id: 'Teams', label: 'Teams' },
-      { id: 'Projects', label: 'Projects' }
-    ]
+    iconPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'
+  },
+  {
+    id: 'Hot Zones',
+    label: 'Hot Zones',
+    iconPath: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z'
+  },
+  {
+    id: 'Task Compass',
+    label: 'Task Compass',
+    iconPath: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7'
   },
   {
     id: 'Onboarding',
@@ -247,9 +255,7 @@ export default function Sidebar({
   const [activeItem, setActiveItem] = useState<string>('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [wasAutoExpanded, setWasAutoExpanded] = useState(false);
-  const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({
-    management: true
-  });
+  const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
 
   // Extract orgShortId from pathname (e.g., /org-x7k2/repositories -> x7k2)
   const getOrgShortIdFromPath = useCallback(() => {
@@ -273,8 +279,14 @@ export default function Sidebar({
       setActiveItem('Settings');
     } else if (pathname.includes('/repositories')) {
       setActiveItem('Repositories');
+    } else if (pathname.includes('/management')) {
+      setActiveItem('management');
     } else if (pathname.includes('/onboarding')) {
       setActiveItem('Onboarding');
+    } else if (pathname.includes('/hot-zones')) {
+      setActiveItem('Hot Zones');
+    } else if (pathname.includes('/task-compass')) {
+      setActiveItem('Task Compass');
     } else if (pathname.includes('/dashboard') || pathname === '/') {
       setActiveItem('dashboard');
     }
