@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { slugify } from '@/lib/utils/slug';
+import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
 
 interface Documentation {
   _id: string;
@@ -38,6 +39,7 @@ export default function DocumentationList({
   repoUrlName,
 }: DocumentationListProps) {
   const router = useRouter();
+  const { startLoading } = useLoadingBar();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -68,6 +70,7 @@ export default function DocumentationList({
       return;
     }
     const slug = doc.slug || slugify(doc.title);
+    startLoading();
     router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/${encodeURIComponent(slug)}`);
   };
 

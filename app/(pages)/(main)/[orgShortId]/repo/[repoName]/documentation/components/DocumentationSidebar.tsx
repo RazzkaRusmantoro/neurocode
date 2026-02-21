@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useDocumentation } from '../context/DocumentationContext';
+import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
 
 interface SidebarItem {
   id: string;
@@ -19,6 +20,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   const router = useRouter();
   const pathname = usePathname();
   const { documentation } = useDocumentation();
+  const { startLoading } = useLoadingBar();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Extract orgShortId and repoName from pathname
@@ -29,9 +31,10 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
 
   const handleBackToDocumentations = useCallback(() => {
     if (orgShortId && repoName) {
+      startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/documentation`);
     }
-  }, [router, orgShortId, repoName]);
+  }, [router, orgShortId, repoName, startLoading]);
 
   // Build sidebar items from documentation sections
   const sidebarItems: SidebarItem[] = documentation?.sections

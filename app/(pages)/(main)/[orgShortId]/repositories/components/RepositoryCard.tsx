@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
 
 interface RepositoryCardProps {
   id: string;
@@ -18,12 +19,14 @@ interface RepositoryCardProps {
 
 export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description }: RepositoryCardProps) {
   const router = useRouter();
+  const { startLoading } = useLoadingBar();
   const addedDate = typeof addedAt === 'string' ? new Date(addedAt) : addedAt;
   const updateDate = lastUpdate ? (typeof lastUpdate === 'string' ? new Date(lastUpdate) : lastUpdate) : addedDate;
   const sizeDisplay = size || 'N/A';
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    startLoading();
     router.push(`/org-${orgShortId}/repo/${urlName}`);
   };
 

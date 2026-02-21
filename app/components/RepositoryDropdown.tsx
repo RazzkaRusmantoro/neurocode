@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { SerializedRepository } from '@/lib/models/repository';
+import { useLoadingBar } from '../contexts/LoadingBarContext';
 
 interface RepositoryWithId extends SerializedRepository {
   id: string;
@@ -21,6 +22,7 @@ export default function RepositoryDropdown({
 }: RepositoryDropdownProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { startLoading } = useLoadingBar();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +64,7 @@ export default function RepositoryDropdown({
     // Extract orgShortId from current path (e.g., /org-x7k2/repo/repo-name -> org-x7k2)
     const orgMatch = pathname.match(/\/org-([^/]+)/);
     if (orgMatch && repo.urlName) {
+      startLoading();
       router.push(`/org-${orgMatch[1]}/repo/${repo.urlName}`);
     }
   };
@@ -142,6 +145,7 @@ export default function RepositoryDropdown({
             onClick={() => {
               const orgMatch = pathname.match(/\/org-([^/]+)/);
               if (orgMatch) {
+                startLoading();
                 router.push(`/org-${orgMatch[1]}/repositories`);
               }
               setIsOpen(false);
