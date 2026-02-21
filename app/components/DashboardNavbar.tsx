@@ -4,9 +4,9 @@ import OrganizationDropdown from './OrganizationDropdown';
 import RepositoryDropdown from './RepositoryDropdown';
 import ProfileDropdown from './ProfileDropdown';
 import type { OrganizationWithId } from '@/actions/organization';
-import type { Repository } from '@/lib/models/repository';
+import type { SerializedRepository } from '@/lib/models/repository';
 
-interface RepositoryWithId extends Repository {
+interface RepositoryWithId extends SerializedRepository {
   id: string;
 }
 

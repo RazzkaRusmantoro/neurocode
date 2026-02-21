@@ -8,7 +8,7 @@ import DocumentationSidebar from '../[orgShortId]/repo/[repoName]/documentation/
 import { RepoCacheProvider } from '../[orgShortId]/repo/context/RepoCacheContext';
 import { DocumentationProvider, useDocumentation } from '../[orgShortId]/repo/[repoName]/documentation/context/DocumentationContext';
 import type { OrganizationWithId } from '@/actions/organization';
-import type { Repository } from '@/lib/models/repository';
+import type { SerializedRepository } from '@/lib/models/repository';
 
 // Wrapper component to use the context
 function DocumentationSidebarWrapper() {
@@ -21,7 +21,7 @@ function DocumentationSidebarWrapper() {
   );
 }
 
-interface RepositoryWithId extends Repository {
+interface RepositoryWithId extends SerializedRepository {
   id: string;
 }
 
