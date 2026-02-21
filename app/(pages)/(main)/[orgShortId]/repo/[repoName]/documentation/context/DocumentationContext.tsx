@@ -2,6 +2,28 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+export interface CodeReferenceDetail {
+  _id?: string;
+  referenceId: string;
+  name: string;
+  type?: 'function' | 'class' | 'method' | 'module';
+  module?: string;
+  filePath?: string;
+  description: string;
+  signature?: string;
+  parameters?: Array<{
+    name: string;
+    type: string;
+    required: boolean;
+    default?: any;
+    description: string;
+  }>;
+  returns?: {
+    type: string;
+    description: string;
+  };
+}
+
 interface Section {
   id: string;
   title: string;
@@ -18,7 +40,7 @@ interface Section {
 interface DocumentationData {
   title: string;
   sections: Section[];
-  code_references?: string[];
+  code_references?: (string | CodeReferenceDetail)[];
 }
 
 interface DocumentationContextType {

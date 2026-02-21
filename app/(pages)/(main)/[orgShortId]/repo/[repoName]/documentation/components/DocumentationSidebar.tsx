@@ -49,12 +49,19 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   if (documentation?.code_references && documentation.code_references.length > 0) {
     const codeRefSubItems = documentation.code_references.map((ref) => {
       // Handle both string and object types
-      const refName = typeof ref === 'string' ? ref : ref.name || ref.referenceId || 'Unknown';
-      const refId = typeof ref === 'string' ? ref : ref.referenceId || ref.name || 'unknown';
-      return {
-        id: `code-ref-${refId}`,
-        label: refName,
-      };
+      if (typeof ref === 'string') {
+        return {
+          id: `code-ref-${ref}`,
+          label: ref,
+        };
+      } else {
+        const refName = ref.name || ref.referenceId || 'Unknown';
+        const refId = ref.referenceId || ref.name || 'unknown';
+        return {
+          id: `code-ref-${refId}`,
+          label: refName,
+        };
+      }
     });
     
     sidebarItems.push({ 
