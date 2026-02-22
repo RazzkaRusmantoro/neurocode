@@ -562,7 +562,7 @@ export default function OnboardingPage() {
           </section>
         </div>
       </div>
-      <Chatbot />
+      <Chatbot orgContext={orgShortId ? { orgShortId } : undefined} />
     </>
   );
 }

@@ -57,7 +57,15 @@ function getChatSubtitle(chat: Chat): string {
   return text.length > 24 ? text.slice(0, 24) + '…' : text;
 }
 
-export default function Chatbot() {
+export interface ChatbotOrgContext {
+  orgShortId: string;
+}
+
+interface ChatbotProps {
+  orgContext?: ChatbotOrgContext;
+}
+
+export default function Chatbot({ orgContext }: ChatbotProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [chats, setChats] = useState<Chat[]>(() => [createNewChat()]);
@@ -66,6 +74,7 @@ export default function Chatbot() {
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [iconError, setIconError] = useState(false);
   const [headerIconError, setHeaderIconError] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   
   // Resolved active chat (sidebar + multiple chats)
   const activeChat = activeChatId
@@ -425,9 +434,9 @@ export default function Chatbot() {
     setActiveChatId(chatId);
   };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !activeChat) return;
+    if (!inputValue.trim() || !activeChat || isSending) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -450,11 +459,26 @@ export default function Chatbot() {
       })
     );
 
-    // Simulate bot response (replace with actual API call later)
-    setTimeout(() => {
+    setIsSending(true);
+    const history = activeChat.messages
+      .filter((m) => m.sender === 'user' || m.sender === 'bot')
+      .map((m) => ({ role: m.sender === 'user' ? 'user' as const : 'assistant' as const, content: m.text }));
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage.text,
+          history,
+          orgContext: orgContext ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm here to help! This is a placeholder response. Connect me to your AI backend to get real answers.",
+        text: reply,
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -465,7 +489,23 @@ export default function Chatbot() {
             : chat
         )
       );
-    }, 500);
+    } catch (err) {
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Failed to send message. Please try again.',
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === activeChat.id
+            ? { ...chat, messages: [...chat.messages, botMessage] }
+            : chat
+        )
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleToggle = () => {
@@ -640,13 +680,17 @@ export default function Chatbot() {
               <div className="flex items-center justify-end px-2 py-2">
                 <button
                   type="submit"
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() || isSending}
                   className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   aria-label="Send message"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
+                  {isSending ? (
+                    <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
