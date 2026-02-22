@@ -10,35 +10,85 @@ interface Message {
   timestamp: Date;
 }
 
+interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+}
+
+const DEFAULT_WELCOME: Message = {
+  id: 'welcome',
+  text: "Hi! I'm your AI assistant. How can I help you with onboarding today?",
+  sender: 'bot',
+  timestamp: new Date(),
+};
+
+function createNewChat(): Chat {
+  return {
+    id: `chat-${Date.now()}`,
+    title: 'New chat',
+    messages: [DEFAULT_WELCOME],
+  };
+}
+
+const SIDEBAR_WIDTH = 220;
+
+function formatChatRelativeTime(chat: Chat): string {
+  const lastMsg = chat.messages[chat.messages.length - 1];
+  const date = lastMsg?.timestamp ? new Date(lastMsg.timestamp) : new Date();
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return 'Now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function getChatSubtitle(chat: Chat): string {
+  const userMessages = chat.messages.filter((m) => m.sender === 'user');
+  if (userMessages.length === 0) return 'No messages yet';
+  const last = userMessages[userMessages.length - 1];
+  const text = last.text.trim();
+  if (!text) return 'No changes';
+  return text.length > 24 ? text.slice(0, 24) + '…' : text;
+}
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hi! I'm your AI assistant. How can I help you with onboarding today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
+  const [chats, setChats] = useState<Chat[]>(() => [createNewChat()]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [iconError, setIconError] = useState(false);
   const [headerIconError, setHeaderIconError] = useState(false);
   
-  // Calculate responsive default size
+  // Resolved active chat (sidebar + multiple chats)
+  const activeChat = activeChatId
+    ? chats.find((c) => c.id === activeChatId) ?? chats[0]
+    : chats[0];
+  const messages = activeChat?.messages ?? [];
+
+  const filteredChats = chatSearchQuery.trim()
+    ? chats.filter((c) =>
+        c.title.toLowerCase().includes(chatSearchQuery.trim().toLowerCase())
+      )
+    : chats;
+
+  // Calculate responsive default size (wider to fit chat list sidebar)
   const getDefaultSize = () => {
     if (typeof window === 'undefined') {
-      return { width: 384, height: 600 };
+      return { width: 440, height: 600 };
     }
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
-    // Calculate responsive width: 30% of viewport, but between 280px and 500px
-    const responsiveWidth = Math.max(280, Math.min(500, viewportWidth * 0.3));
-    
-    // Calculate responsive height: 60% of viewport, but between 400px and 700px
+    const minWidth = 320 + SIDEBAR_WIDTH; // room for sidebar + messages
+    const responsiveWidth = Math.max(minWidth, Math.min(560, viewportWidth * 0.35));
     const responsiveHeight = Math.max(400, Math.min(700, viewportHeight * 0.6));
-    
     return { width: responsiveWidth, height: responsiveHeight };
   };
   
@@ -51,7 +101,7 @@ export default function Chatbot() {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const resizeStartRef = useRef({ x: 0, y: 0, width: 0, height: 0, right: 0, bottom: 0, left: 0, top: 0 });
   const [mounted, setMounted] = useState(false);
@@ -72,9 +122,9 @@ export default function Chatbot() {
     const currentRight = currentPositionRef.current.right;
     const currentBottom = currentPositionRef.current.bottom;
     
-    // Constrain width
+    // Constrain width (min accommodates sidebar)
     const maxWidth = viewportWidth - (margin * 2);
-    const minWidth = 250;
+    const minWidth = 280 + SIDEBAR_WIDTH;
     let constrainedWidth = Math.max(minWidth, Math.min(currentWidth, maxWidth));
     
     // Constrain height
@@ -160,6 +210,24 @@ export default function Chatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const adjustTextareaHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
+
+  // Keep activeChatId in sync (e.g. select first chat when only one exists)
+  useEffect(() => {
+    if (chats.length === 0) return;
+    const activeExists = activeChatId && chats.some((c) => c.id === activeChatId);
+    if (!activeExists) setActiveChatId(chats[0].id);
+  }, [chats.length]);
+
   // Sync position refs with state
   useEffect(() => {
     currentPositionRef.current = { right: rightOffset, bottom: bottomOffset };
@@ -181,10 +249,10 @@ export default function Chatbot() {
       // Ensure chatbot is within viewport bounds (handles zoom scenarios)
       setTimeout(() => constrainToViewport(), 0);
       scrollToBottom();
-      // Focus input when chat opens
+      // Focus input when chat opens or when switching chats
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, messages]);
+  }, [isOpen, activeChatId, messages.length]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -211,7 +279,7 @@ export default function Chatbot() {
 
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      const minWidth = 250;
+      const minWidth = 280 + SIDEBAR_WIDTH;
       const minHeight = 300;
 
       // Handle horizontal resizing (only from left edge)
@@ -346,9 +414,20 @@ export default function Chatbot() {
     }
   };
 
+  const handleNewChat = () => {
+    const newChat = createNewChat();
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+    setInputValue('');
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    setActiveChatId(chatId);
+  };
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || !activeChat) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -356,9 +435,20 @@ export default function Chatbot() {
       sender: 'user',
       timestamp: new Date(),
     };
-
-    setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
+
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== activeChat.id) return chat;
+        const isFirstUserMessage = chat.messages.every((m) => m.sender !== 'user');
+        const nextMessages = [...chat.messages, userMessage];
+        const title =
+          isFirstUserMessage && chat.title === 'New chat'
+            ? userMessage.text.slice(0, 36).trim() + (userMessage.text.length > 36 ? '…' : '')
+            : chat.title;
+        return { ...chat, messages: nextMessages, title };
+      })
+    );
 
     // Simulate bot response (replace with actual API call later)
     setTimeout(() => {
@@ -368,7 +458,13 @@ export default function Chatbot() {
         sender: 'bot',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, botMessage]);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === activeChat.id
+            ? { ...chat, messages: [...chat.messages, botMessage] }
+            : chat
+        )
+      );
     }, 500);
   };
 
@@ -436,7 +532,7 @@ export default function Chatbot() {
           {/* Header - Draggable */}
           <div 
             onMouseDown={handleDragStart}
-            className="bg-[#1a1a1d] border-b border-[#262626] px-4 py-3 flex items-center justify-between cursor-move"
+            className="bg-[#1a1a1d] border-b border-[#262626] px-4 py-3 flex items-center justify-between cursor-move flex-shrink-0"
           >
             <div className="flex items-center gap-3">
               {headerIconError ? (
@@ -488,72 +584,137 @@ export default function Chatbot() {
             </button>
           </div>
 
-          {/* Messages */}
+          <div className="flex flex-1 min-h-0">
+            {/* Messages area */}
+          <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2.5 ${
-                    message.sender === 'user'
-                      ? 'bg-[var(--color-primary)] text-white'
-                      : 'bg-[#1a1a1d] text-white/90 border border-[#262626]'
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.text}
-                  </p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-white/70' : 'text-white/50'
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
+            {messages.map((message) =>
+              message.sender === 'user' ? (
+                <div key={message.id} className="w-full">
+                  <div className="w-full rounded-lg px-4 py-2.5 bg-[#1a1a1d] text-white border border-[#262626]">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.text}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div key={message.id} className="flex justify-start w-full">
+                  <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.text}
+                    </p>
+                    <p className="text-xs mt-1 text-white/50">
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )
+            )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <form onSubmit={handleSend} className="border-t border-[#262626] p-4 bg-[#1a1a1d]">
-            <div className="flex gap-2">
-              <input
+          {/* Message box - typing area + send in one bordered container */}
+          <form
+            onSubmit={handleSend}
+            className="flex-shrink-0 p-3"
+          >
+            <div className="bg-[#1a1a1d] border border-[#262626] rounded-lg overflow-hidden flex flex-col">
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                onInput={adjustTextareaHeight}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (inputValue.trim()) handleSend(e as unknown as React.FormEvent);
+                  }
+                }}
                 placeholder="Type your message..."
-                className="flex-1 bg-[#121215] border border-[#262626] rounded-lg px-4 py-2.5 text-white text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                rows={1}
+                className="w-full bg-transparent px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none resize-none min-h-[52px] overflow-hidden border-0 rounded-none"
               />
-              <button
-                type="submit"
-                disabled={!inputValue.trim()}
-                className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg px-4 py-2.5 transition-colors"
-                aria-label="Send message"
-              >
-                <svg
-                  className="w-5 h-5 rotate-90"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center justify-end px-2 py-2">
+                <button
+                  type="submit"
+                  disabled={!inputValue.trim()}
+                  className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  aria-label="Send message"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              </button>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </form>
+          </div>
+
+            {/* Chat list sidebar - right side, image-style UI */}
+            <div
+              className="flex-shrink-0 border-l border-[#262626] bg-[#0d0d0f] flex flex-col"
+              style={{ width: SIDEBAR_WIDTH }}
+            >
+              <div className="p-2 flex flex-col gap-2 flex-shrink-0">
+                <input
+                  type="text"
+                  value={chatSearchQuery}
+                  onChange={(e) => setChatSearchQuery(e.target.value)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  placeholder="Search chats..."
+                  className="w-full bg-[#1a1a1d] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={handleNewChat}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="w-full py-2 rounded-lg text-sm font-medium text-white bg-[#1a1a1d] border border-[#262626] hover:bg-[#262626] transition-colors cursor-pointer"
+                >
+                  New chat
+                </button>
+              </div>
+              <p className="text-white/50 text-xs font-medium px-3 pt-1 pb-1 flex-shrink-0">
+                Chats
+              </p>
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 min-h-0">
+                {filteredChats.map((chat) => {
+                  const isActive = activeChat?.id === chat.id;
+                  return (
+                    <button
+                      key={chat.id}
+                      type="button"
+                      onClick={() => handleSelectChat(chat.id)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className={`w-full text-left rounded-lg px-2 py-2.5 flex items-start gap-2 transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-[#262626]'
+                          : 'hover:bg-[#1a1a1d]'
+                      }`}
+                      title={chat.title}
+                    >
+                      <span className="flex-shrink-0 mt-0.5 text-white/80 text-xs" aria-hidden>
+                        ✔
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-white/90'}`}>
+                          {chat.title}
+                        </p>
+                        <p className="text-xs text-white/50 truncate mt-0.5">
+                          {getChatSubtitle(chat)}
+                        </p>
+                      </div>
+                      <span className="flex-shrink-0 text-xs text-white/50">
+                        {formatChatRelativeTime(chat)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
