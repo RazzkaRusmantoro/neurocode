@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
 import { createRepository, getRepositoryByGithubIdAndOrganization, getRepositoriesByOrganization } from '@/lib/models/repository';
 import { addRepositoryToOrganization, getOrganizationById } from '@/lib/models/organization';
+import { getGitHubTokenWithFallback } from '@/lib/utils/github-token';
 
 interface AddRepositoryData {
   githubId?: number; // Optional - only for GitHub repos
@@ -74,6 +75,61 @@ export async function addRepository(
 
     if (!success) {
       return { success: false, error: 'Failed to add repository to organization' };
+    }
+
+    // Enqueue background RAG index job for GitHub repos (fire-and-forget; don't block or fail add)
+    if (repositoryData.source === 'github' && repository.urlName) {
+      try {
+        const repoFullName = (() => {
+          try {
+            const url = new URL(repositoryData.url);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            return pathParts.length >= 2 ? `${pathParts[0]}/${pathParts[1]}` : '';
+          } catch {
+            return '';
+          }
+        })();
+        if (!repoFullName) {
+          console.warn('[queue-index] Skipping enqueue: could not parse repo_full_name from url', repositoryData.url);
+        } else {
+          const tokenResult = await getGitHubTokenWithFallback(
+            session.user.id,
+            organizationId,
+            repository.urlName
+          );
+          if (!tokenResult) {
+            console.warn('[queue-index] Skipping enqueue: no GitHub token for repo', repoFullName, 'repositoryId=', repository._id?.toString());
+          } else {
+            const pythonUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
+            console.log('[queue-index] Enqueueing index job for', repoFullName, 'repositoryId=', repository._id?.toString());
+            const res = await fetch(`${pythonUrl}/internal/queue-index`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(process.env.INTERNAL_API_KEY && { 'X-Internal-Key': process.env.INTERNAL_API_KEY }),
+              },
+              body: JSON.stringify({
+                github_token: tokenResult.token,
+                repo_full_name: repoFullName,
+                branch: 'main',
+                organization_id: organizationId,
+                organization_short_id: organization.shortId,
+                organization_name: organization.name,
+                repository_id: repository._id!.toString(),
+                repository_name: repository.name,
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json().catch(() => ({}));
+              console.log('[queue-index] Enqueued successfully job_id=', (data as { job_id?: string }).job_id);
+            } else {
+              console.error('[queue-index] Enqueue failed', res.status, await res.text());
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[queue-index] Failed to enqueue index job:', e);
+      }
     }
 
     return { success: true, repositoryId: repository._id!.toString() };
