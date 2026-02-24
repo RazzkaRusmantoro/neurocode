@@ -6,91 +6,55 @@ import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
 import { slugify } from '@/lib/utils/slug';
 
-// Function to parse description and convert [[text]] to styled links, `text` to styled text, and **text** to bold
-function parseDescription(
-  description: string,
-  onCodeRefClick?: (codeRefId: string) => void
-): (string | React.ReactElement)[] {
-  const parts: (string | React.ReactElement)[] = [];
-  let processedText = description;
-  let key = 0;
-  let hasMatches = false;
+// Segment types: paragraph (inline content) or fenced code block
+type DocSegment =
+  | { type: 'paragraph'; content: (string | React.ReactElement)[] }
+  | { type: 'code'; content: string; language?: string };
 
-  // Find all matches for patterns: `[[text]]`, [[text]], `text`, and **text**
-  // Priority: backticked links first, then links, then code, then bold
+// Parse inline patterns in a text string: [[text]], `text`, **text**
+function parseInline(
+  text: string,
+  onCodeRefClick?: (codeRefId: string) => void,
+  keyStart: number = 0
+): { parts: (string | React.ReactElement)[]; nextKey: number } {
+  const parts: (string | React.ReactElement)[] = [];
+  let key = keyStart;
+  let hasMatches = false;
   const allMatches: Array<{ type: 'link' | 'code' | 'bold'; start: number; end: number; text: string; priority: number }> = [];
-  
-  // Single pass regex to find all patterns: `[[text]]`, [[text]], `text`, and **text**
-  // Order matters: backticked links first, then links, then code, then bold
   const patterns = [
     { regex: /`\[\[([^\]]+)\]\]`/g, type: 'link', priority: 4 },
     { regex: /\[\[([^\]]+)\]\]/g, type: 'link', priority: 3 },
     { regex: /`([^`\n]+)`/g, type: 'code', priority: 2 },
     { regex: /\*\*([^*\n]+?)\*\*/g, type: 'bold', priority: 1 },
   ];
-  
-  // Find all matches with their positions
   patterns.forEach(({ regex, type, priority }) => {
     regex.lastIndex = 0;
     let match;
-    while ((match = regex.exec(description)) !== null) {
-      allMatches.push({
-        type: type as 'link' | 'code' | 'bold',
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[1],
-        priority,
-      });
+    while ((match = regex.exec(text)) !== null) {
+      allMatches.push({ type: type as 'link' | 'code' | 'bold', start: match.index, end: match.index + match[0].length, text: match[1], priority });
     }
   });
-  
-  // Sort by position, then by priority (higher priority wins)
-  allMatches.sort((a, b) => {
-    if (a.start !== b.start) return a.start - b.start;
-    return b.priority - a.priority;
-  });
-  
-  // Remove overlapping matches (keep higher priority)
+  allMatches.sort((a, b) => (a.start !== b.start ? a.start - b.start : b.priority - a.priority));
   const filteredMatches: typeof allMatches = [];
   for (const current of allMatches) {
     let shouldAdd = true;
-    
     for (let i = 0; i < filteredMatches.length; i++) {
       const existing = filteredMatches[i];
-      // Check if overlaps
       if (current.start < existing.end && current.end > existing.start) {
-        // If current has higher priority, replace existing
-        if (current.priority > existing.priority) {
-          filteredMatches[i] = current;
-        }
+        if (current.priority > existing.priority) filteredMatches[i] = current;
         shouldAdd = false;
         break;
       }
     }
-    
-    if (shouldAdd) {
-      filteredMatches.push(current);
-    }
+    if (shouldAdd) filteredMatches.push(current);
   }
-  
-  // Re-sort after filtering
   filteredMatches.sort((a, b) => a.start - b.start);
-  
-  // Build the parts array
   let lastIndex = 0;
   for (const match of filteredMatches) {
     hasMatches = true;
-    
-    // Add text before the match
-    if (match.start > lastIndex) {
-      parts.push(description.substring(lastIndex, match.start));
-    }
-    
-    // Add the styled element
+    if (match.start > lastIndex) parts.push(text.substring(lastIndex, match.start));
     const cleanText = match.text.replace(/[`\[\]]/g, '');
-    
     if (match.type === 'link') {
-      // Hyperlink with thin underline - scrolls to specific code reference or code references section
       const codeRefId = `code-ref-${cleanText}`;
       parts.push(
         <a
@@ -98,62 +62,66 @@ function parseDescription(
           href={`#${codeRefId}`}
           onClick={(e) => {
             e.preventDefault();
-            if (onCodeRefClick) {
-              onCodeRefClick(codeRefId);
-            } else {
-              // Fallback if no handler provided
-              const specificRef = document.getElementById(codeRefId);
-              if (specificRef) {
-                specificRef.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              } else {
-                const codeRefSection = document.getElementById('code-references-section');
-                if (codeRefSection) {
-                  codeRefSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }
+            if (onCodeRefClick) onCodeRefClick(codeRefId);
+            else {
+              const el = document.getElementById(codeRefId);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              else document.getElementById('code-references-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
           }}
           className="inline px-1.5 py-0.5 rounded text-[#3fb1c5] cursor-pointer hover:text-[#5dd5e8] transition-colors"
-          style={{ 
-            backgroundColor: 'rgba(128, 128, 128, 0.3)',
-            textDecoration: 'underline',
-            textDecorationThickness: '0.5px',
-            textUnderlineOffset: '2px'
-          }}
+          style={{ backgroundColor: 'rgba(128, 128, 128, 0.3)', textDecoration: 'underline', textDecorationThickness: '0.5px', textUnderlineOffset: '2px' }}
         >
           {cleanText}
         </a>
       );
     } else if (match.type === 'code') {
-      // Code text without underline (not a link)
-      parts.push(
-        <span
-          key={key++}
-          className="inline px-1.5 py-0.5 rounded text-white"
-          style={{ backgroundColor: 'rgba(128, 128, 128, 0.3)' }}
-        >
-          {cleanText}
-        </span>
-      );
+      parts.push(<span key={key++} className="inline px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: 'rgba(128, 128, 128, 0.3)' }}>{cleanText}</span>);
     } else if (match.type === 'bold') {
-      // Bold text
-      parts.push(
-        <strong key={key++} className="font-semibold text-white">
-          {match.text}
-        </strong>
-      );
+      parts.push(<strong key={key++} className="font-semibold text-white">{match.text}</strong>);
     }
-    
     lastIndex = match.end;
   }
-  
-  // Add remaining text
-  if (lastIndex < description.length) {
-    parts.push(description.substring(lastIndex));
+  if (lastIndex < text.length) parts.push(text.substring(lastIndex));
+  return { parts: hasMatches ? parts : [text], nextKey: key };
+}
+
+// Code block styling to match CodeSnippet look (no component)
+const codeBlockStyle = 'mt-4 border border-white/20 rounded bg-[#1a1a1a] overflow-x-auto';
+const codeBlockPreStyle = 'p-4 text-white/90 text-[13px] leading-[1.5] font-mono whitespace-pre';
+
+// Parse description: supports ``` fenced code blocks plus inline [[links]], `code`, **bold**
+function parseDescription(
+  description: string,
+  onCodeRefClick?: (codeRefId: string) => void
+): DocSegment[] {
+  const segments: DocSegment[] = [];
+  const fenceRegex = /```(\w*)\n?([\s\S]*?)```/g;
+  let key = 0;
+  let lastEnd = 0;
+  let match;
+  while ((match = fenceRegex.exec(description)) !== null) {
+    const before = description.slice(lastEnd, match.index).trimEnd();
+    if (before.length > 0) {
+      const { parts, nextKey } = parseInline(before, onCodeRefClick, key);
+      key = nextKey;
+      segments.push({ type: 'paragraph', content: parts });
+    }
+    const language = match[1]?.trim() || undefined;
+    const codeContent = match[2].replace(/\n$/, ''); // trim trailing newline from capture
+    segments.push({ type: 'code', content: codeContent, language });
+    lastEnd = fenceRegex.lastIndex;
   }
-  
-  // If no matches, return the original description as a string in an array
-  return hasMatches ? parts : [description];
+  const after = description.slice(lastEnd);
+  if (after.length > 0) {
+    const { parts } = parseInline(after, onCodeRefClick, key);
+    segments.push({ type: 'paragraph', content: parts });
+  }
+  if (segments.length === 0) {
+    const { parts } = parseInline(description, onCodeRefClick, 0);
+    segments.push({ type: 'paragraph', content: parts });
+  }
+  return segments;
 }
 
 interface CodeReferenceDetail {
@@ -549,9 +517,10 @@ export default function DocumentationTitlePage() {
     <div className="h-full overflow-y-auto custom-scrollbar py-6">
       <div className="max-w-screen-2xl mx-auto w-full px-6">
         {/* Title */}
-        <h1 className="text-3xl font-bold text-white mb-6 text-left">
+        <h1 className="text-3xl font-bold text-white mb-4 text-left">
           {content.title}
         </h1>
+        <div className="border-t-2 border-white/20 mb-10" />
 
         {/* Sections */}
         {content.documentation?.sections && content.documentation.sections.length > 0 && (
@@ -569,10 +538,18 @@ export default function DocumentationTitlePage() {
                 </h2>
 
                 {/* Section Description */}
-                <div className="prose prose-invert max-w-none mb-6">
-                  <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
-                    {parseDescription(section.description, handleCodeRefClick)}
-                  </p>
+                <div className="prose prose-invert max-w-none mb-6 space-y-2">
+                  {parseDescription(section.description, handleCodeRefClick).map((seg, i) =>
+                    seg.type === 'code' ? (
+                      <div key={i} className={codeBlockStyle}>
+                        <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                      </div>
+                    ) : (
+                      <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                        {seg.content}
+                      </p>
+                    )
+                  )}
                 </div>
 
                 {/* Subsections */}
@@ -586,10 +563,18 @@ export default function DocumentationTitlePage() {
                         </h3>
 
                         {/* Subsection Description */}
-                        <div className="prose prose-invert max-w-none mb-4">
-                          <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
-                            {parseDescription(subsection.description, handleCodeRefClick)}
-                          </p>
+                        <div className="prose prose-invert max-w-none mb-4 space-y-2">
+                          {parseDescription(subsection.description, handleCodeRefClick).map((seg, i) =>
+                            seg.type === 'code' ? (
+                              <div key={i} className={codeBlockStyle}>
+                                <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                              </div>
+                            ) : (
+                              <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                                {seg.content}
+                              </p>
+                            )
+                          )}
                         </div>
                       </div>
                     ))}
@@ -640,10 +625,18 @@ export default function DocumentationTitlePage() {
                     
                     {/* Code Reference Description */}
                     {refDescription && (
-                      <div className="prose prose-invert max-w-none mb-4">
-                        <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
-                          {parseDescription(refDescription, handleCodeRefClick)}
-                        </p>
+                      <div className="prose prose-invert max-w-none mb-4 space-y-2">
+                        {parseDescription(refDescription, handleCodeRefClick).map((seg, i) =>
+                          seg.type === 'code' ? (
+                            <div key={i} className={codeBlockStyle}>
+                              <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                            </div>
+                          ) : (
+                            <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                              {seg.content}
+                            </p>
+                          )
+                        )}
                       </div>
                     )}
                     
@@ -658,9 +651,17 @@ export default function DocumentationTitlePage() {
                                 <span className="font-mono text-[#3fb1c5]">{param.name}</span>
                               </div>
                               {param.description && (
-                                <p className="text-white/60 text-sm mt-1 ml-0">
-                                  {parseDescription(param.description, handleCodeRefClick)}
-                                </p>
+                                <div className="text-white/60 text-sm mt-1 ml-0 space-y-2">
+                                  {parseDescription(param.description, handleCodeRefClick).map((seg, i) =>
+                                    seg.type === 'code' ? (
+                                      <div key={i} className={codeBlockStyle}>
+                                        <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                                      </div>
+                                    ) : (
+                                      <p key={i}>{seg.content}</p>
+                                    )
+                                  )}
+                                </div>
                               )}
                             </div>
                           ))}
@@ -682,9 +683,17 @@ export default function DocumentationTitlePage() {
                             <span className="font-mono text-[#3fb1c5]">{refReturns.type}</span>
                           )}
                           {refReturns.description && (
-                            <p className="text-white/60 text-sm mt-1">
-                              {parseDescription(refReturns.description, handleCodeRefClick)}
-                            </p>
+                            <div className="text-white/60 text-sm mt-1 space-y-2">
+                              {parseDescription(refReturns.description, handleCodeRefClick).map((seg, i) =>
+                                seg.type === 'code' ? (
+                                  <div key={i} className={codeBlockStyle}>
+                                    <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                                  </div>
+                                ) : (
+                                  <p key={i}>{seg.content}</p>
+                                )
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
