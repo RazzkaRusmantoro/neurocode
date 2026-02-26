@@ -2,7 +2,7 @@
 
 import TextInput from '@/app/components/TextInput';
 
-type TabType = 'documentation' | 'visual-tree' | 'code-reference' | 'glossary';
+type TabType = 'documentation' | 'visual-tree' | 'code-reference';
 
 interface DocumentationHeaderProps {
   activeTab: TabType;
@@ -25,8 +25,6 @@ export default function DocumentationHeader({
         return 'Visual Tree';
       case 'code-reference':
         return 'Code Reference';
-      case 'glossary':
-        return 'Glossary';
       default:
         return '';
     }

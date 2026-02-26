@@ -73,8 +73,6 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
       subItems: codeRefSubItems
     });
   }
-  sidebarItems.push({ id: 'glossary', label: 'Glossary' });
-
   // Auto-expand sections that have subsections and code references
   useEffect(() => {
     const expanded = new Set<string>();
@@ -157,7 +155,17 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
             Navigation
           </h2>
           <nav className="space-y-1 flex-1 overflow-y-auto sidebar-scrollbar">
-            {sidebarItems.map((item) => {
+            {!documentation ? (
+              <div className="animate-pulse space-y-2">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-9 bg-white/10 rounded flex-shrink-0"
+                    style={{ width: i % 2 === 0 ? '85%' : '70%', marginLeft: i % 3 === 1 ? '1rem' : 0 }}
+                  />
+                ))}
+              </div>
+            ) : sidebarItems.map((item) => {
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isItemExpanded = isExpanded(item.id);
               
@@ -175,9 +183,6 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
                           if (element) {
                             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }
-                        } else if (item.id === 'glossary') {
-                          // Handle glossary scroll if needed
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
                         } else {
                           const element = document.getElementById(`section-${item.id}`);
                           if (element) {

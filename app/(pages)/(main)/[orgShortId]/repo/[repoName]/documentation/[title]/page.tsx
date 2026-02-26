@@ -6,10 +6,11 @@ import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
 import { slugify } from '@/lib/utils/slug';
 
-// Segment types: paragraph (inline content) or fenced code block
+// Segment types: paragraph (inline content), fenced code block, or markdown table
 type DocSegment =
   | { type: 'paragraph'; content: (string | React.ReactElement)[] }
-  | { type: 'code'; content: string; language?: string };
+  | { type: 'code'; content: string; language?: string }
+  | { type: 'table'; rows: string[][] };
 
 // Parse inline patterns in a text string: [[text]], `text`, **text**
 function parseInline(
@@ -90,7 +91,40 @@ function parseInline(
 const codeBlockStyle = 'mt-4 border border-white/20 rounded bg-[#1a1a1a] overflow-x-auto';
 const codeBlockPreStyle = 'p-4 text-white/90 text-[13px] leading-[1.5] font-mono whitespace-pre';
 
-// Parse description: supports ``` fenced code blocks plus inline [[links]], `code`, **bold**
+// Split text into table blocks and paragraph blocks (for Markdown tables)
+function splitTablesAndParagraphs(text: string): Array<{ type: 'table'; rows: string[][] } | { type: 'paragraph'; content: string }> {
+  const result: Array<{ type: 'table'; rows: string[][] } | { type: 'paragraph'; content: string }> = [];
+  const lines = text.split('\n');
+  let i = 0;
+  const isTableLine = (line: string) => /^\|.+\|$/.test(line.trim());
+  const isSeparatorLine = (cells: string[]) => cells.every((c) => /^[\s\-:]+$/.test(c));
+  while (i < lines.length) {
+    if (isTableLine(lines[i])) {
+      const tableRows: string[][] = [];
+      let j = i;
+      while (j < lines.length && isTableLine(lines[j])) {
+        const cells = lines[j].trim().split('|').map((c) => c.trim());
+        if (cells[0] === '') cells.shift();
+        if (cells.length > 0 && cells[cells.length - 1] === '') cells.pop();
+        tableRows.push(cells);
+        j++;
+      }
+      if (tableRows.length >= 2 && isSeparatorLine(tableRows[1])) tableRows.splice(1, 1);
+      if (tableRows.length >= 1) {
+        result.push({ type: 'table', rows: tableRows });
+        i = j;
+        continue;
+      }
+    }
+    let paraStart = i;
+    while (i < lines.length && !isTableLine(lines[i])) i++;
+    const paraContent = lines.slice(paraStart, i).join('\n');
+    if (paraContent.trim().length > 0) result.push({ type: 'paragraph', content: paraContent });
+  }
+  return result;
+}
+
+// Parse description: supports ``` fenced code blocks, markdown tables, and inline [[links]], `code`, **bold**
 function parseDescription(
   description: string,
   onCodeRefClick?: (codeRefId: string) => void
@@ -103,23 +137,43 @@ function parseDescription(
   while ((match = fenceRegex.exec(description)) !== null) {
     const before = description.slice(lastEnd, match.index).trimEnd();
     if (before.length > 0) {
-      const { parts, nextKey } = parseInline(before, onCodeRefClick, key);
-      key = nextKey;
-      segments.push({ type: 'paragraph', content: parts });
+      for (const block of splitTablesAndParagraphs(before)) {
+        if (block.type === 'table') {
+          segments.push({ type: 'table', rows: block.rows });
+        } else {
+          const { parts, nextKey } = parseInline(block.content, onCodeRefClick, key);
+          key = nextKey;
+          segments.push({ type: 'paragraph', content: parts });
+        }
+      }
     }
     const language = match[1]?.trim() || undefined;
-    const codeContent = match[2].replace(/\n$/, ''); // trim trailing newline from capture
+    const codeContent = match[2].replace(/\n$/, '');
     segments.push({ type: 'code', content: codeContent, language });
     lastEnd = fenceRegex.lastIndex;
   }
   const after = description.slice(lastEnd);
   if (after.length > 0) {
-    const { parts } = parseInline(after, onCodeRefClick, key);
-    segments.push({ type: 'paragraph', content: parts });
+    for (const block of splitTablesAndParagraphs(after)) {
+      if (block.type === 'table') {
+        segments.push({ type: 'table', rows: block.rows });
+      } else {
+        const { parts, nextKey } = parseInline(block.content, onCodeRefClick, key);
+        key = nextKey;
+        segments.push({ type: 'paragraph', content: parts });
+      }
+    }
   }
   if (segments.length === 0) {
-    const { parts } = parseInline(description, onCodeRefClick, 0);
-    segments.push({ type: 'paragraph', content: parts });
+    for (const block of splitTablesAndParagraphs(description)) {
+      if (block.type === 'table') {
+        segments.push({ type: 'table', rows: block.rows });
+      } else {
+        const { parts, nextKey } = parseInline(block.content, onCodeRefClick, key);
+        key = nextKey;
+        segments.push({ type: 'paragraph', content: parts });
+      }
+    }
   }
   return segments;
 }
@@ -476,14 +530,18 @@ export default function DocumentationTitlePage() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto custom-scrollbar py-6">
-        <div className="max-w-screen-2xl mx-auto w-full px-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-white/10 rounded w-3/4 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-white/10 rounded w-full"></div>
-              <div className="h-4 bg-white/10 rounded w-5/6"></div>
-              <div className="h-4 bg-white/10 rounded w-4/6"></div>
+      <div className="h-full flex flex-col overflow-y-auto custom-scrollbar py-6">
+        <div className="max-w-screen-2xl mx-auto w-full px-6 flex-1 flex flex-col min-h-0">
+          <div className="animate-pulse flex-1 flex flex-col">
+            <div className="h-8 bg-white/10 rounded w-3/4 mb-6 flex-shrink-0" />
+            <div className="space-y-4 flex-1 flex flex-col">
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-4 bg-white/10 rounded flex-shrink-0"
+                  style={{ width: i % 3 === 0 ? '100%' : i % 3 === 1 ? '83%' : '66%' }}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -544,6 +602,22 @@ export default function DocumentationTitlePage() {
                       <div key={i} className={codeBlockStyle}>
                         <pre className={codeBlockPreStyle}>{seg.content}</pre>
                       </div>
+                    ) : seg.type === 'table' ? (
+                      <div key={i} className="my-4 overflow-x-auto">
+                        <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
+                          <tbody>
+                            {seg.rows.map((row, ri) => (
+                              <tr key={ri}>
+                                {row.map((cell, ci) => (
+                                  <td key={ci} className="border border-white/20 px-3 py-2 text-left">
+                                    {ri === 0 ? <strong>{cell}</strong> : cell}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     ) : (
                       <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
                         {seg.content}
@@ -568,6 +642,22 @@ export default function DocumentationTitlePage() {
                             seg.type === 'code' ? (
                               <div key={i} className={codeBlockStyle}>
                                 <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                              </div>
+                            ) : seg.type === 'table' ? (
+                              <div key={i} className="my-4 overflow-x-auto">
+                                <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
+                                  <tbody>
+                                    {seg.rows.map((row, ri) => (
+                                      <tr key={ri}>
+                                        {row.map((cell, ci) => (
+                                          <td key={ci} className="border border-white/20 px-3 py-2 text-left">
+                                            {ri === 0 ? <strong>{cell}</strong> : cell}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
                             ) : (
                               <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
@@ -631,6 +721,22 @@ export default function DocumentationTitlePage() {
                             <div key={i} className={codeBlockStyle}>
                               <pre className={codeBlockPreStyle}>{seg.content}</pre>
                             </div>
+                          ) : seg.type === 'table' ? (
+                            <div key={i} className="my-4 overflow-x-auto">
+                              <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
+                                <tbody>
+                                  {seg.rows.map((row, ri) => (
+                                    <tr key={ri}>
+                                      {row.map((cell, ci) => (
+                                        <td key={ci} className="border border-white/20 px-3 py-2 text-left">
+                                          {ri === 0 ? <strong>{cell}</strong> : cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           ) : (
                             <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
                               {seg.content}
@@ -656,6 +762,22 @@ export default function DocumentationTitlePage() {
                                     seg.type === 'code' ? (
                                       <div key={i} className={codeBlockStyle}>
                                         <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                                      </div>
+                                    ) : seg.type === 'table' ? (
+                                      <div key={i} className="my-2 overflow-x-auto">
+                                        <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
+                                          <tbody>
+                                            {seg.rows.map((row, ri) => (
+                                              <tr key={ri}>
+                                                {row.map((cell, ci) => (
+                                                  <td key={ci} className="border border-white/20 px-2 py-1 text-left">
+                                                    {ri === 0 ? <strong>{cell}</strong> : cell}
+                                                  </td>
+                                                ))}
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
                                       </div>
                                     ) : (
                                       <p key={i}>{seg.content}</p>
@@ -688,6 +810,22 @@ export default function DocumentationTitlePage() {
                                 seg.type === 'code' ? (
                                   <div key={i} className={codeBlockStyle}>
                                     <pre className={codeBlockPreStyle}>{seg.content}</pre>
+                                  </div>
+                                ) : seg.type === 'table' ? (
+                                  <div key={i} className="my-2 overflow-x-auto">
+                                    <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
+                                      <tbody>
+                                        {seg.rows.map((row, ri) => (
+                                          <tr key={ri}>
+                                            {row.map((cell, ci) => (
+                                              <td key={ci} className="border border-white/20 px-2 py-1 text-left">
+                                                {ri === 0 ? <strong>{cell}</strong> : cell}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
                                   </div>
                                 ) : (
                                   <p key={i}>{seg.content}</p>

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import DashboardNavbar from '@/app/components/DashboardNavbar';
 import RepoSidebar from '@/app/components/RepoSidebar';
 import DocumentationSidebar from '../[orgShortId]/repo/[repoName]/documentation/components/DocumentationSidebar';
+import DocumentationChatPanel from '../[orgShortId]/repo/[repoName]/documentation/components/DocumentationChatPanel';
 import { RepoCacheProvider } from '../[orgShortId]/repo/context/RepoCacheContext';
 import { DocumentationProvider, useDocumentation } from '../[orgShortId]/repo/[repoName]/documentation/context/DocumentationContext';
 import type { OrganizationWithId } from '@/actions/organization';
@@ -44,6 +45,7 @@ export default function RepoLayoutClient({
   children,
 }: RepoLayoutClientProps & { children: React.ReactNode }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [docChatPanelOpen, setDocChatPanelOpen] = useState(true);
   const pathname = usePathname();
 
   const toggleSidebar = () => {
@@ -58,11 +60,14 @@ export default function RepoLayoutClient({
     : null;
 
   // Show documentation sidebar on documentation detail pages:
-  // `/.../documentation/<slug>` (but not visual-tree, code-reference, or glossary)
+  // `/.../documentation/<slug>` (but not visual-tree or code-reference)
   const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname) && 
     !pathname.includes('/documentation/visual-tree') &&
-    !pathname.includes('/documentation/code-reference') &&
-    !pathname.includes('/documentation/glossary');
+    !pathname.includes('/documentation/code-reference');
+
+  // Extract org short id from pathname (e.g. /org-2Sc8S/repo/... -> 2Sc8S)
+  const orgShortIdMatch = pathname.match(/\/org-([^/]+)/);
+  const orgShortId = orgShortIdMatch ? orgShortIdMatch[1] : undefined;
 
   return (
     <RepoCacheProvider>
@@ -80,8 +85,8 @@ export default function RepoLayoutClient({
           />
         )}
         
-        {/* Right side - Navbar and content stacked */}
-        <div className="flex-1 flex flex-col overflow-hidden px-16">
+        {/* Center: Navbar and content stacked */}
+        <div className="flex-1 flex flex-col overflow-hidden px-16 relative min-w-0">
           {/* Navbar */}
           <DashboardNavbar 
             userEmail={userEmail} 
@@ -98,7 +103,29 @@ export default function RepoLayoutClient({
               {children}
             </div>
           </main>
+
+          {/* When on doc title page and chat panel is closed: tab to open it */}
+          {isDocumentationTitlePage && !docChatPanelOpen && (
+            <button
+              type="button"
+              onClick={() => setDocChatPanelOpen(true)}
+              className="absolute top-1/2 -translate-y-1/2 right-0 flex items-center gap-2 pl-3 pr-2 py-3 rounded-l-lg bg-[#1a1a1d] border border-r-0 border-[#262626] text-white/90 hover:text-white hover:bg-[#262626] transition-colors cursor-pointer shadow-lg"
+              aria-label="Open AI chat"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              <span className="text-sm font-medium">Chat</span>
+            </button>
+          )}
         </div>
+
+        {/* Right: full-height chat panel (only on documentation title pages, outside navbar+main div) */}
+        {isDocumentationTitlePage && docChatPanelOpen && (
+          <DocumentationChatPanel
+            orgContext={orgShortId ? { orgShortId } : undefined}
+          />
+        )}
       </div>
       </DocumentationProvider>
     </RepoCacheProvider>
