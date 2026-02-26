@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
 
@@ -19,20 +19,57 @@ interface RepositoryCardProps {
   onBeforeNavigate?: () => boolean;
   /** Optional: show drag cursor when used in a sortable grid */
   isDraggable?: boolean;
+  /** When true, show the actions menu (triple-dot) with Delete. Default true on repositories list. */
+  showActions?: boolean;
 }
 
-export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description, onBeforeNavigate, isDraggable }: RepositoryCardProps) {
+export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description, onBeforeNavigate, isDraggable, showActions = true }: RepositoryCardProps) {
   const router = useRouter();
   const { startLoading } = useLoadingBar();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const addedDate = typeof addedAt === 'string' ? new Date(addedAt) : addedAt;
   const updateDate = lastUpdate ? (typeof lastUpdate === 'string' ? new Date(lastUpdate) : lastUpdate) : addedDate;
   const sizeDisplay = size || 'N/A';
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuOpen]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (onBeforeNavigate && !onBeforeNavigate()) return;
     startLoading();
     router.push(`/org-${orgShortId}/repo/${urlName}`);
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuOpen(false);
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/organizations/org-${orgShortId}/repositories/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error ?? 'Failed to delete repository');
+        return;
+      }
+      router.refresh();
+    } catch {
+      alert('Failed to delete repository');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -48,8 +85,39 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
+      {/* Actions menu - triple dot top right */}
+      {showActions && (
+        <div ref={menuRef} className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen((o) => !o); }}
+            className="p-1.5 rounded text-white/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Repository options"
+            disabled={deleting}
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="5" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="12" cy="19" r="1.5" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 px-1.5 py-1.5 min-w-[120px] rounded border border-[#262626] bg-[#171717] shadow-lg z-20">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full text-left px-3 py-2 rounded text-sm text-red-400 hover:bg-white/10 disabled:opacity-50 cursor-pointer"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Repository Name - Headline */}
-      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[var(--color-primary)] transition-colors duration-300">
+      <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-[var(--color-primary)] transition-colors duration-300 pr-8">
         {name}
       </h2>
 

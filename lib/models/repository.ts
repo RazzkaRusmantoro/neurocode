@@ -113,3 +113,9 @@ export async function getRepositoryByUrlNameAndOrganization(
   });
 }
 
+export async function deleteRepository(id: string): Promise<boolean> {
+  const collection = await getRepositoriesCollection();
+  const result = await collection.deleteOne({ _id: new ObjectId(id) });
+  return result.deletedCount > 0;
+}
+

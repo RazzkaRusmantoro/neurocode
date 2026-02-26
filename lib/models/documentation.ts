@@ -186,3 +186,13 @@ export async function getDocumentationsByGlossaryTerm(
     .toArray();
 }
 
+export async function deleteDocumentationsByRepository(
+  repositoryId: string
+): Promise<number> {
+  const collection = await getDocumentationCollection();
+  const result = await collection.deleteMany({
+    repositoryId: new ObjectId(repositoryId),
+  });
+  return result.deletedCount;
+}
+

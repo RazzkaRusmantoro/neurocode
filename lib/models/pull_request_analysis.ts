@@ -282,3 +282,13 @@ export async function getPRAnalysesByRepository(
     .toArray();
 }
 
+export async function deletePullRequestAnalysesByRepository(
+  repositoryId: string
+): Promise<number> {
+  const collection = await getPullRequestAnalysisCollection();
+  const result = await collection.deleteMany({
+    repositoryId: new ObjectId(repositoryId),
+  });
+  return result.deletedCount;
+}
+

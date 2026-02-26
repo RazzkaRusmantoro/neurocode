@@ -260,3 +260,13 @@ export async function getCommentsPostedStatus(
   return new Set(posted.map(c => c.commentHash));
 }
 
+export async function deletePRCommentsByRepository(
+  repositoryId: string
+): Promise<number> {
+  const collection = await getPRCommentsCollection();
+  const result = await collection.deleteMany({
+    repositoryId: new ObjectId(repositoryId),
+  });
+  return result.deletedCount;
+}
+

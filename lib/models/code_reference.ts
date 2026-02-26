@@ -77,3 +77,13 @@ export async function getCodeReferencesByRepository(
   return collection.find(query).sort({ name: 1 }).toArray();
 }
 
+export async function deleteCodeReferencesByRepository(
+  repositoryId: string
+): Promise<number> {
+  const collection = await getCodeReferencesCollection();
+  const result = await collection.deleteMany({
+    repositoryId: new ObjectId(repositoryId),
+  });
+  return result.deletedCount;
+}
+

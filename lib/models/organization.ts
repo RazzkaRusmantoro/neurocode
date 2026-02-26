@@ -91,6 +91,22 @@ export async function updateOrganizationName(
   return result.modifiedCount > 0;
 }
 
+export async function removeRepositoryFromOrganization(
+  organizationId: string,
+  repositoryId: string
+): Promise<boolean> {
+  const collection = await getOrganizationsCollection();
+  const now = new Date();
+  const result = await collection.updateOne(
+    { _id: new ObjectId(organizationId) },
+    {
+      $pull: { repositories: { repositoryId: new ObjectId(repositoryId) } },
+      $set: { updatedAt: now },
+    }
+  );
+  return result.modifiedCount > 0;
+}
+
 // Modify for upload and bitbucket repositories as well
 export async function addRepositoryToOrganization(
   organizationId: string,
