@@ -15,9 +15,13 @@ interface RepositoryCardProps {
   size?: string;
   lastUpdate?: Date | string;
   description?: string;
+  /** When provided (e.g. in sortable context), navigation only happens if this returns true. Use to block navigation after a drag. */
+  onBeforeNavigate?: () => boolean;
+  /** Optional: show drag cursor when used in a sortable grid */
+  isDraggable?: boolean;
 }
 
-export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description }: RepositoryCardProps) {
+export default function RepositoryCard({ id, name, urlName, url, orgShortId, source, addedAt, size, lastUpdate, description, onBeforeNavigate, isDraggable }: RepositoryCardProps) {
   const router = useRouter();
   const { startLoading } = useLoadingBar();
   const addedDate = typeof addedAt === 'string' ? new Date(addedAt) : addedAt;
@@ -26,6 +30,7 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (onBeforeNavigate && !onBeforeNavigate()) return;
     startLoading();
     router.push(`/org-${orgShortId}/repo/${urlName}`);
   };
@@ -33,7 +38,7 @@ export default function RepositoryCard({ id, name, urlName, url, orgShortId, sou
   return (
     <div
       onClick={handleClick}
-      className="group relative border border-[#262626] rounded p-6 hover:border-[var(--color-primary)]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-[#262626]/50"
+      className="h-full min-h-0 group relative border border-[#262626] rounded p-6 hover:border-[var(--color-primary)]/50 transition-all duration-300 overflow-hidden flex flex-col bg-[#262626]/50 cursor-pointer"
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = `0 0 25px rgba(var(--color-primary-rgb), 0.3)`;
         e.currentTarget.style.transform = 'translateY(-2px)';

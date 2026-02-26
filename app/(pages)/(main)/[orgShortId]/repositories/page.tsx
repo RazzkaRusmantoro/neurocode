@@ -5,7 +5,7 @@ import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getRepositoriesByOrganization } from '@/lib/models/repository';
 import { generateSlug } from '@/lib/utils/slug';
 import RepositorySearch from './components/RepositorySearch';
-import RepositoryCard from './components/RepositoryCard';
+import RepositoriesGrid from './components/RepositoriesGrid';
 
 export default async function RepositoriesPage({
   params
@@ -92,23 +92,20 @@ export default async function RepositoriesPage({
       {/* Repositories Grid */}
       <div className="mt-10">
         {formattedRepositories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {formattedRepositories.map((repo) => (
-              <RepositoryCard
-                key={repo.id}
-                id={repo.id}
-                name={repo.name}
-                urlName={repo.urlName}
-                url={repo.url}
-                orgShortId={shortId}
-                source={repo.source}
-                addedAt={repo.addedAt}
-                description={repo.description}
-                size={repo.size ? `${(repo.size / 1024).toFixed(2)} MB` : undefined}
-                lastUpdate={repo.lastUpdate}
-              />
-            ))}
-          </div>
+          <RepositoriesGrid
+            repositories={formattedRepositories.map((repo) => ({
+              id: repo.id,
+              name: repo.name,
+              urlName: repo.urlName,
+              url: repo.url,
+              source: repo.source,
+              description: repo.description,
+              size: repo.size ? `${(repo.size / 1024).toFixed(2)} MB` : undefined,
+              lastUpdate: repo.lastUpdate,
+              addedAt: repo.addedAt,
+            }))}
+            orgShortId={shortId}
+          />
         ) : (
           <div className="mt-6 p-8 bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded text-center">
             <p className="text-white/70">
