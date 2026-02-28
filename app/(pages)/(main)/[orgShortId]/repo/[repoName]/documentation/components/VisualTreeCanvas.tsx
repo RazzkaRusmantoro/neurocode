@@ -1484,7 +1484,7 @@ export default function VisualTreeCanvas({
                   maxZoom={2}
                   proOptions={{ hideAttribution: true }}
                 >
-                  <Background gap={20} size={1} color="#2a2a2d" />
+                  <Background gap={20} size={1} color="#333338" />
                   <Controls
                     showInteractive={false}
                     style={{ background: '#1e1e21', border: '1px solid #333', borderRadius: 6 }}

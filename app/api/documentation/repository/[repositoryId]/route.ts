@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getCachedUserById } from '@/lib/models/user';
 import { getDocumentationCollection, getDocumentationsByRepository } from '@/lib/models/documentation';
+import { getUmlDiagramsByRepository } from '@/lib/models/uml_diagram';
 import { getRepositoryById } from '@/lib/models/repository';
 import { slugify } from '@/lib/utils/slug';
 
@@ -35,8 +36,11 @@ export async function GET(
       return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
     }
 
-    // Get all documentations for this repository
-    const documentations = await getDocumentationsByRepository(repositoryId);
+    // Get all documentations and UML diagrams for this repository
+    const [documentations, umlDiagrams] = await Promise.all([
+      getDocumentationsByRepository(repositoryId),
+      getUmlDiagramsByRepository(repositoryId),
+    ]);
 
     // Backfill missing slugs for legacy documents (so slug URLs work reliably)
     const collection = await getDocumentationCollection();
@@ -79,9 +83,21 @@ export async function GET(
         createdBy: doc.createdBy ? doc.createdBy.toString() : null,
       }));
 
+    const serializedUml = umlDiagrams.map(doc => ({
+      _id: doc._id?.toString(),
+      name: doc.name,
+      slug: doc.slug,
+      type: doc.type,
+      description: doc.description ?? null,
+      prompt: doc.prompt || null,
+      createdAt: doc.createdAt ? doc.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : new Date().toISOString(),
+    }));
+
     return NextResponse.json({
       success: true,
       documentations: serializedDocs,
+      umlDiagrams: serializedUml,
       count: serializedDocs.length,
     });
   } catch (error) {

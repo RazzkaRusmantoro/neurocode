@@ -4,23 +4,10 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { slugify } from '@/lib/utils/slug';
 import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
-
-interface Documentation {
-  _id: string;
-  target?: string;
-  prompt?: string;
-  title?: string;
-  description?: string;
-  slug?: string | null;
-  branch: string;
-  version: number;
-  isLatest: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { DocumentationListItem } from './DocumentationViewer';
 
 interface DocumentationListProps {
-  documentations: Documentation[];
+  items: DocumentationListItem[];
   loading: boolean;
   error: string | null;
   searchQuery: string;
@@ -30,7 +17,7 @@ interface DocumentationListProps {
 }
 
 export default function DocumentationList({
-  documentations,
+  items,
   loading,
   error,
   searchQuery,
@@ -52,25 +39,42 @@ export default function DocumentationList({
     });
   };
 
-  const filteredDocumentations = useMemo(() => {
-    if (!searchQuery.trim()) return documentations;
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
     const query = searchQuery.toLowerCase();
-    return documentations.filter(doc => 
-      doc.title?.toLowerCase().includes(query) ||
-      doc.description?.toLowerCase().includes(query) ||
-      doc.prompt?.toLowerCase().includes(query) ||
-      doc.target?.toLowerCase().includes(query) ||
-      doc.branch.toLowerCase().includes(query)
-    );
-  }, [documentations, searchQuery]);
+    return items.filter(item => {
+      if (item.kind === 'doc') {
+        const doc = item.doc;
+        return (
+          doc.title?.toLowerCase().includes(query) ||
+          doc.description?.toLowerCase().includes(query) ||
+          doc.prompt?.toLowerCase().includes(query) ||
+          doc.target?.toLowerCase().includes(query) ||
+          doc.branch.toLowerCase().includes(query)
+        );
+      }
+      const uml = item.uml;
+      return (
+        uml.name?.toLowerCase().includes(query) ||
+        uml.description?.toLowerCase().includes(query) ||
+        uml.prompt?.toLowerCase().includes(query) ||
+        uml.type?.toLowerCase().includes(query)
+      );
+    });
+  }, [items, searchQuery]);
 
-  const handleDocumentationClick = (doc: Documentation) => {
+  const handleItemClick = (item: DocumentationListItem) => {
+    startLoading();
+    if (item.kind === 'uml') {
+      router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/uml/${encodeURIComponent(item.uml.slug)}`);
+      return;
+    }
+    const doc = item.doc;
     if (!doc.title) {
       console.error('Documentation has no title');
       return;
     }
     const slug = doc.slug || slugify(doc.title);
-    startLoading();
     router.push(`/org-${orgShortId}/repo/${repoUrlName}/documentation/${encodeURIComponent(slug)}`);
   };
 
@@ -100,7 +104,7 @@ export default function DocumentationList({
     );
   }
 
-  if (filteredDocumentations.length === 0) {
+  if (filteredItems.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-white/60 mb-2">
@@ -116,48 +120,72 @@ export default function DocumentationList({
   return (
     <div className="pb-4">
       <div className="flex flex-col gap-6">
-        {filteredDocumentations.map((doc) => (
+        {filteredItems.map((item) => (
           <div
-            key={doc._id}
-            onClick={() => handleDocumentationClick(doc)}
+            key={item.kind === 'doc' ? item.doc._id : `uml-${item.uml._id}`}
+            onClick={() => handleItemClick(item)}
             className="w-full cursor-pointer group"
           >
             <div className="flex flex-col h-full hover:text-[var(--color-primary)] transition-colors">
-              {/* Title */}
-              {doc.title && (
-                <h3 className="text-white/65 font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
-                  {doc.title}
-                </h3>
+              {item.kind === 'doc' ? (
+                <>
+                  {item.doc.title && (
+                    <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
+                      {item.doc.title}
+                    </h3>
+                  )}
+                  {item.doc.description && (
+                    <p className="text-white/50 text-sm mb-3 line-clamp-3">
+                      {item.doc.description}
+                    </p>
+                  )}
+                  {item.doc.target && (
+                    <p className="text-white/50 text-sm mb-4 font-mono truncate">
+                      {item.doc.target}
+                    </p>
+                  )}
+                  <div className="mt-auto pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between text-xs text-white/40">
+                      <span>{formatDate(item.doc.createdAt)}</span>
+                      <svg
+                        className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-2 flex-wrap">
+                    <span>{item.uml.name}</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-400/40">
+                      UML
+                    </span>
+                  </h3>
+                  {(item.uml.description ?? item.uml.prompt) && (
+                    <p className="text-white/50 text-sm mb-3 line-clamp-3">
+                      {item.uml.description ?? item.uml.prompt}
+                    </p>
+                  )}
+                  <div className="mt-auto pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between text-xs text-white/40">
+                      <span>{formatDate(item.uml.createdAt)}</span>
+                      <svg
+                        className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
               )}
-
-              {/* Description */}
-              {doc.description && (
-                <p className="text-white/50 text-sm mb-3 line-clamp-3">
-                  {doc.description}
-                </p>
-              )}
-
-              {/* Target */}
-              {doc.target && (
-                <p className="text-white/50 text-sm mb-4 font-mono truncate">
-                  {doc.target}
-                </p>
-              )}
-
-              {/* Metadata */}
-              <div className="mt-auto pt-4 border-t border-white/10">
-                <div className="flex items-center justify-between text-xs text-white/40">
-                  <span>{formatDate(doc.createdAt)}</span>
-                  <svg
-                    className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
             </div>
           </div>
         ))}

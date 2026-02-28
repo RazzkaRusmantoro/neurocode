@@ -60,10 +60,13 @@ export default function RepoLayoutClient({
     : null;
 
   // Show documentation sidebar on documentation detail pages:
-  // `/.../documentation/<slug>` (but not visual-tree or code-reference)
-  const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname) && 
+  // `/.../documentation/<slug>` (but not visual-tree or code-reference or uml)
+  const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname) &&
     !pathname.includes('/documentation/visual-tree') &&
     !pathname.includes('/documentation/code-reference');
+
+  // UML canvas pages: no sidebar, full-width canvas (like visual tree)
+  const isUmlPage = pathname.includes('/documentation/uml/');
 
   // Extract org short id from pathname (e.g. /org-2Sc8S/repo/... -> 2Sc8S)
   const orgShortIdMatch = pathname.match(/\/org-([^/]+)/);
@@ -73,8 +76,8 @@ export default function RepoLayoutClient({
     <RepoCacheProvider>
       <DocumentationProvider>
         <div className="h-screen flex bg-transparent">
-        {/* Sidebar on the left - full height */}
-        {isDocumentationTitlePage ? (
+        {/* Sidebar on the left - full height (hidden on UML canvas pages) */}
+        {isUmlPage ? null : isDocumentationTitlePage ? (
           <DocumentationSidebarWrapper />
         ) : (
           <RepoSidebar 
@@ -84,19 +87,20 @@ export default function RepoLayoutClient({
             userEmail={userEmail}
           />
         )}
-        
-        {/* Center: Navbar and content stacked */}
-        <div className="flex-1 flex flex-col overflow-hidden px-16 relative min-w-0">
-          {/* Navbar */}
-          <DashboardNavbar 
-            userEmail={userEmail} 
-            userName={userName}
-            organizations={organizations}
-            selectedOrganization={selectedOrganization}
-            repositories={repositories}
-            selectedRepository={selectedRepository}
-          />
-          
+
+        {/* Center: Navbar and content stacked (UML = full-screen canvas, no navbar) */}
+        <div className={`flex-1 flex flex-col overflow-hidden relative min-w-0 ${isUmlPage ? 'px-0' : 'px-16'}`}>
+          {!isUmlPage && (
+            <DashboardNavbar
+              userEmail={userEmail}
+              userName={userName}
+              organizations={organizations}
+              selectedOrganization={selectedOrganization}
+              repositories={repositories}
+              selectedRepository={selectedRepository}
+            />
+          )}
+
           {/* Main content area */}
           <main className="flex-1 overflow-hidden min-h-0">
             <div className="h-full">

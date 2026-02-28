@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { slugify } from '@/lib/utils/slug';
 
 interface GenerateDocumentationModalProps {
   isOpen: boolean;
@@ -12,7 +14,15 @@ interface GenerateDocumentationModalProps {
   repositoryId: string;
 }
 
-type Scope = 'module' | 'file' | 'custom' | 'repository';
+type View = 'choice' | 'textual' | 'umlChoice' | 'umlPrompt';
+type DiagramType = 'class' | 'sequence' | 'useCase' | 'state';
+
+const UML_DIAGRAM_OPTIONS: { type: DiagramType; label: string; description: string }[] = [
+  { type: 'class', label: 'Class diagram', description: 'Classes, interfaces, inheritance and associations' },
+  { type: 'sequence', label: 'Sequence diagram', description: 'Message flow between objects over time' },
+  { type: 'useCase', label: 'Use case diagram', description: 'Actors and use cases' },
+  { type: 'state', label: 'State diagram', description: 'States and transitions' },
+];
 
 export default function GenerateDocumentationModal({
   isOpen,
@@ -23,70 +33,53 @@ export default function GenerateDocumentationModal({
   repoUrlName,
   repositoryId,
 }: GenerateDocumentationModalProps) {
-  const [showCustomOptions, setShowCustomOptions] = useState(false);
-  const [showCustomDetails, setShowCustomDetails] = useState(false);
-  const [scope, setScope] = useState<Scope>('module');
+  const [view, setView] = useState<View>('choice');
+  const [umlDiagramType, setUmlDiagramType] = useState<DiagramType | null>(null);
   const [target, setTarget] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isOpen) {
+      setView('choice');
+      setUmlDiagramType(null);
+      setTarget('');
+      setError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleCompleteDocumentation = async () => {
-    setIsGenerating(true);
+  const handleTextualDoc = () => {
+    setView('textual');
     setError(null);
-    setResult(null);
-
-    try {
-      const response = await fetch('/api/documentation/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          repoFullName: repoFullName,
-          orgShortId: orgShortId,
-          repoUrlName: repoUrlName,
-          branch: 'main',
-          scope: 'repository',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to generate documentation');
-        return;
-      }
-
-      setResult(data);
-      console.log('Documentation generated:', data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
-  const handleCustomDocumentation = () => {
-    setShowCustomOptions(true);
+  const handleUmlGeneration = () => {
+    setView('umlChoice');
+    setError(null);
   };
 
-  const handleCustomScope = () => {
-    setScope('custom');
-    setShowCustomDetails(true);
+  const handleUmlDiagramSelect = (type: DiagramType) => {
+    setUmlDiagramType(type);
+    setView('umlPrompt');
+    setError(null);
   };
 
   const handleBack = () => {
-    if (showCustomDetails) {
-      setShowCustomDetails(false);
-      setScope('module');
+    if (view === 'umlPrompt') {
+      setView('umlChoice');
+      setUmlDiagramType(null);
+      setTarget('');
+    } else if (view === 'umlChoice') {
+      setView('choice');
     } else {
-      setShowCustomOptions(false);
+      setView('choice');
+      setTarget('');
     }
-    // Reset form
-    setTarget('');
+    setError(null);
   };
 
   const handleGenerate = async () => {
@@ -95,9 +88,52 @@ export default function GenerateDocumentationModal({
       return;
     }
 
+    // UML flow: call generate-uml API (RAG + LLM), then navigate to UML page with slug
+    if (umlDiagramType) {
+      setIsGenerating(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/documentation/uml/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoFullName,
+            orgShortId,
+            repoUrlName,
+            branch: 'main',
+            prompt: target.trim(),
+            diagramType: umlDiagramType,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setError(data.error || data.details || 'Failed to generate UML diagram');
+          return;
+        }
+        const slug = data.slug || `${umlDiagramType}-${slugify(target.trim()) || 'diagram'}`;
+        const base = orgShortId.startsWith('org-') ? orgShortId : `org-${orgShortId}`;
+        onClose();
+        router.push(`/${base}/repo/${repoUrlName}/documentation/uml/${encodeURIComponent(slug)}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setResult(null);
+
+    const body: Record<string, string> = {
+      repoFullName: repoFullName,
+      orgShortId: orgShortId,
+      repoUrlName: repoUrlName,
+      branch: 'main',
+      scope: 'custom',
+      prompt: target.trim(),
+    };
 
     try {
       const response = await fetch('/api/documentation/generate', {
@@ -105,14 +141,7 @@ export default function GenerateDocumentationModal({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          repoFullName: repoFullName,
-          orgShortId: orgShortId,
-          repoUrlName: repoUrlName,
-          branch: 'main',
-          scope: 'custom',
-          prompt: target.trim(), // Send the user's prompt/description
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -143,7 +172,7 @@ export default function GenerateDocumentationModal({
       <div className="relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out max-w-5xl min-h-[500px] overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            {(showCustomOptions || showCustomDetails) && (
+            {(view === 'textual' || view === 'umlChoice' || view === 'umlPrompt') && (
               <button
                 onClick={handleBack}
                 className="text-white/60 hover:text-white transition-colors duration-200 cursor-pointer"
@@ -168,16 +197,16 @@ export default function GenerateDocumentationModal({
         </div>
 
         <div className="relative overflow-hidden p-5">
-          {/* Initial View - Two Main Boxes */}
+          {/* Initial View - Textual Documentation & UML Generation */}
           <div className={`transition-all duration-500 ease-in-out ${
-            showCustomOptions 
-              ? 'transform -translate-x-full opacity-0 absolute w-full' 
+            view !== 'choice'
+              ? 'transform -translate-x-full opacity-0 absolute w-full'
               : 'transform translate-x-0 opacity-100 relative'
           }`}>
             <div className="grid grid-cols-2 gap-6">
-              {/* Complete Documentation Box */}
+              {/* Textual doc - goes straight to custom prompt stage */}
               <div
-                onClick={handleCompleteDocumentation}
+                onClick={handleTextualDoc}
                 className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
                 style={{ backgroundColor: '#212121' }}
                 onMouseEnter={(e) => {
@@ -190,18 +219,18 @@ export default function GenerateDocumentationModal({
                 }}
               >
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-[#D85A2A] transition-colors duration-300">
-                  Complete Documentation
+                  Textual Documentation
                 </h3>
                 <p className="text-base text-white/70">
-                  Generate comprehensive documentation including API reference, architecture, and guides
+                  Describe what you want documented and generate custom documentation
                 </p>
                 <div className="flex-grow"></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
               </div>
 
-              {/* Custom Documentation Box */}
+              {/* UML Generation */}
               <div
-                onClick={handleCustomDocumentation}
+                onClick={handleUmlGeneration}
                 className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
                 style={{ backgroundColor: '#212121' }}
                 onMouseEnter={(e) => {
@@ -214,10 +243,10 @@ export default function GenerateDocumentationModal({
                 }}
               >
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-[#D85A2A] transition-colors duration-300">
-                  Custom Documentation
+                  UML Generation
                 </h3>
                 <p className="text-base text-white/70">
-                  Choose specific documentation types to generate
+                  Generate UML diagrams from your codebase
                 </p>
                 <div className="flex-grow"></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
@@ -225,128 +254,82 @@ export default function GenerateDocumentationModal({
             </div>
           </div>
 
-          {/* Custom Options View - Selection Interface */}
+          {/* UML Choice - four diagram type boxes */}
           <div className={`transition-all duration-500 ease-in-out ${
-            showCustomOptions 
-              ? 'transform translate-x-0 opacity-100 relative' 
+            view !== 'umlChoice'
+              ? 'transform -translate-x-full opacity-0 absolute w-full'
+              : 'transform translate-x-0 opacity-100 relative'
+          }`}>
+            <div className="grid grid-cols-2 gap-6">
+              {UML_DIAGRAM_OPTIONS.map(({ type, label, description }) => (
+                <div
+                  key={type}
+                  onClick={() => handleUmlDiagramSelect(type)}
+                  className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[300px]"
+                  style={{ backgroundColor: '#212121' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-[#D85A2A] transition-colors duration-300">
+                    {label}
+                  </h3>
+                  <p className="text-base text-white/70">
+                    {description}
+                  </p>
+                  <div className="flex-grow"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Textual doc / UML prompt - same text box stage */}
+          <div className={`transition-all duration-500 ease-in-out ${
+            view === 'textual' || view === 'umlPrompt'
+              ? 'transform translate-x-0 opacity-100 relative'
               : 'transform translate-x-full opacity-0 absolute w-full'
           }`}>
-            {/* Scope Selection View */}
-            <div className={`transition-all duration-500 ease-in-out ${
-              showCustomDetails
-                ? 'transform -translate-x-full opacity-0 absolute w-full'
-                : 'transform translate-x-0 opacity-100 relative'
-            }`}>
-              <div className="space-y-6">
-                {/* Scope Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">
-                    What would you like to document?
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div
-                      onClick={() => {
-                        setScope('module');
-                        setTarget('');
-                        setShowCustomDetails(true);
-                      }}
-                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
-                      style={{ backgroundColor: '#212121' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = 'none';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">Module</div>
-                      <div className="text-sm opacity-80 text-white/70">Specific module/folder</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
-                    </div>
-                    <div
-                      onClick={() => {
-                        setScope('file');
-                        setTarget('');
-                        setShowCustomDetails(true);
-                      }}
-                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden"
-                      style={{ backgroundColor: '#212121' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = 'none';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">File</div>
-                      <div className="text-sm opacity-80 text-white/70">Single file</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
-                    </div>
-                    <div
-                      onClick={handleCustomScope}
-                      className="group relative border border-white/10 rounded p-4 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer overflow-hidden col-span-2"
-                      style={{ backgroundColor: '#212121' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.3)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = 'none';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      <div className="font-semibold mb-1 text-white group-hover:text-[#D85A2A] transition-colors duration-300">Custom</div>
-                      <div className="text-sm opacity-80 text-white/70">Custom documentation</div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#BC4918]/0 to-[#BC4918]/0 group-hover:from-[#BC4918]/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded" />
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-3">
+                  {view === 'umlPrompt'
+                    ? 'Describe what to include in the diagram (e.g. scope, focus area)'
+                    : 'What documentation would you like to generate?'}
+                </label>
+                <textarea
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  placeholder={view === 'umlPrompt'
+                    ? "e.g. 'All classes in the auth module' or 'Checkout flow from cart to payment'"
+                    : "Describe what you want documented. For example: 'Explain the payment processing flow' or 'Document the authentication system' or 'How does the API handle user requests?'"}
+                  rows={8}
+                  className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
+                />
               </div>
-            </div>
 
-            {/* Custom Details View */}
-            <div className={`transition-all duration-500 ease-in-out ${
-              showCustomDetails
-                ? 'transform translate-x-0 opacity-100 relative'
-                : 'transform translate-x-full opacity-0 absolute w-full'
-            }`}>
-              <div className="space-y-6">
-                {/* Prompt/Description Field */}
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">
-                    What documentation would you like to generate?
-                  </label>
-                  <textarea
-                    value={target}
-                    onChange={(e) => setTarget(e.target.value)}
-                    placeholder="Describe what you want documented. For example: 'Explain the payment processing flow' or 'Document the authentication system' or 'How does the API handle user requests?'"
-                    rows={8}
-                    className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
-                  />
-                </div>
-
-                {/* Generate Button */}
-                <div className="pt-4 border-t border-white/10 space-y-3">
-                  <button
-                    onClick={() => handleGenerate()}
-                    disabled={isGenerating || !target.trim()}
-                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded transition-all duration-200 cursor-pointer"
-                  >
-                    {isGenerating ? 'Generating Documentation...' : 'Generate Documentation'}
-                  </button>
-                </div>
-
-                {/* Error Display */}
-                {error && (
-                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
-                    <p className="text-red-400 text-sm">{error}</p>
-                  </div>
-                )}
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <button
+                  onClick={() => handleGenerate()}
+                  disabled={isGenerating || !target.trim()}
+                  className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded transition-all duration-200 cursor-pointer"
+                >
+                  {isGenerating
+                    ? (view === 'umlPrompt' ? 'Generating diagram...' : 'Generating Documentation...')
+                    : (view === 'umlPrompt' ? 'Generate diagram' : 'Generate Documentation')}
+                </button>
               </div>
+
+              {error && (
+                <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

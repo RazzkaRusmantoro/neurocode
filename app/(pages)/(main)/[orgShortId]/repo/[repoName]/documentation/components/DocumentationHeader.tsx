@@ -1,14 +1,21 @@
 'use client';
 
+import { useRef, useLayoutEffect, useState } from 'react';
 import TextInput from '@/app/components/TextInput';
 
 type TabType = 'documentation' | 'visual-tree' | 'code-reference' | 'glossary';
+
+export type DocTypeFilter = 'all' | 'doc' | 'uml';
+
+const TYPE_FILTER_VALUES = ['all', 'doc', 'uml'] as const;
 
 interface DocumentationHeaderProps {
   activeTab: TabType;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onGenerateClick?: () => void;
+  typeFilter?: DocTypeFilter;
+  onTypeFilterChange?: (filter: DocTypeFilter) => void;
 }
 
 export default function DocumentationHeader({
@@ -16,7 +23,37 @@ export default function DocumentationHeader({
   searchQuery = '',
   onSearchChange,
   onGenerateClick,
+  typeFilter = 'all',
+  onTypeFilterChange,
 }: DocumentationHeaderProps) {
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number; transition: string }>({
+    left: 0,
+    width: 0,
+    transition: 'none',
+  });
+  const prevTypeFilter = useRef<DocTypeFilter | null>(null);
+
+  useLayoutEffect(() => {
+    if (!onTypeFilterChange || activeTab !== 'documentation') return;
+    const idx = TYPE_FILTER_VALUES.indexOf(typeFilter);
+    const btn = buttonRefs.current[idx];
+    const container = filterContainerRef.current;
+    if (btn && container) {
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const isInitialMount = prevTypeFilter.current === null;
+      const isUserSwitch = prevTypeFilter.current !== null && prevTypeFilter.current !== typeFilter;
+      prevTypeFilter.current = typeFilter;
+      setPillStyle({
+        left: btnRect.left - containerRect.left,
+        width: btnRect.width,
+        transition: isInitialMount ? 'none' : isUserSwitch ? 'left 0.25s ease-out, width 0.25s ease-out' : 'none',
+      });
+    }
+  }, [typeFilter, activeTab, onTypeFilterChange]);
+
   const getTitle = () => {
     switch (activeTab) {
       case 'documentation':
@@ -38,7 +75,41 @@ export default function DocumentationHeader({
         {getTitle()}
       </h2>
       {activeTab === 'documentation' && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Type filter: All / Textual / UML */}
+          {onTypeFilterChange && (
+            <div
+              ref={filterContainerRef}
+              className="relative flex rounded-lg bg-white/5 border border-white/10 p-0.5"
+            >
+              {/* Sliding pill behind active tab - only show once positioned to avoid flash */}
+              {pillStyle.width > 0 && (
+                <div
+                  className="absolute top-0.5 bottom-0.5 rounded-md bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/40 shadow-[0_0_12px_rgba(var(--color-primary-rgb),0.15)] pointer-events-none"
+                  style={{
+                    left: pillStyle.left,
+                    width: pillStyle.width,
+                    transition: pillStyle.transition,
+                  }}
+                />
+              )}
+              {TYPE_FILTER_VALUES.map((value, index) => (
+                <button
+                  key={value}
+                  ref={el => { buttonRefs.current[index] = el; }}
+                  type="button"
+                  onClick={() => onTypeFilterChange(value)}
+                  className={`relative z-10 cursor-pointer px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ease-out ${
+                    typeFilter === value
+                      ? 'text-[var(--color-primary)]'
+                      : 'text-white/60 hover:text-white/80'
+                  }`}
+                >
+                  {value === 'all' ? 'All' : value === 'doc' ? 'Textual' : 'UML'}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Search Bar */}
           <div className="w-128 relative">
             <svg
