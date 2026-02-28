@@ -38,7 +38,7 @@ export async function POST(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    revalidateTag(`org-repository-options:${organization._id!.toString()}`);
+    revalidateTag(`org-repository-options:${organization._id!.toString()}`, 'default');
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json(
