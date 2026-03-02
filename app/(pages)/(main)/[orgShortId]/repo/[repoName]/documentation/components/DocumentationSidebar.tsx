@@ -36,6 +36,13 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
     }
   }, [router, orgShortId, repoName, startLoading]);
 
+  // Show skeleton when: no doc loaded, or on documentation index, or on UML page (no TOC for those)
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const docSegmentIndex = pathSegments.indexOf('documentation');
+  const isDocIndexRoute = docSegmentIndex >= 0 && docSegmentIndex === pathSegments.length - 1;
+  const isUmlRoute = pathname.includes('/documentation/uml/');
+  const showSidebarSkeleton = !documentation || isDocIndexRoute || isUmlRoute;
+
   // Build sidebar items from documentation sections
   const sidebarItems: SidebarItem[] = documentation?.sections
     ? documentation.sections.map((section) => ({
@@ -155,9 +162,9 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
             Navigation
           </h2>
           <nav className="space-y-1 flex-1 overflow-y-auto sidebar-scrollbar">
-            {!documentation ? (
+            {showSidebarSkeleton ? (
               <div className="animate-pulse space-y-2">
-                {Array.from({ length: 12 }).map((_, i) => (
+                {Array.from({ length: 20 }).map((_, i) => (
                   <div
                     key={i}
                     className="h-9 bg-white/10 rounded flex-shrink-0"

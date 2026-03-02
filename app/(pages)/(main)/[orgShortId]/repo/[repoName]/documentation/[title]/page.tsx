@@ -280,6 +280,9 @@ export default function DocumentationTitlePage() {
   const [content, setContent] = useState<DocumentationContent | null>(null);
 
   useEffect(() => {
+    // Clear previous doc immediately so sidebar shows skeleton in sync with this page's loading state
+    setDocumentation(null);
+
     const fetchDocumentation = async () => {
       try {
         setLoading(true);

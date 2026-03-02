@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
       branch = 'main', 
       scope = 'repository',
       target,
-      prompt  // User's prompt/description for custom documentation
+      prompt,  // User's prompt/description for custom documentation
+      documentationType,  // api | architecture | aiAgent | endUser | test | onboarding
     } = body;
 
     if (!repoFullName || !orgShortId || !repoUrlName) {
@@ -98,6 +99,9 @@ export async function POST(request: NextRequest) {
     if (scope === 'custom' && prompt) {
       pythonEndpoint = '/api/generate-docs-rag';
       requestBody.prompt = prompt;
+      if (documentationType) {
+        requestBody.documentation_type = documentationType;
+      }
     } else {
       // For other scopes, include target if provided
       if (target) {
