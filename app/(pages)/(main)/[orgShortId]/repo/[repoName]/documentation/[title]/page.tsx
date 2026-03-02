@@ -70,8 +70,7 @@ function parseInline(
               else document.getElementById('code-references-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
           }}
-          className="inline px-1.5 py-0.5 rounded text-[#3fb1c5] cursor-pointer hover:text-[#5dd5e8] transition-colors"
-          style={{ backgroundColor: 'rgba(128, 128, 128, 0.3)', textDecoration: 'underline', textDecorationThickness: '0.5px', textUnderlineOffset: '2px' }}
+          className="inline font-bold text-orange-400 underline underline-offset-2 cursor-pointer hover:text-orange-300 transition-colors"
         >
           {cleanText}
         </a>
@@ -87,9 +86,42 @@ function parseInline(
   return { parts: hasMatches ? parts : [text], nextKey: key };
 }
 
-// Code block styling to match CodeSnippet look (no component)
-const codeBlockStyle = 'mt-4 border border-white/20 rounded bg-[#1a1a1a] overflow-x-auto';
-const codeBlockPreStyle = 'p-4 text-white/90 text-[13px] leading-[1.5] font-mono whitespace-pre';
+// Documentation table component – consistent styling for markdown tables
+function DocTable({ rows, compact = false }: { rows: string[][]; compact?: boolean }) {
+  if (!rows.length) return null;
+  const [headerRow, ...bodyRows] = rows;
+  const cellPadding = compact ? 'px-3 py-2' : 'px-4 py-3';
+  const textSize = compact ? 'text-xs' : 'text-sm';
+  return (
+    <div className="my-4 overflow-x-auto rounded-lg border border-white/15 bg-white/[0.03] shadow-sm ring-1 ring-white/5 min-w-0">
+      <table className={`w-full border-collapse ${textSize} text-white/90`}>
+        <thead>
+          <tr className="border-b border-white/20 bg-white/[0.06]">
+            {headerRow.map((cell, ci) => (
+              <th key={ci} className={`${cellPadding} text-left font-semibold text-white/95`}>
+                {cell}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyRows.map((row, ri) => (
+            <tr
+              key={ri}
+              className={`border-b border-white/10 last:border-b-0 ${ri % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'}`}
+            >
+              {row.map((cell, ci) => (
+                <td key={ci} className={`${cellPadding} text-left text-white/85 align-top`}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 // Split text into table blocks and paragraph blocks (for Markdown tables)
 function splitTablesAndParagraphs(text: string): Array<{ type: 'table'; rows: string[][] } | { type: 'paragraph'; content: string }> {
@@ -599,27 +631,11 @@ export default function DocumentationTitlePage() {
                 <div className="prose prose-invert max-w-none mb-6 space-y-2">
                   {parseDescription(section.description, handleCodeRefClick).map((seg, i) =>
                     seg.type === 'code' ? (
-                      <div key={i} className={codeBlockStyle}>
-                        <pre className={codeBlockPreStyle}>{seg.content}</pre>
-                      </div>
+                      <CodeSnippet key={i} code={seg.content} language={seg.language} />
                     ) : seg.type === 'table' ? (
-                      <div key={i} className="my-4 overflow-x-auto">
-                        <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
-                          <tbody>
-                            {seg.rows.map((row, ri) => (
-                              <tr key={ri}>
-                                {row.map((cell, ci) => (
-                                  <td key={ci} className="border border-white/20 px-3 py-2 text-left">
-                                    {ri === 0 ? <strong>{cell}</strong> : cell}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <DocTable key={i} rows={seg.rows} />
                     ) : (
-                      <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                      <p key={i} className="text-white leading-relaxed whitespace-pre-wrap">
                         {seg.content}
                       </p>
                     )
@@ -640,27 +656,11 @@ export default function DocumentationTitlePage() {
                         <div className="prose prose-invert max-w-none mb-4 space-y-2">
                           {parseDescription(subsection.description, handleCodeRefClick).map((seg, i) =>
                             seg.type === 'code' ? (
-                              <div key={i} className={codeBlockStyle}>
-                                <pre className={codeBlockPreStyle}>{seg.content}</pre>
-                              </div>
+                              <CodeSnippet key={i} code={seg.content} language={seg.language} />
                             ) : seg.type === 'table' ? (
-                              <div key={i} className="my-4 overflow-x-auto">
-                                <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
-                                  <tbody>
-                                    {seg.rows.map((row, ri) => (
-                                      <tr key={ri}>
-                                        {row.map((cell, ci) => (
-                                          <td key={ci} className="border border-white/20 px-3 py-2 text-left">
-                                            {ri === 0 ? <strong>{cell}</strong> : cell}
-                                          </td>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
+                              <DocTable key={i} rows={seg.rows} />
                             ) : (
-                              <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                              <p key={i} className="text-white leading-relaxed whitespace-pre-wrap">
                                 {seg.content}
                               </p>
                             )
@@ -718,34 +718,18 @@ export default function DocumentationTitlePage() {
                       <div className="prose prose-invert max-w-none mb-4 space-y-2">
                         {parseDescription(refDescription, handleCodeRefClick).map((seg, i) =>
                           seg.type === 'code' ? (
-                            <div key={i} className={codeBlockStyle}>
-                              <pre className={codeBlockPreStyle}>{seg.content}</pre>
-                            </div>
+                            <CodeSnippet key={i} code={seg.content} language={seg.language} />
                           ) : seg.type === 'table' ? (
-                            <div key={i} className="my-4 overflow-x-auto">
-                              <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
-                                <tbody>
-                                  {seg.rows.map((row, ri) => (
-                                    <tr key={ri}>
-                                      {row.map((cell, ci) => (
-                                        <td key={ci} className="border border-white/20 px-3 py-2 text-left">
-                                          {ri === 0 ? <strong>{cell}</strong> : cell}
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                            <DocTable key={i} rows={seg.rows} />
                           ) : (
-                            <p key={i} className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                            <p key={i} className="text-white leading-relaxed whitespace-pre-wrap">
                               {seg.content}
                             </p>
                           )
                         )}
                       </div>
                     )}
-                    
+
                     {/* Parameters Section */}
                     {refParameters && refParameters.length > 0 && (
                       <div className="mt-4 mb-4">
@@ -760,25 +744,9 @@ export default function DocumentationTitlePage() {
                                 <div className="text-white/60 text-sm mt-1 ml-0 space-y-2">
                                   {parseDescription(param.description, handleCodeRefClick).map((seg, i) =>
                                     seg.type === 'code' ? (
-                                      <div key={i} className={codeBlockStyle}>
-                                        <pre className={codeBlockPreStyle}>{seg.content}</pre>
-                                      </div>
+                                      <CodeSnippet key={i} code={seg.content} language={seg.language} />
                                     ) : seg.type === 'table' ? (
-                                      <div key={i} className="my-2 overflow-x-auto">
-                                        <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
-                                          <tbody>
-                                            {seg.rows.map((row, ri) => (
-                                              <tr key={ri}>
-                                                {row.map((cell, ci) => (
-                                                  <td key={ci} className="border border-white/20 px-2 py-1 text-left">
-                                                    {ri === 0 ? <strong>{cell}</strong> : cell}
-                                                  </td>
-                                                ))}
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
+                                      <DocTable key={i} rows={seg.rows} compact />
                                     ) : (
                                       <p key={i}>{seg.content}</p>
                                     )
@@ -808,25 +776,9 @@ export default function DocumentationTitlePage() {
                             <div className="text-white/60 text-sm mt-1 space-y-2">
                               {parseDescription(refReturns.description, handleCodeRefClick).map((seg, i) =>
                                 seg.type === 'code' ? (
-                                  <div key={i} className={codeBlockStyle}>
-                                    <pre className={codeBlockPreStyle}>{seg.content}</pre>
-                                  </div>
+                                  <CodeSnippet key={i} code={seg.content} language={seg.language} />
                                 ) : seg.type === 'table' ? (
-                                  <div key={i} className="my-2 overflow-x-auto">
-                                    <table className="w-full border-collapse border border-white/20 text-sm text-white/90">
-                                      <tbody>
-                                        {seg.rows.map((row, ri) => (
-                                          <tr key={ri}>
-                                            {row.map((cell, ci) => (
-                                              <td key={ci} className="border border-white/20 px-2 py-1 text-left">
-                                                {ri === 0 ? <strong>{cell}</strong> : cell}
-                                              </td>
-                                            ))}
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                  <DocTable key={i} rows={seg.rows} compact />
                                 ) : (
                                   <p key={i}>{seg.content}</p>
                                 )
