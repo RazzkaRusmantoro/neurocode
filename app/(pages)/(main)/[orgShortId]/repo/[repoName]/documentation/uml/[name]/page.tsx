@@ -28,6 +28,7 @@ import {
   DEFAULT_DIAMOND_LENGTH,
   DEFAULT_ARROW_LENGTH,
 } from '../components/UmlRelationshipMarkers';
+import { UMLLifelineNode, SequenceMessageEdge, SequenceSelfMessageEdge, SequenceFragmentNode, SequenceStepLabelNode } from '../components/UmlSequenceNodes';
 
 const FIT_VIEW_OPTS = { padding: 0.2, maxZoom: 0.9, duration: 300 };
 
@@ -63,6 +64,30 @@ interface ApiUmlRelationship {
   relationship: 'composition' | 'aggregation' | 'association' | 'directed_association' | 'generalization' | 'dependency';
   sourceMultiplicity?: string;
   targetMultiplicity?: string;
+}
+
+// ─── Sequence diagram API types (from backend) ───────────────────
+interface ApiSequenceLifeline {
+  id: string;
+  label: string;
+  isActor?: boolean;
+  isDestroyed?: boolean;
+}
+interface ApiSequenceMessage {
+  fromLifeline: string;
+  toLifeline: string;
+  label: string;
+  isReturn?: boolean;
+  opensNewActivation?: boolean;
+}
+interface ApiSequenceFragment {
+  operator: string;
+  condition?: string;
+  messageIndices?: number[];
+}
+interface ApiSequenceStep {
+  title: string;
+  messageIndices: number[];
 }
 
 // ─── UML class node data ─────────────────────────────────────────
@@ -224,98 +249,116 @@ const UMLClassNode = memo(UMLClassNodeInner, (prev, next) =>
   (prev as NodeProps & { dragging?: boolean }).dragging === (next as NodeProps & { dragging?: boolean }).dragging
 );
 
-const nodeTypes = { umlClass: UMLClassNode };
+const nodeTypes = { umlClass: UMLClassNode, lifeline: UMLLifelineNode, sequenceFragment: SequenceFragmentNode, sequenceStepLabel: SequenceStepLabelNode };
 
-// ─── Sample class diagram data (nodes only) ──────────────────────
-const SAMPLE_CLASSES: Record<string, UMLClassData> = {
-  BaseEntity: {
-    className: 'BaseEntity',
-    abstract: true,
-    stereotype: 'abstract',
-    attributes: [
-      { name: 'id', type: 'string', visibility: '#' },
-      { name: 'createdAt', type: 'Date', visibility: '#' },
-    ],
-    methods: [{ name: 'getId', params: '', returnType: 'string', visibility: '+' }],
+/** Temporary placeholder node shown when no diagram is loaded. */
+const TEMP_PLACEHOLDER_NODE: Node[] = [
+  {
+    id: 'fragment-1',
+    type: 'sequenceFragment',
+    position: { x: 30, y: 150 }, // Positioned to surround the interactions
+    data: { operator: 'alt', condition: '[if successful]', width: 700, height: 160 },
+    zIndex: -2, // Behind the lifelines
   },
-  User: {
-    className: 'User',
-    stereotype: 'entity',
-    attributes: [
-      { name: 'id', type: 'string', visibility: '-' },
-      { name: 'email', type: 'string', visibility: '-' },
-    ],
-    methods: [
-      { name: 'getId', params: '', returnType: 'string', visibility: '+' },
-      { name: 'validate', params: '', returnType: 'boolean', visibility: '+' },
-    ],
+  {
+    id: 'lifeline-0',
+    type: 'lifeline',
+    position: { x: 50, y: 50 },
+    data: { label: 'User', isActor: true, activations: [{ startY: 20, height: 180 }] },
+    zIndex: -1,
   },
-  Account: {
-    className: 'Account',
-    stereotype: 'entity',
-    attributes: [
-      { name: 'id', type: 'string', visibility: '-' },
-      { name: 'userId', type: 'string', visibility: '-' },
-    ],
-    methods: [
-      { name: 'linkUser', params: 'user: User', returnType: 'void', visibility: '+' },
-    ],
+  {
+    id: 'lifeline-1',
+    type: 'lifeline',
+    position: { x: 350, y: 50 },
+    data: { 
+      label: 'Client', 
+      activations: [
+        { startY: 40, height: 160 }, // Main client activation
+        { startY: 80, height: 40, xOffset: 8 }, // Nested recursive activation
+        { startY: 220, height: 40 } // Standalone activation for self message
+      ] 
+    },
+    zIndex: -1,
   },
-  Car: {
-    className: 'Car',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
+  {
+    id: 'lifeline-2',
+    type: 'lifeline',
+    position: { x: 650, y: 50 },
+    data: { label: 'Server', activations: [{ startY: 80, height: 80 }], isDestroyed: true },
+    zIndex: -1,
   },
-  Engine: {
-    className: 'Engine',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
+  {
+    id: 'placeholder',
+    type: 'umlClass',
+    position: { x: 200, y: 200 },
+    data: {
+      className: 'SampleClass',
+      stereotype: 'entity',
+      attributes: [
+        { name: 'id', type: 'string', visibility: '-' },
+        { name: 'name', type: 'string', visibility: '-' },
+      ],
+      methods: [
+        { name: 'getId', params: '', returnType: 'string', visibility: '+' },
+        { name: 'getName', params: '', returnType: 'string', visibility: '+' },
+      ],
+    } as unknown as Record<string, unknown>,
   },
-  University: {
-    className: 'University',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
+];
+
+const TEMP_PLACEHOLDER_EDGES: Edge[] = [
+  {
+    id: 'msg-1',
+    source: 'lifeline-0',
+    target: 'lifeline-1',
+    sourceHandle: 'act-0-source-right',
+    targetHandle: 'act-0-target-left',
+    type: 'sequenceMessage',
+    data: { label: 'login()' },
+    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
   },
-  Student: {
-    className: 'Student',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
+  {
+    id: 'msg-2',
+    source: 'lifeline-1',
+    target: 'lifeline-0',
+    sourceHandle: 'act-0-source-left',
+    targetHandle: 'act-0-target-right',
+    type: 'sequenceMessage',
+    data: { label: 'token', isReturn: true },
+    markerEnd: { type: 'arrow', color: '#e4e4e7', width: 20, height: 20 },
+    // Because the handles are positioned relative to their activation boxes,
+    // and both activations start at slightly different Ys, we need to manually
+    // shift the edge down to the bottom of the client activation.
+    style: { transform: 'translateY(160px)' },
+    // Force Z-index so it doesn't get hidden behind lifelines
+    zIndex: 10,
   },
-  Animal: {
-    className: 'Animal',
-    stereotype: 'abstract',
-    attributes: [],
-    methods: [],
+  {
+    id: 'msg-3',
+    source: 'lifeline-1',
+    target: 'lifeline-1',
+    sourceHandle: 'act-0-source-right', // Start at main activation
+    targetHandle: 'act-1-target-right', // End at nested activation
+    type: 'sequenceSelfMessage',
+    data: { label: 'recursiveCall()' },
+    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
+    // Because we're connecting exactly from handle to handle (which have different Ys),
+    // we no longer need the translateY hack for this self message!
+    zIndex: 10,
   },
-  Dog: {
-    className: 'Dog',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
-  },
-  Driver: {
-    className: 'Driver',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
-  },
-  Order: {
-    className: 'Order',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
-  },
-  Customer: {
-    className: 'Customer',
-    stereotype: 'entity',
-    attributes: [],
-    methods: [],
-  },
-};
+  {
+    id: 'msg-4',
+    source: 'lifeline-1',
+    target: 'lifeline-1',
+    sourceHandle: 'act-2-source-right',
+    targetHandle: 'act-2-target-right',
+    type: 'sequenceSelfMessage',
+    data: { label: 'selfMessage()' },
+    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
+    zIndex: 10,
+  }
+];
 
 const NODE_WIDTH = 240;
 const NODE_HEIGHT = 220;
@@ -444,17 +487,7 @@ const BorderEdge = memo(BorderEdgeInner, (prev, next) => {
     pd.relationship === nd.relationship && (prev.style as { stroke?: string })?.stroke === (next.style as { stroke?: string })?.stroke;
 });
 
-const edgeTypes = { border: BorderEdge };
-
-function buildSampleClassDiagram(): Node[] {
-  const nodeIds = Object.keys(SAMPLE_CLASSES);
-  return nodeIds.map((id) => ({
-    id,
-    type: 'umlClass',
-    position: { x: 0, y: 0 },
-    data: SAMPLE_CLASSES[id] as unknown as Record<string, unknown>,
-  }));
-}
+const edgeTypes = { border: BorderEdge, sequenceMessage: SequenceMessageEdge, sequenceSelfMessage: SequenceSelfMessageEdge };
 
 /**
  * Sort classes so base/super classes tend to come before subclasses (by generalization target).
@@ -515,15 +548,241 @@ function buildEdgeDefsFromGeneratedRels(relationships: ApiUmlRelationship[]): Ed
   }));
 }
 
-const EDGE_DEFS: EdgeDef[] = [
-  { id: 'e-base-user', source: 'BaseEntity', target: 'User', stroke: '#e4e4e7', sourceMultiplicity: '1', targetMultiplicity: '0..1', relationship: 'association' },
-  { id: 'e-user-account', source: 'User', target: 'Account', stroke: '#e4e4e7', sourceMultiplicity: '1..*', targetMultiplicity: '*' },
-  { id: 'e-car-engine', source: 'Car', target: 'Engine', stroke: '#e4e4e7', relationship: 'composition' },
-  { id: 'e-univ-student', source: 'University', target: 'Student', stroke: '#e4e4e7', relationship: 'aggregation' },
-  { id: 'e-dog-animal', source: 'Dog', target: 'Animal', stroke: '#e4e4e7', relationship: 'generalization' },
-  { id: 'e-driver-car', source: 'Driver', target: 'Car', stroke: '#e4e4e7', relationship: 'directed_association' },
-  { id: 'e-order-customer', source: 'Order', target: 'Customer', stroke: '#e4e4e7', relationship: 'dependency' },
-];
+// ─── Sequence diagram layout (Y positions + activations from messages) ───
+const SEQ_MSG_Y_BASE = 60;
+const SEQ_MSG_SPACING = 70;
+const SEQ_LIFELINE_Y = 50;
+const SEQ_LIFELINE_START_X = 50;
+const SEQ_LIFELINE_SPACING = 300;
+const SEQ_NESTED_X_OFFSET = 8;
+const SEQ_SELF_MSG_LOOP_HEIGHT = 30;
+
+interface SequenceActivation {
+  startY: number;
+  height: number;
+  xOffset?: number;
+}
+
+interface SequenceLayoutResult {
+  lifelineNodes: Node[];
+  messageEdges: Edge[];
+  activationsByLifeline: Map<string, SequenceActivation[]>;
+  messageY: number[];
+}
+
+function buildSequenceLayout(
+  lifelines: ApiSequenceLifeline[],
+  messages: ApiSequenceMessage[]
+): SequenceLayoutResult {
+  const lifelineIds = new Set(lifelines.map((ll) => ll.id));
+  const messageY = messages.map((_, i) => SEQ_MSG_Y_BASE + i * SEQ_MSG_SPACING);
+  const endY = messages.length > 0 ? messageY[messages.length - 1] + SEQ_MSG_SPACING * 2 : SEQ_MSG_Y_BASE + 80;
+
+  // Per-lifeline: stack of { startY, activationIndex, isNested }; activations array built in order
+  const stacks = new Map<string, { startY: number; activationIndex: number; isNested: boolean }[]>();
+  const activationsByLifeline = new Map<string, SequenceActivation[]>();
+
+  function ensureActivation(lifelineId: string, y: number): number {
+    let stack = stacks.get(lifelineId);
+    if (!stack) {
+      stack = [];
+      stacks.set(lifelineId, stack);
+    }
+    if (stack.length === 0) {
+      const acts = activationsByLifeline.get(lifelineId) || [];
+      const activationIndex = acts.length;
+      acts.push({ startY: y, height: 0 });
+      activationsByLifeline.set(lifelineId, acts);
+      stack.push({ startY: y, activationIndex, isNested: false });
+    }
+    return stack[stack.length - 1].activationIndex;
+  }
+
+  function pushActivation(lifelineId: string, y: number, isNested: boolean): number {
+    let stack = stacks.get(lifelineId);
+    if (!stack) {
+      stack = [];
+      stacks.set(lifelineId, stack);
+    }
+    const acts = activationsByLifeline.get(lifelineId) || [];
+    const activationIndex = acts.length;
+    acts.push({ startY: y, height: 0, xOffset: isNested ? SEQ_NESTED_X_OFFSET : undefined });
+    activationsByLifeline.set(lifelineId, acts);
+    stack.push({ startY: y, activationIndex, isNested });
+    return activationIndex;
+  }
+
+  function popActivation(lifelineId: string, y: number): void {
+    const stack = stacks.get(lifelineId);
+    if (!stack || stack.length === 0) return;
+    const top = stack.pop()!;
+    const acts = activationsByLifeline.get(lifelineId)!;
+    const raw = y - top.startY;
+    acts[top.activationIndex].height = Math.max(raw + 10, 20);
+  }
+
+  function topActivationIndex(lifelineId: string): number | null {
+    const stack = stacks.get(lifelineId);
+    if (!stack || stack.length === 0) return null;
+    return stack[stack.length - 1].activationIndex;
+  }
+
+  const edgeHandles: { fromAct: number; toAct: number; fromL: string; toL: string; label: string; isReturn: boolean; isSelf: boolean; yOffset: number }[] = [];
+
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    const y = messageY[i];
+    if (!lifelineIds.has(m.fromLifeline) || !lifelineIds.has(m.toLifeline)) continue;
+
+    if (m.isReturn) {
+      ensureActivation(m.fromLifeline, y);
+      ensureActivation(m.toLifeline, y);
+      const fromAct = topActivationIndex(m.fromLifeline)!;
+      const toAct = topActivationIndex(m.toLifeline)!;
+      const fromActs = activationsByLifeline.get(m.fromLifeline) || [];
+      const yOffset = y - (fromActs[fromAct]?.startY || 0);
+      edgeHandles.push({
+        fromAct,
+        toAct,
+        fromL: m.fromLifeline,
+        toL: m.toLifeline,
+        label: m.label,
+        isReturn: true,
+        isSelf: m.fromLifeline === m.toLifeline,
+        yOffset,
+      });
+      popActivation(m.fromLifeline, y);
+      if (m.fromLifeline !== m.toLifeline) {
+        popActivation(m.toLifeline, y);
+      }
+    } else {
+      ensureActivation(m.fromLifeline, y);
+      const fromAct = topActivationIndex(m.fromLifeline)!;
+      const fromActs = activationsByLifeline.get(m.fromLifeline) || [];
+      const yOffset = y - (fromActs[fromAct]?.startY || 0);
+      const isSelf = m.fromLifeline === m.toLifeline;
+      const opensNew = !!m.opensNewActivation;
+      let toAct: number;
+      if (isSelf) {
+        if (opensNew) {
+          toAct = pushActivation(m.toLifeline, y, true);
+          // Immediately close the nested activation with a fixed height
+          // matching the self-message loop so it doesn't pile up on the stack
+          popActivation(m.toLifeline, y + SEQ_SELF_MSG_LOOP_HEIGHT);
+        } else {
+          toAct = ensureActivation(m.toLifeline, y);
+        }
+      } else {
+        toAct = pushActivation(m.toLifeline, y, false);
+      }
+      edgeHandles.push({
+        fromAct,
+        toAct,
+        fromL: m.fromLifeline,
+        toL: m.toLifeline,
+        label: m.label,
+        isReturn: false,
+        isSelf,
+        yOffset,
+      });
+    }
+  }
+
+  // Close remaining stacks
+  for (const lid of lifelineIds) {
+    let stack = stacks.get(lid);
+    while (stack && stack.length > 0) popActivation(lid, endY);
+  }
+
+  const lifelineTotalHeight = endY + 60;
+  const lifelineNodes: Node[] = lifelines.map((ll, i) => ({
+    id: ll.id,
+    type: 'lifeline',
+    position: { x: SEQ_LIFELINE_START_X + i * SEQ_LIFELINE_SPACING, y: SEQ_LIFELINE_Y },
+    data: {
+      label: ll.label,
+      isActor: !!ll.isActor,
+      isDestroyed: !!ll.isDestroyed,
+      activations: activationsByLifeline.get(ll.id) || [],
+      lifelineHeight: lifelineTotalHeight,
+    },
+    zIndex: -1,
+  }));
+
+  const markerEnd = { type: 'arrowclosed' as const, color: '#e4e4e7', width: 20, height: 20 };
+  const markerEndReturn = { type: 'arrow' as const, color: '#e4e4e7', width: 20, height: 20 };
+
+  const messageEdges: Edge[] = edgeHandles.map((h, i) => {
+    const isSelf = h.fromL === h.toL;
+    const sourceHandle = `act-${h.fromAct}-source-right`;
+    const targetHandle = isSelf ? `act-${h.toAct}-target-right` : `act-${h.toAct}-target-left`;
+    const sourceHandleReturn = `act-${h.fromAct}-source-left`;
+    const targetHandleReturn = `act-${h.toAct}-target-right`;
+    return {
+      id: `msg-${i}`,
+      source: h.fromL,
+      target: h.toL,
+      sourceHandle: h.isReturn ? sourceHandleReturn : sourceHandle,
+      targetHandle: h.isReturn ? targetHandleReturn : targetHandle,
+      type: isSelf ? 'sequenceSelfMessage' : 'sequenceMessage',
+      data: { label: h.label, isReturn: h.isReturn },
+      markerEnd: h.isReturn ? markerEndReturn : markerEnd,
+      style: h.yOffset > 0 ? { transform: `translateY(${h.yOffset}px)` } : undefined,
+      zIndex: 10,
+    };
+  });
+
+  return { lifelineNodes, messageEdges, activationsByLifeline, messageY };
+}
+
+function buildSequenceStepLabelNodes(steps: ApiSequenceStep[], messageY: number[]): Node[] {
+  if (!steps.length) return [];
+  return steps.map((step, si) => {
+    const indices = (step.messageIndices || []).filter((idx) => idx >= 0 && idx < messageY.length);
+    const minI = indices.length > 0 ? Math.min(...indices) : 0;
+    const y = messageY[minI] !== undefined ? messageY[minI] - 28 : SEQ_MSG_Y_BASE - 20;
+    return {
+      id: `step-${si}`,
+      type: 'sequenceStepLabel',
+      position: { x: SEQ_LIFELINE_START_X, y },
+      data: { title: step.title, stepIndex: si },
+      zIndex: 1,
+    };
+  });
+}
+
+/** Fragments must not be first: only include if min(messageIndices) >= 1. */
+function buildSequenceFragmentNodes(
+  fragments: ApiSequenceFragment[],
+  messageY: number[],
+  lifelineCount: number
+): Node[] {
+  const safeFragments = fragments.filter((f) => {
+    const indices = (f.messageIndices || []).filter((idx) => idx >= 0 && idx < messageY.length);
+    return indices.length > 0 && Math.min(...indices) >= 1;
+  });
+  if (!safeFragments.length) return [];
+  const fragWidth = Math.max(lifelineCount * SEQ_LIFELINE_SPACING, 400);
+  return safeFragments.map((f, fi) => {
+    const indices = (f.messageIndices || []).filter((idx) => idx >= 0 && idx < messageY.length);
+    const minI = indices.length > 0 ? Math.min(...indices) : 1;
+    const maxI = indices.length > 0 ? Math.max(...indices) : 1;
+    const startY = messageY[minI] !== undefined ? messageY[minI] - 10 : SEQ_MSG_Y_BASE;
+    const endY = messageY[maxI] !== undefined ? messageY[maxI] + SEQ_MSG_SPACING + 10 : startY + 100;
+    return {
+      id: `fragment-${fi}`,
+      type: 'sequenceFragment',
+      position: { x: SEQ_LIFELINE_START_X - 20, y: startY },
+      data: {
+        operator: f.operator,
+        condition: f.condition,
+        width: fragWidth + 40,
+        height: Math.max(endY - startY, 60),
+      },
+      zIndex: -2,
+    };
+  });
+}
 
 type EdgeDef = {
   id: string; source: string; target: string; stroke: string;
@@ -637,13 +896,32 @@ function runDagreLayout(
  */
 function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
   if (nodes.length === 0) return [];
+  
+  // Separate sequence nodes from class nodes
+  const lifelineNodes = nodes.filter(n => n.type === 'lifeline');
+  const classNodes = nodes.filter(n => n.type !== 'lifeline');
+  
+  // Layout lifelines in a horizontal line
+  const LIFELINE_Y = 50;
+  const LIFELINE_START_X = 50;
+  const LIFELINE_SPACING = 300;
+  const positionedLifelines = lifelineNodes.map((n, i) => ({
+    ...n,
+    position: {
+      x: LIFELINE_START_X + i * LIFELINE_SPACING,
+      y: LIFELINE_Y,
+    },
+  }));
+
+  if (classNodes.length === 0) return positionedLifelines;
+
   const boxW = LAYOUT_BOX_WIDTH;
   const boxH = LAYOUT_BOX_HEIGHT;
-  const hasEdges = edgeDefs.length > 0 && edgeDefs.some((e) => nodes.some((n) => n.id === e.source) && nodes.some((n) => n.id === e.target));
+  const hasEdges = edgeDefs.length > 0 && edgeDefs.some((e) => classNodes.some((n) => n.id === e.source) && classNodes.some((n) => n.id === e.target));
   let result: Node[];
   if (!hasEdges) {
-    const COLS = Math.ceil(Math.sqrt(nodes.length)) || 1;
-    result = nodes.map((n, i) => {
+    const COLS = Math.ceil(Math.sqrt(classNodes.length)) || 1;
+    result = classNodes.map((n, i) => {
       const col = i % COLS;
       const row = Math.floor(i / COLS);
       return {
@@ -655,14 +933,28 @@ function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
       };
     });
   } else {
-    const tb = runDagreLayout(nodes, edgeDefs, boxW, boxH, 'TB');
-    const lr = runDagreLayout(nodes, edgeDefs, boxW, boxH, 'LR');
+    const tb = runDagreLayout(classNodes, edgeDefs, boxW, boxH, 'TB');
+    const lr = runDagreLayout(classNodes, edgeDefs, boxW, boxH, 'LR');
     const aspect = (w: number, h: number) => (w > h ? w / h : h / w);
     const tbAspect = aspect(tb.width, tb.height);
     const lrAspect = aspect(lr.width, lr.height);
     result = tbAspect <= lrAspect ? tb.nodes : lr.nodes;
   }
-  return resolveOverlaps(result, boxW, boxH);
+  
+  // Shift class nodes down if lifelines are present to avoid overlap
+  const resolvedClassNodes = resolveOverlaps(result, boxW, boxH);
+  if (lifelineNodes.length > 0) {
+    const CLASS_START_Y = LIFELINE_Y + 700; // 600px lifeline height + 100px gap
+    return [
+      ...positionedLifelines,
+      ...resolvedClassNodes.map(n => ({
+        ...n,
+        position: { ...n.position, y: n.position.y + CLASS_START_Y }
+      }))
+    ];
+  }
+  
+  return [...positionedLifelines, ...resolvedClassNodes];
 }
 
 function computeSmartEdges(nodes: Node[], edgeDefs: EdgeDef[]): Edge[] {
@@ -711,51 +1003,76 @@ export default function DocumentationUmlPage() {
   const rfRef = useRef<ReactFlowInstance | null>(null);
   const [hideDetails, setHideDetails] = useState(false);
 
-  const sampleNodes = useMemo(() => buildSampleClassDiagram(), []);
-  const [generatedDiagram, setGeneratedDiagram] = useState<{ classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] } | null>(null);
+  type ClassDiagramData = { type: 'class'; classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] };
+  type SequenceDiagramData = { type: 'sequence'; lifelines: ApiSequenceLifeline[]; messages: ApiSequenceMessage[]; steps: ApiSequenceStep[]; fragments: ApiSequenceFragment[] };
+  const [generatedDiagram, setGeneratedDiagram] = useState<ClassDiagramData | SequenceDiagramData | null>(null);
   const [generatedLoading, setGeneratedLoading] = useState(false);
   const [generatedError, setGeneratedError] = useState<string | null>(null);
 
-  const displayNodes = useMemo(
-    () =>
-      generatedDiagram && generatedDiagram.classes.length > 0
-        ? buildNodesFromGeneratedClasses(generatedDiagram.classes, generatedDiagram.relationships)
-        : sampleNodes,
-    [generatedDiagram, sampleNodes]
-  );
+  const isSequenceDiagram = generatedDiagram?.type === 'sequence';
+  const sequenceLayout = useMemo(() => {
+    if (!isSequenceDiagram || !generatedDiagram) return null;
+    const { lifelines, messages } = generatedDiagram;
+    if (lifelines.length < 2) return null;
+    return buildSequenceLayout(lifelines, messages);
+  }, [isSequenceDiagram, generatedDiagram]);
+
+  const displayNodes = useMemo(() => {
+    if (isSequenceDiagram && sequenceLayout) {
+      const seq = generatedDiagram as SequenceDiagramData;
+      const fragNodes = buildSequenceFragmentNodes(
+        seq.fragments,
+        sequenceLayout.messageY,
+        seq.lifelines.length
+      );
+      return [...sequenceLayout.lifelineNodes, ...fragNodes];
+    }
+    if (generatedDiagram?.type === 'class' && generatedDiagram.classes.length > 0) {
+      return [
+        ...buildNodesFromGeneratedClasses(generatedDiagram.classes, generatedDiagram.relationships),
+        ...TEMP_PLACEHOLDER_NODE,
+      ];
+    }
+    return TEMP_PLACEHOLDER_NODE;
+  }, [generatedDiagram, isSequenceDiagram, sequenceLayout]);
+
   const displayEdgeDefs = useMemo(
     () =>
-      generatedDiagram && generatedDiagram.classes.length > 0
+      generatedDiagram?.type === 'class' && generatedDiagram.classes.length > 0
         ? buildEdgeDefsFromGeneratedRels(generatedDiagram.relationships)
-        : EDGE_DEFS,
+        : [],
     [generatedDiagram]
   );
 
-  const layoutedNodes = useMemo(
-    () => getLayoutedUmlNodes(displayNodes, displayEdgeDefs),
-    [displayNodes, displayEdgeDefs]
-  );
+  const layoutedNodes = useMemo(() => {
+    if (isSequenceDiagram && sequenceLayout) return displayNodes;
+    return getLayoutedUmlNodes(displayNodes, displayEdgeDefs);
+  }, [isSequenceDiagram, sequenceLayout, displayNodes, displayEdgeDefs]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
-  const edges = useMemo(() => computeSmartEdges(nodes, displayEdgeDefs), [nodes, displayEdgeDefs]);
+  const edges = useMemo(() => {
+    if (isSequenceDiagram && sequenceLayout) return sequenceLayout.messageEdges;
+    const computedEdges = computeSmartEdges(nodes, displayEdgeDefs);
+    return [...computedEdges, ...TEMP_PLACEHOLDER_EDGES];
+  }, [isSequenceDiagram, sequenceLayout, nodes, displayEdgeDefs]);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [panelData, setPanelData] = useState<ApiUmlClass | null>(null);
 
   const classesById = useMemo(() => {
     const map = new Map<string, ApiUmlClass>();
-    if (generatedDiagram?.classes) {
+    if (generatedDiagram?.type === 'class') {
       generatedDiagram.classes.forEach((c) => map.set(c.id, c));
     }
     return map;
-  }, [generatedDiagram?.classes]);
+  }, [generatedDiagram]);
 
   const selectedClassForPanel = useMemo((): ApiUmlClass | null => {
-    if (!selectedNodeId) return null;
+    if (!selectedNodeId || isSequenceDiagram) return null;
     const fromApi = classesById.get(selectedNodeId);
     if (fromApi) return fromApi;
     const node = nodes.find((n) => n.id === selectedNodeId);
-    if (!node) return null;
+    if (!node || node.type !== 'umlClass') return null;
     const d = node.data as unknown as UMLClassData;
     return {
       id: selectedNodeId,
@@ -775,7 +1092,7 @@ export default function DocumentationUmlPage() {
         description: m.description,
       })),
     };
-  }, [selectedNodeId, classesById, nodes]);
+  }, [selectedNodeId, classesById, nodes, isSequenceDiagram]);
 
   useEffect(() => {
     if (selectedClassForPanel) {
@@ -805,10 +1122,23 @@ export default function DocumentationUmlPage() {
       })
       .then((data) => {
         const diagramData = data?.diagram?.diagramData ?? data?.diagramData;
+        const lifelines = diagramData?.lifelines;
+        const messages = diagramData?.messages;
+        if (lifelines && Array.isArray(lifelines) && lifelines.length >= 2) {
+          setGeneratedDiagram({
+            type: 'sequence',
+            lifelines,
+            messages: Array.isArray(messages) ? messages : [],
+            steps: Array.isArray(diagramData?.steps) ? diagramData.steps : [],
+            fragments: Array.isArray(diagramData?.fragments) ? diagramData.fragments : [],
+          });
+          return;
+        }
         const classes = diagramData?.classes;
         const relationships = diagramData?.relationships;
         if (classes && Array.isArray(classes)) {
           setGeneratedDiagram({
+            type: 'class',
             classes,
             relationships: Array.isArray(relationships) ? relationships : [],
           });
