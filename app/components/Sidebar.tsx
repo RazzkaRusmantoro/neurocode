@@ -407,7 +407,7 @@ export default function Sidebar({
         <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'}`}>
           {/* MAIN Section */}
           <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">MAIN</h3>}
+            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">MAIN</h3>}
             <ul className="space-y-1">
               {MAIN_MENU_ITEMS.map((item) => (
                 <li key={item.id}>
@@ -431,7 +431,7 @@ export default function Sidebar({
           {/* ORGANIZATION Section */}
           <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
           <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">ORGANIZATION</h3>}
+            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">ORGANIZATION</h3>}
             <ul className="space-y-1">
               <li>
                 <button 
@@ -464,7 +464,7 @@ export default function Sidebar({
           {/* CONFIGURATIONS Section */}
           <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
           <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">CONFIGURATIONS</h3>}
+            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">CONFIGURATIONS</h3>}
             <ul className="space-y-1">
               <li>
                 <button 

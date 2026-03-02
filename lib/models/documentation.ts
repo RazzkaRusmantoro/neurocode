@@ -29,6 +29,10 @@ export interface Documentation {
   code_reference_ids?: string[]; // Array of code reference IDs (referenceId strings)
   glossary_term_ids?: string[]; // Array of glossary term IDs (termId strings)
   
+  // Documentation type (mirrors S3 metadata; allows filtering without fetching S3)
+  documentationType?: string; // api | architecture | aiAgent | endUser | test | onboarding
+  aiAgentDocKind?: string; // context | playbook | custom (when documentationType === 'aiAgent')
+  
   createdAt: Date;
   updatedAt: Date;
   createdBy?: ObjectId; // User ID who generated this
@@ -37,6 +41,38 @@ export interface Documentation {
 export async function getDocumentationCollection() {
   const db = await getDb();
   return db.collection<Documentation>('documentation');
+}
+
+/**
+ * Ensure title and slug are unique within this repository.
+ * If the given title/slug already exists, appends " (2)", " (3)", etc. for title and "-2", "-3" for slug.
+ */
+export async function ensureUniqueDocumentationTitleAndSlug(
+  repositoryId: string,
+  organizationId: string,
+  title: string,
+  slug?: string | null
+): Promise<{ title: string; slug: string }> {
+  const existing = await getDocumentationsByRepository(repositoryId, organizationId);
+  const existingTitles = new Set(existing.map((d) => (d.title || '').trim()).filter(Boolean));
+  const existingSlugs = new Set(
+    existing.map((d) => (d.slug || (d.title ? slugify(d.title) : '')).trim()).filter(Boolean)
+  );
+
+  const baseTitle = (title || 'Documentation').trim();
+  const baseSlug = (slug || slugify(baseTitle) || 'documentation').trim();
+
+  let finalTitle = baseTitle;
+  let finalSlug = baseSlug;
+  let n = 1;
+
+  while (existingTitles.has(finalTitle) || existingSlugs.has(finalSlug)) {
+    n += 1;
+    finalTitle = `${baseTitle} (${n})`;
+    finalSlug = `${baseSlug}-${n}`;
+  }
+
+  return { title: finalTitle, slug: finalSlug };
 }
 
 export async function createDocumentation(

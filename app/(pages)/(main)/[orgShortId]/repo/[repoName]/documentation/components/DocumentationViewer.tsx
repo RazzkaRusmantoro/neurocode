@@ -65,8 +65,7 @@ export default function DocumentationViewer({
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Refresh documentations after generating new one (force refresh)
-    fetchDocumentations(true);
+    // No refetch on close; user can reload the page or use list refresh if they generated new docs
   };
 
   const fetchDocumentations = async (forceRefresh = false) => {
@@ -135,7 +134,7 @@ export default function DocumentationViewer({
       <div className="h-full flex flex-col bg-transparent">
         <div className="max-w-screen-2xl mx-auto w-full h-full flex flex-col">
           {/* Content */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6">
+          <div className={`flex-1 overflow-y-auto px-6 py-6 ${loading ? 'hide-scrollbar' : 'custom-scrollbar'}`}>
             {/* Header with Search and Generate Button */}
             <DocumentationHeader
               activeTab="documentation"

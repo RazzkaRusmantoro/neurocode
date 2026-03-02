@@ -148,13 +148,14 @@ export default function FileTree({
     }
   };
 
-  // Skeleton loader component - using fixed widths to avoid hydration mismatch
+  // Skeleton loader - many fixed-height rows so the list fills the container
   const SkeletonLoader = () => {
-    const skeletonWidths = [150, 200, 120, 180, 160, 140, 190, 170]; // Fixed widths for consistency
-    
+    const skeletonWidths = [150, 200, 120, 180, 160, 140, 190, 170];
+    const rowCount = 28;
+
     return (
       <div>
-        {[...Array(8)].map((_, index) => (
+        {[...Array(rowCount)].map((_, index) => (
           <div
             key={index}
             className="flex items-center gap-2 py-3 border-b border-[#262626] animate-pulse"
@@ -169,11 +170,12 @@ export default function FileTree({
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
+    <div className={`h-full overflow-y-auto ${initialLoading ? 'hide-scrollbar' : 'custom-scrollbar'}`}>
+      {initialLoading ? (
+        <SkeletonLoader />
+      ) : (
       <div>
-        {initialLoading ? (
-          <SkeletonLoader />
-        ) : sortedContents.length === 0 ? (
+        {sortedContents.length === 0 ? (
           <div className="px-4 py-8 text-center text-white/60 text-sm">
             No files found
           </div>
@@ -188,6 +190,7 @@ export default function FileTree({
           ))
         )}
       </div>
+      )}
     </div>
   );
 }

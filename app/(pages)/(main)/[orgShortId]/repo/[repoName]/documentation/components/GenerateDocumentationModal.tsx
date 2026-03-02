@@ -17,7 +17,14 @@ interface GenerateDocumentationModalProps {
 
 type View = 'choice' | 'docTypeChoice' | 'textual' | 'umlChoice' | 'umlPrompt';
 type DiagramType = 'class' | 'sequence' | 'useCase' | 'state';
-type DocType = 'api' | 'architecture' | 'aiAgent' | 'endUser' | 'test' | 'onboarding';
+type DocType = 'api' | 'architecture' | 'aiAgent' | 'endUser' | 'test' | 'onboarding' | 'fakeLoading';
+type AiAgentDocKind = 'context' | 'playbook' | 'custom';
+
+const AI_AGENT_DOC_KIND_OPTIONS: { type: AiAgentDocKind; label: string; description: string }[] = [
+  { type: 'context', label: 'Context', description: 'Explanations: project overview, structure, conventions, how things work' },
+  { type: 'playbook', label: 'Playbook', description: 'Procedures: step-by-step instructions (e.g. how to add doc, run tests)' },
+  { type: 'custom', label: 'Custom', description: 'Free-form; describe exactly what you need' },
+];
 
 const UML_DIAGRAM_OPTIONS: { type: DiagramType; label: string; description: string }[] = [
   { type: 'class', label: 'Class diagram', description: 'Classes, interfaces, inheritance and associations' },
@@ -33,6 +40,7 @@ const DOC_TYPE_OPTIONS: { type: DocType; label: string; description: string }[] 
   { type: 'endUser', label: 'End-User Documentation', description: 'User manuals, guides, tutorials and FAQs' },
   { type: 'test', label: 'Test Documentation', description: 'Test strategy, coverage, scenarios and how to run tests' },
   { type: 'onboarding', label: 'Onboarding', description: 'Getting started, setup, conventions and where to find things' },
+  { type: 'fakeLoading', label: 'Test loading (temp)', description: 'Temporary: fake loading UX only, no API call' },
 ];
 
 export default function GenerateDocumentationModal({
@@ -48,6 +56,8 @@ export default function GenerateDocumentationModal({
   const [umlDiagramType, setUmlDiagramType] = useState<DiagramType | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<DocType | null>(null);
   const [target, setTarget] = useState('');
+  const [aiAgentDocKind, setAiAgentDocKind] = useState<AiAgentDocKind | null>(null);
+  const [aiAgentExtraInstructions, setAiAgentExtraInstructions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +100,8 @@ export default function GenerateDocumentationModal({
       setUmlDiagramType(null);
       setSelectedDocType(null);
       setTarget('');
+      setAiAgentDocKind(null);
+      setAiAgentExtraInstructions('');
       setError(null);
     }
   }, [isOpen]);
@@ -128,6 +140,8 @@ export default function GenerateDocumentationModal({
     } else if (view === 'textual') {
       setView('docTypeChoice');
       setTarget('');
+      setAiAgentDocKind(null);
+      setAiAgentExtraInstructions('');
     } else if (view === 'docTypeChoice') {
       setView('choice');
       setSelectedDocType(null);
@@ -139,9 +153,21 @@ export default function GenerateDocumentationModal({
   };
 
   const handleGenerate = async () => {
-    if (!target.trim()) {
-      setError('Please enter a description of what documentation you want to generate');
-      return;
+    const isAiAgent = selectedDocType === 'aiAgent';
+    if (isAiAgent) {
+      if (!aiAgentDocKind) {
+        setError('Please select what kind of AI-Agent document you want to generate');
+        return;
+      }
+      if (!aiAgentExtraInstructions.trim()) {
+        setError('Please provide instructions for what to generate');
+        return;
+      }
+    } else {
+      if (!target.trim()) {
+        setError('Please enter a description of what documentation you want to generate');
+        return;
+      }
     }
 
     // UML flow: call generate-uml API (RAG + LLM), then navigate to UML page with slug
@@ -182,8 +208,8 @@ export default function GenerateDocumentationModal({
       return;
     }
 
-    // System Architecture: show same loading UX but no API call; stop after a short delay
-    if (selectedDocType === 'architecture') {
+    // Temporary: fake loading UX only (no API call) for testing
+    if (selectedDocType === 'fakeLoading') {
       setIsGenerating(true);
       setError(null);
       setTimeout(() => {
@@ -197,14 +223,23 @@ export default function GenerateDocumentationModal({
     setError(null);
     setResult(null);
 
+    const promptForApi = isAiAgent && aiAgentDocKind
+      ? `${AI_AGENT_DOC_KIND_OPTIONS.find((o) => o.type === aiAgentDocKind)?.label || aiAgentDocKind}. ${aiAgentExtraInstructions.trim()}`
+      : target.trim();
+
     const body: Record<string, string> = {
       repoFullName: repoFullName,
       orgShortId: orgShortId,
       repoUrlName: repoUrlName,
       branch: 'main',
       scope: 'custom',
-      prompt: target.trim(),
+      prompt: promptForApi,
       ...(selectedDocType && { documentationType: selectedDocType }),
+      ...(isAiAgent &&
+        aiAgentDocKind && {
+          aiAgentDocKind,
+          aiAgentExtraInstructions: aiAgentExtraInstructions.trim(),
+        }),
     };
 
     try {
@@ -225,7 +260,7 @@ export default function GenerateDocumentationModal({
 
       setResult(data);
       const base = orgShortId.startsWith('org-') ? orgShortId : `org-${orgShortId}`;
-      const slug = data.title ? slugify(data.title) : slugify(target.trim()) || 'documentation';
+      const slug = data.slug || (data.title ? slugify(data.title) : slugify(promptForApi) || 'documentation');
       
       // Complete the progress bar before navigating
       setLoadingProgress(100);
@@ -606,6 +641,66 @@ export default function GenerateDocumentationModal({
                     style={{ width: `${Math.min(100, Math.max(0, loadingProgress))}%` }}
                   />
                 </div>
+              </div>
+            ) : view === 'textual' && selectedDocType === 'aiAgent' ? (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-3">
+                    What kind of AI-Agent document?
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {AI_AGENT_DOC_KIND_OPTIONS.map(({ type, label, description }) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setAiAgentDocKind(type)}
+                        className={`text-left p-4 rounded border transition-all duration-200 ${
+                          aiAgentDocKind === type
+                            ? 'border-[#BC4918] bg-[#BC4918]/10 text-white'
+                            : 'border-white/10 bg-[#212121] text-white/90 hover:border-white/20 hover:bg-[#252525]'
+                        }`}
+                      >
+                        <span className="font-medium block mb-0.5">{label}</span>
+                        <span className="text-xs text-white/60">{description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">
+                    Instructions
+                  </label>
+                  <textarea
+                    value={aiAgentExtraInstructions}
+                    onChange={(e) => setAiAgentExtraInstructions(e.target.value)}
+                    placeholder={
+                      aiAgentDocKind === 'custom'
+                        ? "e.g. 'Cursor rules for this repo focusing on testing conventions'"
+                        : aiAgentDocKind === 'context'
+                          ? "e.g. 'Explain the auth flow and where config lives'"
+                          : "e.g. 'How to add a new doc type and run the generator'"
+                    }
+                    rows={4}
+                    className="w-full px-4 py-3 bg-[#212121] border border-white/10 rounded text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#BC4918] focus:border-transparent transition-all resize-none"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-white/10 space-y-3">
+                  <button
+                    onClick={() => handleGenerate()}
+                    disabled={isGenerating || !aiAgentDocKind || !aiAgentExtraInstructions.trim()}
+                    className="w-full px-6 py-3 bg-[#BC4918] hover:bg-[#BC4918]/80 disabled:bg-[#BC4918]/50 disabled:cursor-not-allowed text-white font-medium rounded transition-all duration-200 cursor-pointer"
+                  >
+                    Generate AI-Agent Documentation
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6">

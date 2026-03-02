@@ -81,11 +81,12 @@ export default function DocumentationList({
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
-        {[1, 2, 3, 4, 5].map((i) => (
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((i) => (
           <div key={i} className="w-full">
             <div className="flex flex-col w-full">
               <div className="h-6 bg-white/10 rounded mb-2 animate-pulse w-full"></div>
-              <div className="h-4 bg-white/10 rounded mb-4 w-2/3 animate-pulse"></div>
+              <div className="h-4 bg-white/10 rounded mb-2 w-2/3 animate-pulse"></div>
+              <div className="h-4 bg-white/10 rounded mb-4 w-[85%] animate-pulse"></div>
               <div className="pt-4 border-t border-white/10">
                 <div className="h-3 bg-white/10 rounded w-1/2 animate-pulse"></div>
               </div>

@@ -10,7 +10,8 @@ import { getCachedUserById } from '@/lib/models/user';
 import { getGitHubTokenWithFallback, testGitHubTokenAccess } from '@/lib/utils/github-token';
 import { getRepositoryByUrlNameAndOrganization } from '@/lib/models/repository';
 import { getOrganizationByShortId } from '@/lib/models/organization';
-import { createDocumentation } from '@/lib/models/documentation';
+import { createDocumentation, ensureUniqueDocumentationTitleAndSlug } from '@/lib/models/documentation';
+import { slugify } from '@/lib/utils/slug';
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || '';
@@ -39,6 +40,8 @@ export async function POST(request: NextRequest) {
       target,
       prompt,  // User's prompt/description for custom documentation
       documentationType,  // api | architecture | aiAgent | endUser | test | onboarding
+      aiAgentDocKind,   // context | playbook | custom (when documentationType === 'aiAgent')
+      aiAgentExtraInstructions,  // required when documentationType === 'aiAgent'
     } = body;
 
     if (!repoFullName || !orgShortId || !repoUrlName) {
@@ -102,6 +105,10 @@ export async function POST(request: NextRequest) {
       if (documentationType) {
         requestBody.documentation_type = documentationType;
       }
+      if (documentationType === 'aiAgent') {
+        if (aiAgentDocKind) requestBody.ai_agent_doc_kind = aiAgentDocKind;
+        if (aiAgentExtraInstructions) requestBody.ai_agent_extra_instructions = aiAgentExtraInstructions;
+      }
     } else {
       // For other scopes, include target if provided
       if (target) {
@@ -138,13 +145,22 @@ export async function POST(request: NextRequest) {
         // Determine scope - if custom, use 'custom', otherwise use the provided scope
         const docScope = (scope === 'custom' && prompt) ? 'custom' : scope;
         
+        // Ensure title and slug are unique for this repository (no duplicates)
+        const rawTitle = result.title || (prompt ? `${prompt.slice(0, 60)}${prompt.length > 60 ? '...' : ''}` : 'Documentation');
+        const { title: uniqueTitle, slug: uniqueSlug } = await ensureUniqueDocumentationTitleAndSlug(
+          repository._id!.toString(),
+          organization._id!.toString(),
+          rawTitle,
+          result.title ? slugify(result.title) : undefined
+        );
+        
         // Get version number (check for existing docs with same scope/target/branch)
         // For now, set version to 1 and isLatest to true
         // TODO: Implement proper versioning logic later
         const version = 1;
         const isLatest = true;
         
-        // Save to MongoDB
+        // Save to MongoDB with unique title and slug
         const documentation = await createDocumentation(
           repository._id!.toString(),
           {
@@ -152,7 +168,8 @@ export async function POST(request: NextRequest) {
             scope: docScope as 'file' | 'module' | 'repository' | 'custom',
             target: target || undefined,
             prompt: prompt || undefined,
-            title: result.title || undefined, // Include title from Python service
+            title: uniqueTitle,
+            slug: uniqueSlug,
             description: result.description || undefined, // Include description from Python service
             s3Key: result.s3.s3_key,
             s3Bucket: result.s3.s3_bucket,
@@ -162,16 +179,20 @@ export async function POST(request: NextRequest) {
             branch: branch,
             code_reference_ids: result.code_reference_ids || undefined, // Array of code reference IDs
             glossary_term_ids: result.glossary_term_ids || undefined, // Array of glossary term IDs
+            documentationType: result.documentation_type ?? documentationType ?? undefined,
+            aiAgentDocKind: result.ai_agent_doc_kind ?? aiAgentDocKind ?? undefined,
             createdBy: new ObjectId(session.user.id),
           }
         );
         
-        console.log(`[Documentation] Saved to MongoDB with ID: ${documentation._id}`);
+        console.log(`[Documentation] Saved to MongoDB with ID: ${documentation._id}, title: ${uniqueTitle}, slug: ${uniqueSlug}`);
         
-        // Return result with MongoDB document ID
+        // Return result with MongoDB document ID and the unique title/slug used (frontend navigates by slug)
         return NextResponse.json({
           success: true,
           documentationId: documentation._id!.toString(),
+          title: uniqueTitle,
+          slug: uniqueSlug,
           ...result,
         });
       } catch (dbError) {

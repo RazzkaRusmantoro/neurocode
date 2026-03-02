@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import JSZip from 'jszip';
 import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
 import { slugify } from '@/lib/utils/slug';
@@ -238,6 +239,63 @@ interface CodeReferenceDetail {
   code?: string; // Raw code snippet
 }
 
+/** Extract raw .md from a fenced block like ```md\n...\n``` for AI-agent doc display */
+function extractMdFromFenced(description: string): string | null {
+  const match = description.match(/^```(?:md)?\s*\n([\s\S]*?)\n```\s*$/);
+  return match ? match[1].trimEnd() : null;
+}
+
+function isAiAgentMdDoc(doc: DocumentationContent): boolean {
+  return (
+    doc.metadata?.documentation_type === 'aiAgent' &&
+    doc.metadata?.ai_agent_doc_kind === 'custom'
+  );
+}
+
+/** Build a single Markdown string from documentation content for export */
+function buildMarkdownExport(doc: DocumentationContent): string {
+  const lines: string[] = [];
+  lines.push(`# ${doc.title}\n`);
+  if (doc.metadata?.generated_at) {
+    lines.push(`*Generated: ${doc.metadata.generated_at}*\n`);
+  }
+  const sections = doc.documentation?.sections ?? [];
+  for (const section of sections) {
+    lines.push(`## ${section.id}. ${section.title}\n`);
+    lines.push(section.description.trimEnd());
+    lines.push('\n');
+    if (section.subsections?.length) {
+      for (const sub of section.subsections) {
+        lines.push(`### ${sub.id}. ${sub.title}\n`);
+        lines.push(sub.description.trimEnd());
+        lines.push('\n');
+      }
+    }
+  }
+  const refs = doc.code_references ?? [];
+  if (refs.length > 0) {
+    lines.push('## Code References\n\n');
+    for (const ref of refs) {
+      const isDetail = typeof ref === 'object' && 'name' in ref;
+      const name = isDetail ? (ref as CodeReferenceDetail).name : String(ref);
+      const desc = isDetail ? (ref as CodeReferenceDetail).description ?? '' : '';
+      const code = isDetail ? (ref as CodeReferenceDetail).code ?? '' : '';
+      lines.push(`### ${name}\n\n`);
+      if (desc) lines.push(desc.trimEnd(), '\n\n');
+      if (code) lines.push('```\n', code, '\n```\n\n');
+    }
+  }
+  return lines.join('');
+}
+
+/** Safe filename for a section: use .md extension, no path chars */
+function sectionToFilename(section: { id: string; title: string }): string {
+  const base = section.title.trim();
+  const hasExt = /\.md$/i.test(base);
+  const safe = base.replace(/[<>:"/\\|?*]/g, '-').replace(/\s+/g, '-') || section.id;
+  return hasExt ? safe : `${slugify(safe) || section.id}.md`;
+}
+
 interface DocumentationContent {
   _id: string;
   title: string;
@@ -248,6 +306,8 @@ interface DocumentationContent {
     repository?: string;
     branch?: string;
     scope?: string;
+    documentation_type?: string;
+    ai_agent_doc_kind?: string;
   };
   documentation: {
     sections: Array<{
@@ -278,6 +338,44 @@ export default function DocumentationTitlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState<DocumentationContent | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    if (!content) return;
+    setExporting(true);
+    try {
+      const folderName = content.title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') || 'documentation';
+
+      if (isAiAgentMdDoc(content)) {
+        const zip = new JSZip();
+        const sections = content.documentation?.sections ?? [];
+        for (const section of sections) {
+          const rawMd = extractMdFromFenced(section.description);
+          const text = rawMd ?? section.description.trimEnd();
+          const filename = sectionToFilename(section);
+          zip.file(filename, text);
+        }
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${folderName}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const md = buildMarkdownExport(content);
+        const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${folderName}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setExporting(false);
+    }
+  }, [content]);
 
   useEffect(() => {
     // Clear previous doc immediately so sidebar shows skeleton in sync with this page's loading state
@@ -609,28 +707,69 @@ export default function DocumentationTitlePage() {
   return (
     <div className="h-full overflow-y-auto custom-scrollbar py-6">
       <div className="max-w-screen-2xl mx-auto w-full px-6">
-        {/* Title */}
-        <h1 className="text-3xl font-bold text-white mb-4 text-left">
-          {content.title}
-        </h1>
+        {/* Title row with Export at top right */}
+        <div className="flex justify-between items-start gap-4 mb-4">
+          <h1 className="text-3xl font-bold text-white text-left flex-1 min-w-0">
+            {content.title}
+          </h1>
+          <button
+            type="button"
+            onClick={() => handleExport()}
+            disabled={exporting}
+            className="relative flex-shrink-0 px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-lg text-white text-sm font-semibold shadow-lg hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 overflow-hidden group"
+            title={isAiAgentMdDoc(content) ? 'Export as folder (ZIP of .md files)' : 'Export as Markdown'}
+          >
+            <span className="relative z-[1] flex items-center gap-2">
+              {exporting ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" />
+                  </svg>
+                  Exporting…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export
+                </>
+              )}
+            </span>
+            <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0" />
+          </button>
+        </div>
         <div className="border-t-2 border-white/20 mb-10" />
 
         {/* Sections */}
-        {content.documentation?.sections && content.documentation.sections.length > 0 && (
+        {content.documentation?.sections && content.documentation.sections.length > 0 && (() => {
+          const isAiAgentMdDocs =
+            content.metadata?.documentation_type === 'aiAgent' &&
+            content.metadata?.ai_agent_doc_kind === 'custom';
+
+          return (
           <div className="space-y-12">
-            {content.documentation.sections.map((section, index) => (
+            {content.documentation.sections.map((section, index) => {
+              const rawMd = isAiAgentMdDocs ? extractMdFromFenced(section.description) : null;
+
+              return (
               <div key={section.id} id={`section-${section.id}`} className="scroll-mt-6">
                 {/* Horizontal line break between sections */}
                 {index > 0 && (
                   <div className="border-t-2 border-white/20 mb-16 mt-16"></div>
                 )}
                 
-                {/* Section Title */}
+                {/* Section Title (always normal heading; for AI-agent docs this is e.g. "GUIDE.md" or "timing.md") */}
                 <h2 className="text-2xl font-semibold text-white mb-4">
                   {section.id}. {section.title}
                 </h2>
 
-                {/* Section Description */}
+                {/* Section Description: for AI-agent .md docs, show the entirety as one copyable code snippet */}
+                {isAiAgentMdDocs && rawMd !== null ? (
+                  <div className="mb-6">
+                    <CodeSnippet code={rawMd} language="markdown" />
+                  </div>
+                ) : (
                 <div className="prose prose-invert max-w-none mb-6 space-y-2">
                   {parseDescription(section.description, handleCodeRefClick).map((seg, i) =>
                     seg.type === 'code' ? (
@@ -644,8 +783,9 @@ export default function DocumentationTitlePage() {
                     )
                   )}
                 </div>
+                )}
 
-                {/* Subsections */}
+                {/* Subsections (not used for AI-agent bundle; each .md is a top-level section) */}
                 {section.subsections && section.subsections.length > 0 && (
                   <div className="ml-6 mt-8 space-y-8">
                     {section.subsections.map((subsection) => (
@@ -674,9 +814,11 @@ export default function DocumentationTitlePage() {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
-        )}
+          );
+        })()}
 
         {/* Code References Section */}
         {content.code_references && content.code_references.length > 0 && (
