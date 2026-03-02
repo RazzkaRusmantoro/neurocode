@@ -28,7 +28,7 @@ import {
   DEFAULT_DIAMOND_LENGTH,
   DEFAULT_ARROW_LENGTH,
 } from '../components/UmlRelationshipMarkers';
-import { UMLLifelineNode, SequenceMessageEdge, SequenceSelfMessageEdge, SequenceFragmentNode, SequenceStepLabelNode } from '../components/UmlSequenceNodes';
+import { UMLLifelineNode, SequenceMessageEdge, SequenceSelfMessageEdge, SequenceFragmentNode, SequenceStepLabelNode, UseCaseSystemBoundaryNode, UseCaseActorNode, UseCaseNode, CommunicationLinkEdge, UseCaseExtendEdge, UseCaseIncludeEdge, UseCaseGeneralizationEdge } from '../components/UmlSequenceNodes';
 
 const FIT_VIEW_OPTS = { padding: 0.2, maxZoom: 0.9, duration: 300 };
 
@@ -88,6 +88,25 @@ interface ApiSequenceFragment {
 interface ApiSequenceStep {
   title: string;
   messageIndices: number[];
+}
+
+// ─── Use case diagram API types (from backend) ─────────────────────
+interface ApiUseCaseSystemBoundary {
+  label: string;
+}
+interface ApiUseCaseActor {
+  id: string;
+  label: string;
+  placement?: 'left' | 'right';
+}
+interface ApiUseCase {
+  id: string;
+  label: string;
+}
+interface ApiUseCaseRelationship {
+  source: string;
+  target: string;
+  relationship: 'communication' | 'include' | 'extend' | 'generalization';
 }
 
 // ─── UML class node data ─────────────────────────────────────────
@@ -249,10 +268,240 @@ const UMLClassNode = memo(UMLClassNodeInner, (prev, next) =>
   (prev as NodeProps & { dragging?: boolean }).dragging === (next as NodeProps & { dragging?: boolean }).dragging
 );
 
-const nodeTypes = { umlClass: UMLClassNode, lifeline: UMLLifelineNode, sequenceFragment: SequenceFragmentNode, sequenceStepLabel: SequenceStepLabelNode };
+const nodeTypes = { umlClass: UMLClassNode, lifeline: UMLLifelineNode, sequenceFragment: SequenceFragmentNode, sequenceStepLabel: SequenceStepLabelNode, useCaseSystemBoundary: UseCaseSystemBoundaryNode, useCaseActor: UseCaseActorNode, useCase: UseCaseNode };
 
-/** Temporary placeholder node shown when no diagram is loaded. */
+const SYSTEM_BOUNDARY_ID = 'system-boundary-1';
+
+/** System boundary box: parent of all use-case overlay nodes; dragging it moves the whole diagram. */
+const SYSTEM_BOUNDARY_NODE: Node = {
+  id: SYSTEM_BOUNDARY_ID,
+  type: 'useCaseSystemBoundary',
+  position: { x: 0, y: 0 },
+  data: { label: 'System', width: 920, height: 800 },
+  zIndex: -3,
+};
+
+/** Actors sit outside boundary (negative x relative to boundary). Positions are relative to boundary. */
+const DEFAULT_ACTOR_NODE: Node = {
+  id: 'actor-1',
+  type: 'useCaseActor',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: -180, y: 80 },
+  data: { label: 'User' },
+};
+
+const DEFAULT_ACTOR_NODE_2: Node = {
+  id: 'actor-2',
+  type: 'useCaseActor',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: -180, y: 250 },
+  data: { label: 'Admin' },
+};
+
+/** Use cases sit inside boundary (positive x/y with margin). Positions relative to boundary. */
+const DEFAULT_USE_CASE_NODE: Node = {
+  id: 'usecase-1',
+  type: 'useCase',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: 120, y: 100 },
+  data: { label: 'Do something', width: 140, height: 72 },
+};
+
+const DEFAULT_USE_CASE_NODE_2: Node = {
+  id: 'usecase-2',
+  type: 'useCase',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: 320, y: 100 },
+  data: { label: 'Do something else', width: 140, height: 72 },
+};
+
+const DEFAULT_USE_CASE_NODE_3: Node = {
+  id: 'usecase-3',
+  type: 'useCase',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: 120, y: 250 },
+  data: { label: 'Optional step', width: 140, height: 72 },
+};
+
+const DEFAULT_USE_CASE_NODE_4: Node = {
+  id: 'usecase-4',
+  type: 'useCase',
+  parentId: SYSTEM_BOUNDARY_ID,
+  position: { x: 320, y: 250 },
+  data: { label: 'Required step', width: 140, height: 72 },
+};
+
+/** Use case edge defs (source/target/type); edges are computed with smart border positioning. */
+const USE_CASE_EDGE_DEFS = [
+  { id: 'comm-actor-usecase1', source: 'actor-1', target: 'usecase-1', type: 'communicationLink' as const },
+  { id: 'comm-usecase1-usecase2', source: 'usecase-1', target: 'usecase-2', type: 'communicationLink' as const },
+  { id: 'extend-usecase3-usecase1', source: 'usecase-3', target: 'usecase-1', type: 'useCaseExtend' as const },
+  { id: 'include-usecase2-usecase4', source: 'usecase-2', target: 'usecase-4', type: 'useCaseInclude' as const },
+  { id: 'gen-actor2-actor1', source: 'actor-2', target: 'actor-1', type: 'useCaseGeneralization' as const },
+  { id: 'gen-usecase3-usecase2', source: 'usecase-3', target: 'usecase-2', type: 'useCaseGeneralization' as const },
+];
+
+type UseCaseEdgeDef = { id: string; source: string; target: string; type: 'communicationLink' | 'useCaseExtend' | 'useCaseInclude' | 'useCaseGeneralization' };
+
+function buildUseCaseEdgeDefsFromGenerated(relationships: ApiUseCaseRelationship[]): UseCaseEdgeDef[] {
+  return relationships.map((r, i) => {
+    const typeMap = {
+      communication: 'communicationLink' as const,
+      include: 'useCaseInclude' as const,
+      extend: 'useCaseExtend' as const,
+      generalization: 'useCaseGeneralization' as const,
+    };
+    return {
+      id: `uc-${r.source}-${r.target}-${i}`,
+      source: r.source,
+      target: r.target,
+      type: typeMap[r.relationship] ?? 'communicationLink',
+    };
+  });
+}
+
+function buildUseCaseNodesFromGenerated(
+  systemBoundary: ApiUseCaseSystemBoundary,
+  actors: ApiUseCaseActor[],
+  useCases: ApiUseCase[]
+): Node[] {
+  const boundaryWidth = 920;
+  const boundaryHeight = 800;
+  const boundaryNode: Node = {
+    ...SYSTEM_BOUNDARY_NODE,
+    data: {
+      ...SYSTEM_BOUNDARY_NODE.data,
+      label: systemBoundary?.label ?? 'System',
+      width: boundaryWidth,
+      height: boundaryHeight,
+    },
+  };
+  const leftActors = actors.filter((a) => (a.placement ?? 'left') === 'left');
+  const rightActors = actors.filter((a) => a.placement === 'right');
+  const actorSpacingY = 140;
+  const actorStartY = 100;
+  const leftActorX = -200;
+  const rightActorX = boundaryWidth + 80;
+  const actorNodes: Node[] = [
+    ...leftActors.map((a, i) => ({
+      id: a.id,
+      type: 'useCaseActor' as const,
+      parentId: SYSTEM_BOUNDARY_ID,
+      position: { x: leftActorX, y: actorStartY + i * actorSpacingY },
+      data: { label: a.label },
+    })),
+    ...rightActors.map((a, i) => ({
+      id: a.id,
+      type: 'useCaseActor' as const,
+      parentId: SYSTEM_BOUNDARY_ID,
+      position: { x: rightActorX, y: actorStartY + i * actorSpacingY },
+      data: { label: a.label },
+    })),
+  ];
+  const ucCols = 2;
+  const ucStartX = 160;
+  const ucStartY = 140;
+  const ucSpacingX = 280;
+  const ucSpacingY = 160;
+  const useCaseNodes: Node[] = useCases.map((u, i) => {
+    const col = i % ucCols;
+    const row = Math.floor(i / ucCols);
+    return {
+      id: u.id,
+      type: 'useCase',
+      parentId: SYSTEM_BOUNDARY_ID,
+      position: { x: ucStartX + col * ucSpacingX, y: ucStartY + row * ucSpacingY },
+      data: { label: u.label, width: 140, height: 72 },
+    };
+  });
+  return [boundaryNode, ...actorNodes, ...useCaseNodes];
+}
+
+const USE_CASE_ACTOR_WIDTH = 80;
+const USE_CASE_ACTOR_HEIGHT = 80;
+const USE_CASE_DEFAULT_WIDTH = 140;
+const USE_CASE_DEFAULT_HEIGHT = 72;
+
+function getOverlayNodeSize(n: Node): [number, number] {
+  if (n.measured && typeof n.measured.width === 'number' && typeof n.measured.height === 'number') {
+    return [n.measured.width, n.measured.height];
+  }
+  if (n.type === 'useCaseActor') return [USE_CASE_ACTOR_WIDTH, USE_CASE_ACTOR_HEIGHT];
+  if (n.type === 'useCase') {
+    const w = (n.data?.width as number) ?? USE_CASE_DEFAULT_WIDTH;
+    const h = (n.data?.height as number) ?? USE_CASE_DEFAULT_HEIGHT;
+    return [w, h];
+  }
+  return [USE_CASE_DEFAULT_WIDTH, USE_CASE_DEFAULT_HEIGHT];
+}
+
+/** Resolve node position to flow (absolute) coordinates when nodes use parentId. */
+function getAbsolutePosition(node: Node, map: Map<string, Node>): { x: number; y: number } {
+  let x = 0;
+  let y = 0;
+  let n: Node | undefined = node;
+  while (n) {
+    x += n.position.x;
+    y += n.position.y;
+    n = n.parentId ? map.get(n.parentId) : undefined;
+  }
+  return { x, y };
+}
+
+function computeUseCaseEdges(nodes: Node[], edgeDefs?: UseCaseEdgeDef[]): Edge[] {
+  const defs = edgeDefs ?? USE_CASE_EDGE_DEFS;
+  const map = new Map(nodes.map((n) => [n.id, n]));
+  return defs.map((e) => {
+    const sn = map.get(e.source);
+    const tn = map.get(e.target);
+    if (!sn || !tn) return { id: e.id, source: e.source, target: e.target, type: e.type };
+
+    const [sw, sh] = getOverlayNodeSize(sn);
+    const [tw, th] = getOverlayNodeSize(tn);
+    const spos = getAbsolutePosition(sn, map);
+    const tpos = getAbsolutePosition(tn, map);
+    const scx = spos.x + sw / 2;
+    const scy = spos.y + sh / 2;
+    const tcx = tpos.x + tw / 2;
+    const tcy = tpos.y + th / 2;
+    // Use ellipse border for use case nodes (they render as ellipses with rx/ry inset by 4 from box)
+    const USE_CASE_ELLIPSE_INSET = 4;
+    const srx = Math.max(1, sw / 2 - USE_CASE_ELLIPSE_INSET);
+    const sry = Math.max(1, sh / 2 - USE_CASE_ELLIPSE_INSET);
+    const trx = Math.max(1, tw / 2 - USE_CASE_ELLIPSE_INSET);
+    const try_ = Math.max(1, th / 2 - USE_CASE_ELLIPSE_INSET);
+    const [x1, y1] = sn.type === 'useCase'
+      ? ellipseBorderPoint(scx, scy, srx, sry, tcx, tcy)
+      : borderPoint(scx, scy, sw, sh, tcx, tcy);
+    const [x2, y2] = tn.type === 'useCase'
+      ? ellipseBorderPoint(tcx, tcy, trx, try_, scx, scy)
+      : borderPoint(tcx, tcy, tw, th, scx, scy);
+    
+    // Open arrow for include/extend
+    const markerEnd = e.type === 'useCaseExtend' || e.type === 'useCaseInclude'
+      ? { type: 'arrow' as const, color: '#e4e4e7', width: 20, height: 20 }
+      : undefined;
+
+    return {
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: e.type,
+      data: { x1, y1, x2, y2 },
+      markerEnd,
+    };
+  });
+}
+
+/** Temporary placeholder nodes shown when no diagram is loaded. Overlay nodes use parentId so they move with boundary. */
 const TEMP_PLACEHOLDER_NODE: Node[] = [
+  { ...SYSTEM_BOUNDARY_NODE, position: { x: -400, y: -50 }, data: { ...SYSTEM_BOUNDARY_NODE.data, width: 350, height: 450 } },
+  { ...DEFAULT_ACTOR_NODE },
+  { ...DEFAULT_ACTOR_NODE_2 },
+  { ...DEFAULT_USE_CASE_NODE },
+  { ...DEFAULT_USE_CASE_NODE_2 },
+  { ...DEFAULT_USE_CASE_NODE_3 },
+  { ...DEFAULT_USE_CASE_NODE_4 },
   {
     id: 'fragment-1',
     type: 'sequenceFragment',
@@ -383,6 +632,18 @@ function borderPoint(
   return [cx + dx * t, cy + dy * t];
 }
 
+/** Point where the ray from (cx,cy) toward (tx,ty) hits the ellipse centered at (cx,cy) with radii rx, ry. */
+function ellipseBorderPoint(
+  cx: number, cy: number, rx: number, ry: number, tx: number, ty: number,
+): [number, number] {
+  const dx = tx - cx;
+  const dy = ty - cy;
+  if (dx === 0 && dy === 0) return [cx, cy - ry];
+  if (rx <= 0 || ry <= 0) return [cx, cy];
+  const t = 1 / Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry));
+  return [cx + dx * t, cy + dy * t];
+}
+
 interface BorderEdgeData {
   x1: number; y1: number; x2: number; y2: number;
   sourceMultiplicity?: string;
@@ -487,7 +748,7 @@ const BorderEdge = memo(BorderEdgeInner, (prev, next) => {
     pd.relationship === nd.relationship && (prev.style as { stroke?: string })?.stroke === (next.style as { stroke?: string })?.stroke;
 });
 
-const edgeTypes = { border: BorderEdge, sequenceMessage: SequenceMessageEdge, sequenceSelfMessage: SequenceSelfMessageEdge };
+const edgeTypes = { border: BorderEdge, sequenceMessage: SequenceMessageEdge, sequenceSelfMessage: SequenceSelfMessageEdge, communicationLink: CommunicationLinkEdge, useCaseExtend: UseCaseExtendEdge, useCaseInclude: UseCaseIncludeEdge, useCaseGeneralization: UseCaseGeneralizationEdge };
 
 /**
  * Sort classes so base/super classes tend to come before subclasses (by generalization target).
@@ -896,10 +1157,14 @@ function runDagreLayout(
  */
 function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
   if (nodes.length === 0) return [];
-  
+
+  // System boundary, use case actors, and use cases are shown on every page but not laid out
+  const overlayNodes = nodes.filter(n => n.type === 'useCaseSystemBoundary' || n.type === 'useCaseActor' || n.type === 'useCase');
+  const rest = nodes.filter(n => n.type !== 'useCaseSystemBoundary' && n.type !== 'useCaseActor' && n.type !== 'useCase');
+
   // Separate sequence nodes from class nodes
-  const lifelineNodes = nodes.filter(n => n.type === 'lifeline');
-  const classNodes = nodes.filter(n => n.type !== 'lifeline');
+  const lifelineNodes = rest.filter(n => n.type === 'lifeline');
+  const classNodes = rest.filter(n => n.type !== 'lifeline');
   
   // Layout lifelines in a horizontal line
   const LIFELINE_Y = 50;
@@ -913,7 +1178,7 @@ function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
     },
   }));
 
-  if (classNodes.length === 0) return positionedLifelines;
+  if (classNodes.length === 0) return [...overlayNodes, ...positionedLifelines];
 
   const boxW = LAYOUT_BOX_WIDTH;
   const boxH = LAYOUT_BOX_HEIGHT;
@@ -943,18 +1208,16 @@ function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
   
   // Shift class nodes down if lifelines are present to avoid overlap
   const resolvedClassNodes = resolveOverlaps(result, boxW, boxH);
-  if (lifelineNodes.length > 0) {
-    const CLASS_START_Y = LIFELINE_Y + 700; // 600px lifeline height + 100px gap
-    return [
-      ...positionedLifelines,
-      ...resolvedClassNodes.map(n => ({
-        ...n,
-        position: { ...n.position, y: n.position.y + CLASS_START_Y }
-      }))
-    ];
-  }
-  
-  return [...positionedLifelines, ...resolvedClassNodes];
+  const finalNodes: Node[] = lifelineNodes.length > 0
+    ? [
+        ...positionedLifelines,
+        ...resolvedClassNodes.map(n => ({
+          ...n,
+          position: { ...n.position, y: n.position.y + (LIFELINE_Y + 700) }
+        }))
+      ]
+    : [...positionedLifelines, ...resolvedClassNodes];
+  return [...overlayNodes, ...finalNodes];
 }
 
 function computeSmartEdges(nodes: Node[], edgeDefs: EdgeDef[]): Edge[] {
@@ -1005,11 +1268,13 @@ export default function DocumentationUmlPage() {
 
   type ClassDiagramData = { type: 'class'; classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] };
   type SequenceDiagramData = { type: 'sequence'; lifelines: ApiSequenceLifeline[]; messages: ApiSequenceMessage[]; steps: ApiSequenceStep[]; fragments: ApiSequenceFragment[] };
-  const [generatedDiagram, setGeneratedDiagram] = useState<ClassDiagramData | SequenceDiagramData | null>(null);
+  type UseCaseDiagramData = { type: 'useCase'; systemBoundary: ApiUseCaseSystemBoundary; actors: ApiUseCaseActor[]; useCases: ApiUseCase[]; relationships: ApiUseCaseRelationship[] };
+  const [generatedDiagram, setGeneratedDiagram] = useState<ClassDiagramData | SequenceDiagramData | UseCaseDiagramData | null>(null);
   const [generatedLoading, setGeneratedLoading] = useState(false);
   const [generatedError, setGeneratedError] = useState<string | null>(null);
 
   const isSequenceDiagram = generatedDiagram?.type === 'sequence';
+  const isUseCaseDiagram = generatedDiagram?.type === 'useCase';
   const sequenceLayout = useMemo(() => {
     if (!isSequenceDiagram || !generatedDiagram) return null;
     const { lifelines, messages } = generatedDiagram;
@@ -1017,7 +1282,19 @@ export default function DocumentationUmlPage() {
     return buildSequenceLayout(lifelines, messages);
   }, [isSequenceDiagram, generatedDiagram]);
 
+  const useCaseEdgeDefs = useMemo((): UseCaseEdgeDef[] | undefined => {
+    if (isUseCaseDiagram && generatedDiagram) {
+      const uc = generatedDiagram as UseCaseDiagramData;
+      return buildUseCaseEdgeDefsFromGenerated(uc.relationships);
+    }
+    return undefined;
+  }, [isUseCaseDiagram, generatedDiagram]);
+
   const displayNodes = useMemo(() => {
+    if (isUseCaseDiagram && generatedDiagram) {
+      const uc = generatedDiagram as UseCaseDiagramData;
+      return buildUseCaseNodesFromGenerated(uc.systemBoundary, uc.actors, uc.useCases);
+    }
     if (isSequenceDiagram && sequenceLayout) {
       const seq = generatedDiagram as SequenceDiagramData;
       const fragNodes = buildSequenceFragmentNodes(
@@ -1025,16 +1302,22 @@ export default function DocumentationUmlPage() {
         sequenceLayout.messageY,
         seq.lifelines.length
       );
-      return [...sequenceLayout.lifelineNodes, ...fragNodes];
+      return [SYSTEM_BOUNDARY_NODE, DEFAULT_ACTOR_NODE, DEFAULT_ACTOR_NODE_2, DEFAULT_USE_CASE_NODE, DEFAULT_USE_CASE_NODE_2, DEFAULT_USE_CASE_NODE_3, DEFAULT_USE_CASE_NODE_4, ...sequenceLayout.lifelineNodes, ...fragNodes];
     }
     if (generatedDiagram?.type === 'class' && generatedDiagram.classes.length > 0) {
       return [
+        SYSTEM_BOUNDARY_NODE,
+        DEFAULT_ACTOR_NODE,
+        DEFAULT_ACTOR_NODE_2,
+        DEFAULT_USE_CASE_NODE,
+        DEFAULT_USE_CASE_NODE_2,
+        DEFAULT_USE_CASE_NODE_3,
+        DEFAULT_USE_CASE_NODE_4,
         ...buildNodesFromGeneratedClasses(generatedDiagram.classes, generatedDiagram.relationships),
-        ...TEMP_PLACEHOLDER_NODE,
       ];
     }
     return TEMP_PLACEHOLDER_NODE;
-  }, [generatedDiagram, isSequenceDiagram, sequenceLayout]);
+  }, [generatedDiagram, isSequenceDiagram, isUseCaseDiagram, sequenceLayout]);
 
   const displayEdgeDefs = useMemo(
     () =>
@@ -1045,16 +1328,20 @@ export default function DocumentationUmlPage() {
   );
 
   const layoutedNodes = useMemo(() => {
-    if (isSequenceDiagram && sequenceLayout) return displayNodes;
+    if (isUseCaseDiagram || (isSequenceDiagram && sequenceLayout)) return displayNodes;
     return getLayoutedUmlNodes(displayNodes, displayEdgeDefs);
-  }, [isSequenceDiagram, sequenceLayout, displayNodes, displayEdgeDefs]);
+  }, [isUseCaseDiagram, isSequenceDiagram, sequenceLayout, displayNodes, displayEdgeDefs]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const edges = useMemo(() => {
-    if (isSequenceDiagram && sequenceLayout) return sequenceLayout.messageEdges;
+    if (isUseCaseDiagram) {
+      return computeUseCaseEdges(nodes, useCaseEdgeDefs);
+    }
+    const ucEdges = computeUseCaseEdges(nodes, useCaseEdgeDefs);
+    if (isSequenceDiagram && sequenceLayout) return [...sequenceLayout.messageEdges, ...ucEdges];
     const computedEdges = computeSmartEdges(nodes, displayEdgeDefs);
-    return [...computedEdges, ...TEMP_PLACEHOLDER_EDGES];
-  }, [isSequenceDiagram, sequenceLayout, nodes, displayEdgeDefs]);
+    return [...computedEdges, ...TEMP_PLACEHOLDER_EDGES, ...ucEdges];
+  }, [isUseCaseDiagram, isSequenceDiagram, sequenceLayout, nodes, displayEdgeDefs, useCaseEdgeDefs]);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [panelData, setPanelData] = useState<ApiUmlClass | null>(null);
@@ -1134,6 +1421,18 @@ export default function DocumentationUmlPage() {
           });
           return;
         }
+        const actors = diagramData?.actors;
+        const useCases = diagramData?.useCases;
+        if (Array.isArray(actors) && Array.isArray(useCases)) {
+          setGeneratedDiagram({
+            type: 'useCase',
+            systemBoundary: diagramData?.systemBoundary ?? { label: 'System' },
+            actors,
+            useCases,
+            relationships: Array.isArray(diagramData?.relationships) ? diagramData.relationships : [],
+          });
+          return;
+        }
         const classes = diagramData?.classes;
         const relationships = diagramData?.relationships;
         if (classes && Array.isArray(classes)) {
@@ -1170,22 +1469,24 @@ export default function DocumentationUmlPage() {
           </svg>
           <span>Back</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setHideDetails((v) => !v)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-            hideDetails
-              ? 'bg-white/15 text-white'
-              : 'text-white/60 hover:text-white hover:bg-white/10'
-          }`}
-          aria-label={hideDetails ? 'Show type and parameter details' : 'Hide type and parameter details'}
-          title={hideDetails ? 'Show details (types, params, return types)' : 'Hide details (show only names)'}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.716 0 1.415-.078 2.073-.22M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 2.25a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{hideDetails ? 'Show details' : 'Hide details'}</span>
-        </button>
+        {!isUseCaseDiagram && (
+          <button
+            type="button"
+            onClick={() => setHideDetails((v) => !v)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              hideDetails
+                ? 'bg-white/15 text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+            aria-label={hideDetails ? 'Show type and parameter details' : 'Hide type and parameter details'}
+            title={hideDetails ? 'Show details (types, params, return types)' : 'Hide details (show only names)'}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.716 0 1.415-.078 2.073-.22M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 2.25a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{hideDetails ? 'Show details' : 'Hide details'}</span>
+          </button>
+        )}
       </div>
 
       <UmlDetailsContext.Provider value={hideDetails}>

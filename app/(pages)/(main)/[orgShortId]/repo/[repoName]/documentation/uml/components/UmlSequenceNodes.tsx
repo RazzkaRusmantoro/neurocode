@@ -1,4 +1,5 @@
 import { NodeProps, Handle, Position, EdgeProps, getStraightPath, BaseEdge } from '@xyflow/react';
+import { GeneralizationArrow, arrowBase, DEFAULT_ARROW_LENGTH } from './UmlRelationshipMarkers';
 
 export function DestroyX({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
   return (
@@ -212,5 +213,269 @@ export function UMLLifelineNode({ data }: NodeProps) {
         )}
       </div>
     </div>
+  );
+}
+
+export function UseCaseSystemBoundaryNode({ data }: NodeProps) {
+  const width = (data.width as number) || 400;
+  const height = (data.height as number) || 500;
+  const label = (data.label as string) || 'System Boundary';
+
+  return (
+    <div className="relative pointer-events-auto" style={{ width, height }}>
+      {/* Outer frame - draggable so moving boundary moves all use case diagram nodes */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
+        <rect x={0.5} y={0.5} width={width - 1} height={height - 1} fill="rgba(255,255,255,0.02)" stroke="#e4e4e7" strokeWidth="2" />
+      </svg>
+      <div className="absolute top-0 left-0 w-full text-center py-2 text-[#e4e4e7] font-bold text-[14px] font-mono z-10 pointer-events-none">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+/** Use case diagram actor: stick figure with optional label (not a sequence lifeline). */
+export function UseCaseActorNode({ data }: NodeProps) {
+  const label = (data.label as string) || 'Actor';
+  const size = 48;
+
+  return (
+    <div className="flex flex-col items-center justify-start pointer-events-auto" style={{ width: 80, height: 80 }}>
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <div className="flex flex-col items-center gap-1 w-full">
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 40 50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-[#e4e4e7] shrink-0"
+        >
+          <circle cx="20" cy="10" r="8" />
+          <line x1="20" y1="18" x2="20" y2="35" />
+          <line x1="5" y1="25" x2="35" y2="25" />
+          <line x1="20" y1="35" x2="10" y2="48" />
+          <line x1="20" y1="35" x2="30" y2="48" />
+        </svg>
+        <span className="text-[#e4e4e7] text-xs font-semibold font-mono text-center max-w-[120px] truncate" title={label}>
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Use case diagram use case: ellipse with label inside. */
+export function UseCaseNode({ data }: NodeProps) {
+  const label = (data.label as string) || 'Use Case';
+  const width = (data.width as number) || 140;
+  const height = (data.height as number) || 72;
+  const cx = width / 2;
+  const cy = height / 2;
+  const rx = (width / 2) - 4;
+  const ry = (height / 2) - 4;
+
+  return (
+    <div className="relative flex items-center justify-center pointer-events-auto" style={{ width, height }}>
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
+        <ellipse
+          cx={cx}
+          cy={cy}
+          rx={rx}
+          ry={ry}
+          fill="rgba(255,255,255,0.04)"
+          stroke="#e4e4e7"
+          strokeWidth="1.5"
+        />
+      </svg>
+      <span
+        className="relative z-10 text-[#e4e4e7] text-xs font-medium font-mono text-center px-2 max-w-full truncate"
+        title={label}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** Use case diagram communication link: solid line (smart border positioning when data has x1,y1,x2,y2). */
+export function CommunicationLinkEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  data,
+  style,
+  markerEnd,
+}: EdgeProps) {
+  const d = data as { x1?: number; y1?: number; x2?: number; y2?: number } | undefined;
+  const hasBorderPoints = d && typeof d.x1 === 'number' && typeof d.y1 === 'number' && typeof d.x2 === 'number' && typeof d.y2 === 'number';
+  const path = hasBorderPoints
+    ? `M ${d!.x1} ${d!.y1} L ${d!.x2} ${d!.y2}`
+    : getStraightPath({ sourceX, sourceY, targetX, targetY })[0];
+  return (
+    <g style={style}>
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{
+          strokeWidth: 1.5,
+          stroke: '#e4e4e7',
+        }}
+        markerEnd={markerEnd}
+      />
+    </g>
+  );
+}
+
+/** Use case diagram extend link: dashed line with arrow and <<extend>> label. */
+export function UseCaseExtendEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  data,
+  style,
+  markerEnd,
+}: EdgeProps) {
+  const d = data as { x1?: number; y1?: number; x2?: number; y2?: number } | undefined;
+  const hasBorderPoints = d && typeof d.x1 === 'number' && typeof d.y1 === 'number' && typeof d.x2 === 'number' && typeof d.y2 === 'number';
+  const x1 = hasBorderPoints ? d!.x1! : sourceX;
+  const y1 = hasBorderPoints ? d!.y1! : sourceY;
+  const x2 = hasBorderPoints ? d!.x2! : targetX;
+  const y2 = hasBorderPoints ? d!.y2! : targetY;
+  const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+  
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+
+  return (
+    <g style={style}>
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{
+          strokeWidth: 1.5,
+          stroke: '#e4e4e7',
+          strokeDasharray: '6, 6',
+        }}
+        markerEnd={markerEnd}
+      />
+      <rect x={midX - 40} y={midY - 10} width={80} height={20} fill="#1a1a1d" rx={4} />
+      <text
+        x={midX}
+        y={midY}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#e4e4e7"
+        fontSize={11}
+        fontFamily="ui-monospace, monospace"
+      >
+        &lt;&lt;extend&gt;&gt;
+      </text>
+    </g>
+  );
+}
+
+/** Use case diagram include link: dashed line with arrow and <<include>> label. */
+export function UseCaseIncludeEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  data,
+  style,
+  markerEnd,
+}: EdgeProps) {
+  const d = data as { x1?: number; y1?: number; x2?: number; y2?: number } | undefined;
+  const hasBorderPoints = d && typeof d.x1 === 'number' && typeof d.y1 === 'number' && typeof d.x2 === 'number' && typeof d.y2 === 'number';
+  const x1 = hasBorderPoints ? d!.x1! : sourceX;
+  const y1 = hasBorderPoints ? d!.y1! : sourceY;
+  const x2 = hasBorderPoints ? d!.x2! : targetX;
+  const y2 = hasBorderPoints ? d!.y2! : targetY;
+  const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+  
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+
+  return (
+    <g style={style}>
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{
+          strokeWidth: 1.5,
+          stroke: '#e4e4e7',
+          strokeDasharray: '6, 6',
+        }}
+        markerEnd={markerEnd}
+      />
+      <rect x={midX - 42} y={midY - 10} width={84} height={20} fill="#1a1a1d" rx={4} />
+      <text
+        x={midX}
+        y={midY}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#e4e4e7"
+        fontSize={11}
+        fontFamily="ui-monospace, monospace"
+      >
+        &lt;&lt;include&gt;&gt;
+      </text>
+    </g>
+  );
+}
+
+/** Use case diagram generalization link: solid line with a hollow triangular arrowhead. */
+export function UseCaseGeneralizationEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  data,
+  style,
+}: EdgeProps) {
+  const d = data as { x1?: number; y1?: number; x2?: number; y2?: number } | undefined;
+  const hasBorderPoints = d && typeof d.x1 === 'number' && typeof d.y1 === 'number' && typeof d.x2 === 'number' && typeof d.y2 === 'number';
+  const x1 = hasBorderPoints ? d!.x1! : sourceX;
+  const y1 = hasBorderPoints ? d!.y1! : sourceY;
+  const x2 = hasBorderPoints ? d!.x2! : targetX;
+  const y2 = hasBorderPoints ? d!.y2! : targetY;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+
+  const base = arrowBase(x2, y2, ux, uy, DEFAULT_ARROW_LENGTH);
+  const path = `M ${x1} ${y1} L ${base.x} ${base.y}`;
+
+  return (
+    <g style={style}>
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{
+          strokeWidth: 1.5,
+          stroke: '#e4e4e7',
+        }}
+      />
+      <GeneralizationArrow tipX={x2} tipY={y2} dirX={ux} dirY={uy} stroke="#e4e4e7" fill="#1a1a1d" />
+    </g>
   );
 }
