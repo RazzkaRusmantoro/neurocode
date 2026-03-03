@@ -522,6 +522,144 @@ export default function GenerateDocumentationModal({
                       </div>
                     )}
 
+                    {type === 'useCase' && (
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center justify-center pointer-events-none z-0 translate-y-12 group-hover:translate-y-[28px] overflow-hidden">
+                        <div className="relative w-[340px] h-[220px] scale-[0.9] opacity-100">
+                          {/* System Boundary */}
+                          <div className="absolute left-[110px] top-[20px] w-[180px] h-[170px] z-0">
+                            <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
+                              <rect x={0.5} y={0.5} width={179} height={169} fill="rgba(255,255,255,0.02)" stroke="#e4e4e7" strokeWidth="2" />
+                            </svg>
+                            <div className="absolute top-0 left-0 w-full text-center py-2 text-[#e4e4e7] font-bold text-[14px] font-mono z-10">
+                              System
+                            </div>
+                          </div>
+                          
+                          {/* Actor */}
+                          <div className="absolute left-[20px] top-[60px] flex flex-col items-center gap-1 z-10" style={{ width: 80, height: 80 }}>
+                            <svg
+                              width={48}
+                              height={48}
+                              viewBox="0 0 40 50"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="text-[#e4e4e7] shrink-0"
+                            >
+                              <circle cx="20" cy="10" r="8" />
+                              <line x1="20" y1="18" x2="20" y2="35" />
+                              <line x1="5" y1="25" x2="35" y2="25" />
+                              <line x1="20" y1="35" x2="10" y2="48" />
+                              <line x1="20" y1="35" x2="30" y2="48" />
+                            </svg>
+                            <span className="text-[#e4e4e7] text-xs font-semibold font-mono text-center max-w-[120px] truncate">
+                              User
+                            </span>
+                          </div>
+
+                          {/* Use Case 1 */}
+                          <div className="absolute left-[130px] top-[55px] w-[140px] h-[50px] flex items-center justify-center z-10">
+                            <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
+                              <ellipse
+                                cx={70}
+                                cy={25}
+                                rx={66}
+                                ry={21}
+                                fill="rgba(255,255,255,0.04)"
+                                stroke="#e4e4e7"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                            <span className="relative z-10 text-[#e4e4e7] text-xs font-medium font-mono text-center px-2">
+                              Login
+                            </span>
+                          </div>
+
+                          {/* Use Case 2 */}
+                          <div className="absolute left-[130px] top-[120px] w-[140px] h-[50px] flex items-center justify-center z-10">
+                            <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
+                              <ellipse
+                                cx={70}
+                                cy={25}
+                                rx={66}
+                                ry={21}
+                                fill="rgba(255,255,255,0.04)"
+                                stroke="#e4e4e7"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                            <span className="relative z-10 text-[#e4e4e7] text-xs font-medium font-mono text-center px-2">
+                              View Dashboard
+                            </span>
+                          </div>
+
+                          {/* Lines */}
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                            <path d="M 80 90 L 134 80" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                            <path d="M 80 90 L 134 145" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+
+                    {type === 'state' && (
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center justify-center pointer-events-none z-0 translate-y-12 group-hover:translate-y-[35px] overflow-hidden">
+                        <div className="relative w-[340px] h-[220px] scale-[0.9] opacity-100">
+                          {/* Start State */}
+                          <div className="absolute left-[30px] top-[100px] flex items-center justify-center z-10">
+                            <div className="w-[16px] h-[16px] bg-[#e4e4e7] rounded-full border-2 border-[#1a1a1a]"></div>
+                          </div>
+
+                          {/* State 1 */}
+                          <div className="absolute left-[90px] top-[85px] w-[90px] h-[46px] bg-[#1e1e22] border border-[#555] rounded-[12px] flex items-center justify-center z-10 shadow-md">
+                            <span className="text-[11px] text-[#e4e4e7] font-mono text-center leading-tight">Draft</span>
+                          </div>
+
+                          {/* State 2 */}
+                          <div className="absolute left-[220px] top-[40px] w-[90px] h-[46px] bg-[#1e1e22] border border-[#555] rounded-[12px] flex items-center justify-center z-10 shadow-md">
+                            <span className="text-[11px] text-[#e4e4e7] font-mono text-center leading-tight">Review</span>
+                          </div>
+
+                          {/* State 3 */}
+                          <div className="absolute left-[220px] top-[130px] w-[90px] h-[46px] bg-[#1e1e22] border border-[#555] rounded-[12px] flex items-center justify-center z-10 shadow-md">
+                            <span className="text-[11px] text-[#e4e4e7] font-mono text-center leading-tight">Published</span>
+                          </div>
+
+                          {/* End State */}
+                          <div className="absolute left-[330px] top-[145px] flex items-center justify-center z-10">
+                            <div className="w-[20px] h-[20px] rounded-full border-2 border-[#e4e4e7] flex items-center justify-center">
+                              <div className="w-[10px] h-[10px] bg-[#e4e4e7] rounded-full"></div>
+                            </div>
+                          </div>
+
+                          {/* Transitions */}
+                          <svg className="absolute inset-0 w-[380px] h-[220px] pointer-events-none z-0 opacity-80" style={{ marginLeft: '-10px' }}>
+                            {/* Start to Draft */}
+                            <path d="M 56 108 L 100 108" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                            <polygon points="100,108 94,105 94,111" fill="#e4e4e7" />
+                            
+                            {/* Draft to Review */}
+                            <path d="M 175 95 L 230 75" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                            <polygon points="230,75 223,74 226,81" fill="#e4e4e7" />
+                            
+                            {/* Review to Published */}
+                            <path d="M 275 86 L 275 130" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                            <polygon points="275,130 272,124 278,124" fill="#e4e4e7" />
+                            
+                            {/* Review back to Draft */}
+                            <path d="M 230 60 Q 150 40 140 85" stroke="#e4e4e7" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+                            <polygon points="140,85 143,78 137,80" fill="#e4e4e7" />
+                            
+                            {/* Published to End */}
+                            <path d="M 320 153 L 340 155" stroke="#e4e4e7" strokeWidth="1.5" fill="none" />
+                            <polygon points="340,155 334,152 334,158" fill="#e4e4e7" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Bottom Right Simple SVGs (Original Visuals) - fade out on hover */}
                     {type === 'class' && (
                       <div className="absolute right-4 bottom-4 opacity-[0.07] group-hover:opacity-0 transition-all duration-400 pointer-events-none translate-y-4 group-hover:translate-y-2 group-hover:scale-95 z-10">
