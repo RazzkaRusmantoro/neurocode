@@ -59,11 +59,12 @@ export default function RepoLayoutClient({
     ? repositories.find(repo => repo.urlName === currentRepoName) || null
     : null;
 
-  // Show documentation sidebar on documentation detail pages:
-  // `/.../documentation/<slug>` (but not visual-tree or code-reference or uml)
+  // Show documentation sidebar on textual documentation detail pages only:
+  // `/.../documentation/<slug>` (not visual-tree, code-reference, or uml list/diagram)
   const isDocumentationTitlePage = /\/documentation\/[^/]+$/.test(pathname) &&
     !pathname.includes('/documentation/visual-tree') &&
-    !pathname.includes('/documentation/code-reference');
+    !pathname.includes('/documentation/code-reference') &&
+    !pathname.includes('/documentation/uml');
 
   // UML canvas pages: no sidebar, full-width canvas (like visual tree)
   const isUmlPage = pathname.includes('/documentation/uml/');

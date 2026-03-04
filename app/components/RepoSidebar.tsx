@@ -59,6 +59,9 @@ export default function RepoSidebar({
     if (pathname?.includes('/code-reference')) {
       return 'Code Reference';
     }
+    if (pathname?.includes('/documentation/uml')) {
+      return 'UML Diagrams';
+    }
     if (pathname?.includes('/documentation')) {
       return 'Documentation';
     }
@@ -91,6 +94,13 @@ export default function RepoSidebar({
     if (orgShortId && repoName) {
       startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/documentation`);
+    }
+  }, [router, orgShortId, repoName, startLoading]);
+
+  const handleUmlDiagramsClick = useCallback(() => {
+    if (orgShortId && repoName) {
+      startLoading();
+      router.push(`/${orgShortId}/repo/${repoName}/documentation/uml`);
     }
   }, [router, orgShortId, repoName, startLoading]);
 
@@ -213,6 +223,15 @@ export default function RepoSidebar({
                 >
                   <Icon iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Documentation</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={handleUmlDiagramsClick}
+                  className={`${BUTTON_BASE_CLASSES} ${activeItem === 'UML Diagrams' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
+                >
+                  <Icon iconPath="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>UML Diagrams</span>
                 </button>
               </li>
               <li>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import GenerateDocumentationModal from './GenerateDocumentationModal';
 import DocumentationHeader from './DocumentationHeader';
-import type { DocTypeFilter } from './DocumentationHeader';
 import DocumentationList from './DocumentationList';
 
 interface Documentation {
@@ -56,7 +55,6 @@ export default function DocumentationViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<DocTypeFilter>('all');
   const [documentationsFetched, setDocumentationsFetched] = useState(false);
 
   const handleGenerateDocumentation = () => {
@@ -117,16 +115,10 @@ export default function DocumentationViewer({
     setUmlDiagrams([]);
   }, [repositoryId]);
 
-  const documentationListItems: DocumentationListItem[] = [
-    ...documentations.map(doc => ({ kind: 'doc' as const, doc })),
-    ...umlDiagrams.map(uml => ({ kind: 'uml' as const, uml })),
-  ]
-    .filter(item => typeFilter === 'all' || (typeFilter === 'doc' && item.kind === 'doc') || (typeFilter === 'uml' && item.kind === 'uml'))
-    .sort((a, b) => {
-      const dateA = a.kind === 'doc' ? a.doc.createdAt : a.uml.createdAt;
-      const dateB = b.kind === 'doc' ? b.doc.createdAt : b.uml.createdAt;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
+  // Textual documentation list only (no UML)
+  const documentationListItems: DocumentationListItem[] = documentations
+    .map(doc => ({ kind: 'doc' as const, doc }))
+    .sort((a, b) => new Date(b.doc.createdAt).getTime() - new Date(a.doc.createdAt).getTime());
 
 
   return (
@@ -141,8 +133,6 @@ export default function DocumentationViewer({
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               onGenerateClick={handleGenerateDocumentation}
-              typeFilter={typeFilter}
-              onTypeFilterChange={setTypeFilter}
             />
 
             {/* Documentation Content */}
