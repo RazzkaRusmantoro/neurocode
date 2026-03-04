@@ -2,7 +2,8 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import Chatbot from '@/app/components/Chatbot';
-import { useRef, useState } from 'react';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
+import { useRef, useState, useEffect } from 'react';
 
 // Mock data - replace with actual API calls
 const LEARNING_PATH_TASKS = {
@@ -237,16 +238,86 @@ export default function OnboardingPage() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [hasMoved, setHasMoved] = useState(false);
 
+  // Frontend-only onboarding setup state
+  const [showSetup, setShowSetup] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+  const [setupStep, setSetupStep] = useState(0);
+  const [experience, setExperience] = useState('');
+  const [role, setRole] = useState('');
+  const [teamSize, setTeamSize] = useState('');
+  const [learningStyle, setLearningStyle] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [generatingText, setGeneratingText] = useState('Analyzing repository structure...');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  const goToNextStep = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSetupStep(s => s + 1);
+      setIsTransitioning(false);
+    }, 400);
+  };
+
+  useEffect(() => {
+    if (setupStep === 5) {
+      setLoadingProgress(0);
+      const progressInterval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev < 60) return prev + Math.random() * 15;
+          if (prev < 85) return prev + Math.random() * 5;
+          return prev;
+        });
+      }, 500);
+      const dotInterval = setInterval(() => {
+        setDotCount((prev) => (prev + 1) % 4);
+      }, 400);
+      const texts = [
+        'Analyzing repository structure...',
+        'Mapping architectural dependencies...',
+        'Extracting code ownership data...',
+        'Crafting your personalized path...',
+        'Ready to dive in!'
+      ];
+      let i = 0;
+      const textInterval = setInterval(() => {
+        i++;
+        if (i < texts.length) {
+          setGeneratingText(texts[i]);
+        } else {
+          clearInterval(textInterval);
+          clearInterval(progressInterval);
+          clearInterval(dotInterval);
+          setLoadingProgress(100);
+          setTimeout(() => setShowSetup(false), 800);
+        }
+      }, 1000);
+      return () => {
+        clearInterval(textInterval);
+        clearInterval(progressInterval);
+        clearInterval(dotInterval);
+      };
+    }
+  }, [setupStep]);
+
+  const toggleInterest = (id: string) => {
+    setInterests(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   const navigateToTaskCompass = () => {
     router.push(`/${orgShortId}/task-compass`);
   };
 
   const navigateToHotZones = () => {
     router.push(`/${orgShortId}/hot-zones`);
-  };
-
-  const navigateToRepositories = () => {
-    router.push(`/${orgShortId}/repositories`);
   };
 
   const scrollCarousel = (direction: 'left' | 'right') => {
@@ -332,7 +403,270 @@ export default function OnboardingPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-screen-2xl">
+      {showSetup && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700 ease-out ${isMounted ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => setShowSetup(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`relative bg-[#121215] border border-[#262626] rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl transition-all duration-700 delay-100 ease-out transform ${isMounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setShowSetup(false)}
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Progress Bar */}
+            <div className="absolute top-0 left-0 h-1 bg-[#262626] w-full">
+              <div 
+                className="h-full bg-[var(--color-primary)] transition-all duration-700 ease-in-out"
+                style={{ width: `${(setupStep / 5) * 100}%` }}
+              />
+            </div>
+
+            <div className={`p-10 transition-all duration-400 transform ${isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+              
+              {setupStep === 0 && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Let's get you onboarded</h2>
+                    <p className="text-white/60">What is your role? This helps us focus on the code and context you'll need most.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { id: 'frontend', title: 'Frontend Engineer' },
+                      { id: 'backend', title: 'Backend Engineer' },
+                      { id: 'fullstack', title: 'Fullstack Engineer' },
+                      { id: 'devops', title: 'DevOps / SRE' },
+                      { id: 'product', title: 'Product Manager' },
+                      { id: 'data', title: 'Data Scientist' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => { setRole(opt.id); goToNextStep(); }}
+                        className={`p-4 text-center rounded-xl border transition-all duration-200 group hover:-translate-y-1 cursor-pointer ${
+                          role === opt.id 
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white' 
+                            : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50 text-white/70'
+                        }`}
+                      >
+                        <div className="font-medium">{opt.title}</div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Step indicator */}
+                  <div className="flex justify-center gap-2 mt-12 pt-4 border-t border-[#262626]">
+                    {[0, 1, 2, 3, 4].map(step => (
+                      <div key={step} className={`h-1.5 rounded-full transition-all duration-300 ${step === 0 ? 'w-8 bg-[var(--color-primary)]' : 'w-2 bg-[#262626]'}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 1 && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Experience with this stack?</h2>
+                    <p className="text-white/60">We'll adjust the depth of our explanations accordingly.</p>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { id: 'new', title: 'Brand new', desc: 'I need the basics and foundational concepts' },
+                      { id: 'familiar', title: 'Somewhat familiar', desc: 'I know the tech, just need to see how it\'s used here' },
+                      { id: 'expert', title: 'Expert', desc: 'Just show me the architecture and where things live' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => { setExperience(opt.id); goToNextStep(); }}
+                        className={`w-full p-4 text-left rounded-xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
+                          experience === opt.id 
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
+                            : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-medium text-white mb-1">{opt.title}</div>
+                          <div className="text-sm text-white/50">{opt.desc}</div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${experience === opt.id ? 'border-[var(--color-primary)]' : 'border-[#404040]'}`}>
+                          {experience === opt.id && <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Step indicator */}
+                  <div className="flex justify-center gap-2 mt-12 pt-4 border-t border-[#262626]">
+                    {[0, 1, 2, 3, 4].map(step => (
+                      <div key={step} className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-[var(--color-primary)]' : step < 1 ? 'w-2 bg-[var(--color-primary)]/50' : 'w-2 bg-[#262626]'}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 2 && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">What size team are you joining?</h2>
+                    <p className="text-white/60">This helps us customize our recommendations on team communication and PRs.</p>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { id: 'solo', title: 'Just me / Solo contributor', desc: 'I am taking full ownership' },
+                      { id: 'small', title: 'Small team (2-5)', desc: 'Tight-knit, agile development' },
+                      { id: 'medium', title: 'Medium team (6-15)', desc: 'Established processes and review cycles' },
+                      { id: 'large', title: 'Large organization (15+)', desc: 'Complex cross-team collaboration' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => { setTeamSize(opt.id); goToNextStep(); }}
+                        className={`w-full p-4 text-left rounded-xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
+                          teamSize === opt.id 
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
+                            : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-medium text-white mb-1">{opt.title}</div>
+                          <div className="text-sm text-white/50">{opt.desc}</div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${teamSize === opt.id ? 'border-[var(--color-primary)]' : 'border-[#404040]'}`}>
+                          {teamSize === opt.id && <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Step indicator */}
+                  <div className="flex justify-center gap-2 mt-12 pt-4 border-t border-[#262626]">
+                    {[0, 1, 2, 3, 4].map(step => (
+                      <div key={step} className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[var(--color-primary)]' : step < 2 ? 'w-2 bg-[var(--color-primary)]/50' : 'w-2 bg-[#262626]'}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 3 && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">How do you prefer to learn?</h2>
+                    <p className="text-white/60">We'll tailor your onboarding tasks to match your style.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { id: 'docs', title: 'Read Documentation', desc: 'Give me the high-level theory first' },
+                      { id: 'code', title: 'Dive into Code', desc: 'Let me read the implementation' },
+                      { id: 'tasks', title: 'Hands-on Tasks', desc: 'Give me small bugs to fix' },
+                      { id: 'visual', title: 'Visual Diagrams', desc: 'Show me the architecture' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => { setLearningStyle(opt.id); goToNextStep(); }}
+                        className={`p-4 text-left rounded-xl border transition-all duration-200 group hover:-translate-y-1 cursor-pointer ${
+                          learningStyle === opt.id 
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
+                            : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                        }`}
+                      >
+                        <div className="font-medium text-white mb-1">{opt.title}</div>
+                        <div className="text-xs text-white/50">{opt.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Step indicator */}
+                  <div className="flex justify-center gap-2 mt-12 pt-4 border-t border-[#262626]">
+                    {[0, 1, 2, 3, 4].map(step => (
+                      <div key={step} className={`h-1.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[var(--color-primary)]' : step < 3 ? 'w-2 bg-[var(--color-primary)]/50' : 'w-2 bg-[#262626]'}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 4 && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">What do you want to explore first?</h2>
+                    <p className="text-white/60">Select up to 3 areas of interest (Optional)</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      'Authentication', 'Database Schema', 'API Gateway', 
+                      'Component Library', 'CI/CD Pipeline', 'State Management',
+                      'Testing Strategy', 'Deployment Structure'
+                    ].map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => toggleInterest(topic)}
+                        className={`px-4 py-2 rounded-full border transition-all duration-200 cursor-pointer ${
+                          interests.includes(topic)
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/20 text-white'
+                            : 'border-[#262626] hover:border-[#404040] bg-transparent text-white/70'
+                        }`}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-12 pt-4 border-t border-[#262626]">
+                    <div className="flex gap-2">
+                      {[0, 1, 2, 3, 4].map(step => (
+                        <div key={step} className={`h-1.5 rounded-full transition-all duration-300 ${step === 4 ? 'w-8 bg-[var(--color-primary)]' : step < 4 ? 'w-2 bg-[var(--color-primary)]/50' : 'w-2 bg-[#262626]'}`} />
+                      ))}
+                    </div>
+                    
+                    <button
+                      onClick={goToNextStep}
+                      className="px-6 py-2 bg-[var(--color-primary)] text-white font-medium rounded-lg transition-all hover:bg-[var(--color-primary-light)] flex items-center gap-2 cursor-pointer"
+                    >
+                      Generate Path
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14m-7-7l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {setupStep === 5 && (
+                <div className="flex flex-col items-center justify-center min-h-[320px] py-12">
+                  <div className="mb-8 scale-[0.8] origin-center">
+                    <LoadingSpinner />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-4 w-64 text-center">
+                    Preparing your workspace
+                    <span className="inline-block text-left" style={{ width: '24px' }}>
+                      {'.'.repeat(dotCount)}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-white/50 mb-4 text-center max-w-xs">{generatingText}</p>
+                  <div className="w-64 h-1.5 bg-[#212121] rounded-full overflow-hidden border border-white/5 relative">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-[var(--color-primary)] rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${Math.min(100, Math.max(0, loadingProgress))}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`mx-auto max-w-screen-2xl ${showSetup ? 'opacity-20 pointer-events-none blur-sm' : ''} transition-all duration-500`}>
         <div className="min-h-full py-10 text-white">
           {/* Header Section */}
           <div className="mb-8">
@@ -357,30 +691,8 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Three Container Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* View Project Context */}
-                      <button
-              onClick={navigateToRepositories}
-              className="bg-orange-500/20 backdrop-blur-sm border border-orange-500/50 rounded-lg p-6 hover:border-orange-500/80 hover:bg-orange-500/30 transition-all text-left group cursor-pointer"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-orange-500/30 rounded-lg text-orange-400">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                          </div>
-                <h3 className="text-lg font-semibold text-white">View Project Context</h3>
-                          </div>
-              <p className="text-sm text-white/70 mb-4">Explore the codebase structure and understand project architecture</p>
-              <div className="flex items-center text-sm text-orange-400 group-hover:gap-2 transition-all">
-                <span>Explore</span>
-                <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </div>
-                      </button>
-
+          {/* Two Container Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Task Compass */}
             <button
               onClick={navigateToTaskCompass}
