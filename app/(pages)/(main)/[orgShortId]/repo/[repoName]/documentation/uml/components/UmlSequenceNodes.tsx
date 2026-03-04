@@ -1,4 +1,4 @@
-import { NodeProps, Handle, Position, EdgeProps, getStraightPath, BaseEdge } from '@xyflow/react';
+import { NodeProps, Handle, Position, EdgeProps, getStraightPath, BaseEdge, getBezierPath, getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react';
 import { GeneralizationArrow, arrowBase, DEFAULT_ARROW_LENGTH } from './UmlRelationshipMarkers';
 
 export function DestroyX({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
@@ -476,6 +476,195 @@ export function UseCaseGeneralizationEdge({
         }}
       />
       <GeneralizationArrow tipX={x2} tipY={y2} dirX={ux} dirY={uy} stroke="#e4e4e7" fill="#1a1a1d" />
+    </g>
+  );
+}
+
+/** State diagram initial state: filled circle. */
+export function InitialStateNode({ data }: NodeProps) {
+  return (
+    <div className="flex items-center justify-center pointer-events-auto" style={{ width: 30, height: 30 }}>
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <div className="w-[20px] h-[20px] bg-[#e4e4e7] rounded-full" />
+    </div>
+  );
+}
+
+/** State diagram final state: filled circle inside an empty circle. */
+export function FinalStateNode({ data }: NodeProps) {
+  return (
+    <div className="flex items-center justify-center pointer-events-auto" style={{ width: 30, height: 30 }}>
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <div className="w-[26px] h-[26px] border-2 border-[#e4e4e7] rounded-full flex items-center justify-center">
+        <div className="w-[14px] h-[14px] bg-[#e4e4e7] rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+/** State diagram normal state: rounded rectangle. Sizes to fit label (no truncation). */
+export function StateNode({ data }: NodeProps) {
+  const label = (data.label as string) || 'State';
+  const explicitW = data.width as number | undefined;
+  const explicitH = data.height as number | undefined;
+
+  return (
+    <div 
+      className="relative flex items-center justify-center pointer-events-auto shadow-md"
+      style={{
+        padding: '16px 24px',
+        minWidth: 120,
+        minHeight: 64,
+        borderRadius: 12,
+        background: 'linear-gradient(160deg, #252528 0%, #1e1e22 100%)',
+        border: '1.5px solid #3f3f46',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+        ...(explicitW != null && explicitH != null
+          ? { width: explicitW, height: explicitH }
+          : { width: 'fit-content', height: 'fit-content', maxWidth: 260 }),
+      }}
+    >
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      <span
+        className="text-[#e4e4e7] text-[12px] font-semibold font-mono text-center"
+        style={{ overflow: 'visible', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}
+        title={label}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** State diagram composite state: rounded rectangle containing nested states. Sized from data to fit content. */
+export function CompositeStateNode({ data }: NodeProps) {
+  const label = (data.label as string) || 'Composite State';
+  const width = (data.width as number) ?? 400;
+  const height = (data.height as number) ?? 300;
+
+  return (
+    <div 
+      className="relative flex flex-col pointer-events-auto" 
+      style={{
+        width,
+        height,
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.025)',
+        border: '1.5px solid #52525b',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
+      }}
+    >
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0, width: 1, height: 1 }} />
+      
+      <div
+        className="w-full px-4 py-2 min-h-[40px] flex items-center justify-center"
+        style={{
+          borderBottom: '1px solid #3f3f46',
+          borderRadius: '10px 10px 0 0',
+          background: 'rgba(255,255,255,0.04)',
+        }}
+      >
+        <span
+          className="text-[#a1a1aa] text-[11px] font-semibold font-mono text-center tracking-wider uppercase"
+          style={{ overflow: 'visible', whiteSpace: 'nowrap' }}
+          title={label}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** State diagram transition edge: solid line with an arrow and event label. */
+export function StateTransitionEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style,
+  data,
+  markerEnd,
+}: EdgeProps) {
+  const d = data as { x1?: number; y1?: number; x2?: number; y2?: number; sourcePos?: Position; targetPos?: Position; label?: string } | undefined;
+  const hasBorderPoints = d && typeof d.x1 === 'number' && typeof d.y1 === 'number' && typeof d.x2 === 'number' && typeof d.y2 === 'number';
+
+  const x1 = hasBorderPoints ? d!.x1! : sourceX;
+  const y1 = hasBorderPoints ? d!.y1! : sourceY;
+  const x2 = hasBorderPoints ? d!.x2! : targetX;
+  const y2 = hasBorderPoints ? d!.y2! : targetY;
+  const sourcePos = d?.sourcePos ?? Position.Bottom;
+  const targetPos = d?.targetPos ?? Position.Top;
+
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
+    sourceX: x1,
+    sourceY: y1,
+    sourcePosition: sourcePos,
+    targetX: x2,
+    targetY: y2,
+    targetPosition: targetPos,
+    borderRadius: 32,
+  });
+
+  // Offset the label perpendicular to the overall edge direction so it clears the line.
+  // Use a fixed 28px offset; if the edge is nearly vertical use horizontal offset instead.
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const perpX = -dy / len;
+  const perpY = dx / len;
+  const labelOffset = 28;
+  const labelPosX = labelX + perpX * labelOffset;
+  const labelPosY = labelY + perpY * labelOffset;
+
+  const label = typeof data?.label === 'string' ? data.label : '';
+
+  return (
+    <g style={style}>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          strokeWidth: 1.5,
+          stroke: '#71717a',
+        }}
+        markerEnd={markerEnd}
+      />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelPosX}px, ${labelPosY}px)`,
+              background: '#1a1a1d',
+              border: '1px solid #3f3f46',
+              padding: '2px 8px',
+              borderRadius: '6px',
+              color: '#a1a1aa',
+              fontSize: 11,
+              fontFamily: 'ui-monospace, monospace',
+              pointerEvents: 'all',
+              zIndex: 10,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </g>
   );
 }

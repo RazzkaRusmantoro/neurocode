@@ -28,7 +28,7 @@ import {
   DEFAULT_DIAMOND_LENGTH,
   DEFAULT_ARROW_LENGTH,
 } from '../components/UmlRelationshipMarkers';
-import { UMLLifelineNode, SequenceMessageEdge, SequenceSelfMessageEdge, SequenceFragmentNode, SequenceStepLabelNode, UseCaseSystemBoundaryNode, UseCaseActorNode, UseCaseNode, CommunicationLinkEdge, UseCaseExtendEdge, UseCaseIncludeEdge, UseCaseGeneralizationEdge } from '../components/UmlSequenceNodes';
+import { UMLLifelineNode, SequenceMessageEdge, SequenceSelfMessageEdge, SequenceFragmentNode, SequenceStepLabelNode, UseCaseSystemBoundaryNode, UseCaseActorNode, UseCaseNode, CommunicationLinkEdge, UseCaseExtendEdge, UseCaseIncludeEdge, UseCaseGeneralizationEdge, InitialStateNode, FinalStateNode, StateNode, CompositeStateNode, StateTransitionEdge } from '../components/UmlSequenceNodes';
 
 const FIT_VIEW_OPTS = { padding: 0.2, maxZoom: 0.9, duration: 300 };
 
@@ -107,6 +107,18 @@ interface ApiUseCaseRelationship {
   source: string;
   target: string;
   relationship: 'communication' | 'include' | 'extend' | 'generalization';
+}
+
+// ─── State diagram API types (from backend) ───────────────────────
+interface ApiStateInitial { id: string; }
+interface ApiStateFinal { id: string; }
+interface ApiStateState { id: string; label: string; }
+interface ApiStateComposite { id: string; label: string; childIds?: string[]; }
+interface ApiStateTransition {
+  source: string;
+  target: string;
+  label?: string;
+  eventParameter?: string;
 }
 
 // ─── UML class node data ─────────────────────────────────────────
@@ -268,7 +280,7 @@ const UMLClassNode = memo(UMLClassNodeInner, (prev, next) =>
   (prev as NodeProps & { dragging?: boolean }).dragging === (next as NodeProps & { dragging?: boolean }).dragging
 );
 
-const nodeTypes = { umlClass: UMLClassNode, lifeline: UMLLifelineNode, sequenceFragment: SequenceFragmentNode, sequenceStepLabel: SequenceStepLabelNode, useCaseSystemBoundary: UseCaseSystemBoundaryNode, useCaseActor: UseCaseActorNode, useCase: UseCaseNode };
+const nodeTypes = { umlClass: UMLClassNode, lifeline: UMLLifelineNode, sequenceFragment: SequenceFragmentNode, sequenceStepLabel: SequenceStepLabelNode, useCaseSystemBoundary: UseCaseSystemBoundaryNode, useCaseActor: UseCaseActorNode, useCase: UseCaseNode, initialState: InitialStateNode, finalState: FinalStateNode, state: StateNode, compositeState: CompositeStateNode };
 
 const SYSTEM_BOUNDARY_ID = 'system-boundary-1';
 
@@ -279,56 +291,6 @@ const SYSTEM_BOUNDARY_NODE: Node = {
   position: { x: 0, y: 0 },
   data: { label: 'System', width: 920, height: 800 },
   zIndex: -3,
-};
-
-/** Actors sit outside boundary (negative x relative to boundary). Positions are relative to boundary. */
-const DEFAULT_ACTOR_NODE: Node = {
-  id: 'actor-1',
-  type: 'useCaseActor',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: -180, y: 80 },
-  data: { label: 'User' },
-};
-
-const DEFAULT_ACTOR_NODE_2: Node = {
-  id: 'actor-2',
-  type: 'useCaseActor',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: -180, y: 250 },
-  data: { label: 'Admin' },
-};
-
-/** Use cases sit inside boundary (positive x/y with margin). Positions relative to boundary. */
-const DEFAULT_USE_CASE_NODE: Node = {
-  id: 'usecase-1',
-  type: 'useCase',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: 120, y: 100 },
-  data: { label: 'Do something', width: 140, height: 72 },
-};
-
-const DEFAULT_USE_CASE_NODE_2: Node = {
-  id: 'usecase-2',
-  type: 'useCase',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: 320, y: 100 },
-  data: { label: 'Do something else', width: 140, height: 72 },
-};
-
-const DEFAULT_USE_CASE_NODE_3: Node = {
-  id: 'usecase-3',
-  type: 'useCase',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: 120, y: 250 },
-  data: { label: 'Optional step', width: 140, height: 72 },
-};
-
-const DEFAULT_USE_CASE_NODE_4: Node = {
-  id: 'usecase-4',
-  type: 'useCase',
-  parentId: SYSTEM_BOUNDARY_ID,
-  position: { x: 320, y: 250 },
-  data: { label: 'Required step', width: 140, height: 72 },
 };
 
 /** Use case edge defs (source/target/type); edges are computed with smart border positioning. */
@@ -493,121 +455,363 @@ function computeUseCaseEdges(nodes: Node[], edgeDefs?: UseCaseEdgeDef[]): Edge[]
   });
 }
 
-/** Temporary placeholder nodes shown when no diagram is loaded. Overlay nodes use parentId so they move with boundary. */
-const TEMP_PLACEHOLDER_NODE: Node[] = [
-  { ...SYSTEM_BOUNDARY_NODE, position: { x: -400, y: -50 }, data: { ...SYSTEM_BOUNDARY_NODE.data, width: 350, height: 450 } },
-  { ...DEFAULT_ACTOR_NODE },
-  { ...DEFAULT_ACTOR_NODE_2 },
-  { ...DEFAULT_USE_CASE_NODE },
-  { ...DEFAULT_USE_CASE_NODE_2 },
-  { ...DEFAULT_USE_CASE_NODE_3 },
-  { ...DEFAULT_USE_CASE_NODE_4 },
-  {
-    id: 'fragment-1',
-    type: 'sequenceFragment',
-    position: { x: 30, y: 150 }, // Positioned to surround the interactions
-    data: { operator: 'alt', condition: '[if successful]', width: 700, height: 160 },
-    zIndex: -2, // Behind the lifelines
-  },
-  {
-    id: 'lifeline-0',
-    type: 'lifeline',
-    position: { x: 50, y: 50 },
-    data: { label: 'User', isActor: true, activations: [{ startY: 20, height: 180 }] },
-    zIndex: -1,
-  },
-  {
-    id: 'lifeline-1',
-    type: 'lifeline',
-    position: { x: 350, y: 50 },
-    data: { 
-      label: 'Client', 
-      activations: [
-        { startY: 40, height: 160 }, // Main client activation
-        { startY: 80, height: 40, xOffset: 8 }, // Nested recursive activation
-        { startY: 220, height: 40 } // Standalone activation for self message
-      ] 
-    },
-    zIndex: -1,
-  },
-  {
-    id: 'lifeline-2',
-    type: 'lifeline',
-    position: { x: 650, y: 50 },
-    data: { label: 'Server', activations: [{ startY: 80, height: 80 }], isDestroyed: true },
-    zIndex: -1,
-  },
-  {
-    id: 'placeholder',
-    type: 'umlClass',
-    position: { x: 200, y: 200 },
-    data: {
-      className: 'SampleClass',
-      stereotype: 'entity',
-      attributes: [
-        { name: 'id', type: 'string', visibility: '-' },
-        { name: 'name', type: 'string', visibility: '-' },
-      ],
-      methods: [
-        { name: 'getId', params: '', returnType: 'string', visibility: '+' },
-        { name: 'getName', params: '', returnType: 'string', visibility: '+' },
-      ],
-    } as unknown as Record<string, unknown>,
-  },
-];
+/** Limit outgoing transitions per state to `max` (default 2).
+ *  Keeps the first `max` outgoing edges for each source node in declaration order. */
+function capTransitions(transitions: ApiStateTransition[], max = 2): ApiStateTransition[] {
+  const outCount = new Map<string, number>();
+  return transitions.filter((t) => {
+    const count = outCount.get(t.source) ?? 0;
+    if (count >= max) return false;
+    outCount.set(t.source, count + 1);
+    return true;
+  });
+}
 
-const TEMP_PLACEHOLDER_EDGES: Edge[] = [
-  {
-    id: 'msg-1',
-    source: 'lifeline-0',
-    target: 'lifeline-1',
-    sourceHandle: 'act-0-source-right',
-    targetHandle: 'act-0-target-left',
-    type: 'sequenceMessage',
-    data: { label: 'login()' },
-    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
-  },
-  {
-    id: 'msg-2',
-    source: 'lifeline-1',
-    target: 'lifeline-0',
-    sourceHandle: 'act-0-source-left',
-    targetHandle: 'act-0-target-right',
-    type: 'sequenceMessage',
-    data: { label: 'token', isReturn: true },
-    markerEnd: { type: 'arrow', color: '#e4e4e7', width: 20, height: 20 },
-    // Because the handles are positioned relative to their activation boxes,
-    // and both activations start at slightly different Ys, we need to manually
-    // shift the edge down to the bottom of the client activation.
-    style: { transform: 'translateY(160px)' },
-    // Force Z-index so it doesn't get hidden behind lifelines
-    zIndex: 10,
-  },
-  {
-    id: 'msg-3',
-    source: 'lifeline-1',
-    target: 'lifeline-1',
-    sourceHandle: 'act-0-source-right', // Start at main activation
-    targetHandle: 'act-1-target-right', // End at nested activation
-    type: 'sequenceSelfMessage',
-    data: { label: 'recursiveCall()' },
-    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
-    // Because we're connecting exactly from handle to handle (which have different Ys),
-    // we no longer need the translateY hack for this self message!
-    zIndex: 10,
-  },
-  {
-    id: 'msg-4',
-    source: 'lifeline-1',
-    target: 'lifeline-1',
-    sourceHandle: 'act-2-source-right',
-    targetHandle: 'act-2-target-right',
-    type: 'sequenceSelfMessage',
-    data: { label: 'selfMessage()' },
-    markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
-    zIndex: 10,
+// Estimated node width for layout calculations
+const STATE_NODE_W = 180;
+const STATE_NODE_H = 70;
+const STATE_CIRCLE_SIZE = 30;
+
+// Composite interior padding constants
+const COMP_PAD_X = 40;
+const COMP_PAD_TOP = 50; // extra to clear the label header
+const COMP_PAD_BOTTOM = 30;
+const COMP_CHILD_NODESEP = 60;
+const COMP_CHILD_RANKSEP = 60;
+
+interface CompositeInfo {
+  width: number;
+  height: number;
+  children: ApiStateState[];
+  childPositions: { id: string; label: string; x: number; y: number }[];
+}
+
+/** Build React Flow nodes for a state diagram using Dagre for top-down layout.
+ *  Each composite state also gets its own internal Dagre layout so children
+ *  are sized and spaced to actually fit inside their container. */
+function buildStateDiagramNodes(
+  initialStates: ApiStateInitial[],
+  finalStates: ApiStateFinal[],
+  states: ApiStateState[],
+  compositeStates: ApiStateComposite[],
+  transitions: ApiStateTransition[] = [],
+): Node[] {
+  const childIdsSet = new Set<string>();
+  compositeStates.forEach((c) => (c.childIds ?? []).forEach((id) => childIdsSet.add(id)));
+  const topLevelStates = states.filter((s) => !childIdsSet.has(s.id));
+
+  // --- Step 1: lay out each composite's children with their own mini Dagre ---
+  const compositeInfoMap = new Map<string, CompositeInfo>();
+
+  for (const comp of compositeStates) {
+    const childIds = new Set(comp.childIds ?? []);
+    const children = (comp.childIds ?? [])
+      .map((id) => states.find((s) => s.id === id))
+      .filter(Boolean) as ApiStateState[];
+
+    if (children.length === 0) {
+      compositeInfoMap.set(comp.id, {
+        width: 400, height: 200, children, childPositions: [],
+      });
+      continue;
+    }
+
+    // Internal transitions (both endpoints are children of this composite)
+    const internalTransitions = transitions.filter(
+      (t) => childIds.has(t.source) && childIds.has(t.target)
+    );
+
+    // We use a topological snake layout to ensure composite states form a square box
+    let order: ApiStateState[] = [];
+    if (internalTransitions.length > 0) {
+      const inDegree = new Map<string, number>();
+      const adj = new Map<string, string[]>();
+      children.forEach(c => { inDegree.set(c.id, 0); adj.set(c.id, []); });
+      internalTransitions.forEach(t => {
+        if (adj.has(t.source) && adj.has(t.target)) {
+          adj.get(t.source)!.push(t.target);
+          inDegree.set(t.target, inDegree.get(t.target)! + 1);
+        }
+      });
+      const q: string[] = [];
+      inDegree.forEach((deg, id) => { if (deg === 0) q.push(id); });
+      if (q.length === 0 && children.length > 0) q.push(children[0].id); // cycle fallback
+      
+      const visited = new Set<string>();
+      while (q.length > 0) {
+        const u = q.shift()!;
+        if (!visited.has(u)) {
+          visited.add(u);
+          order.push(children.find(c => c.id === u)!);
+          const neighbors = adj.get(u) || [];
+          for (const v of neighbors) {
+            const d = inDegree.get(v)! - 1;
+            inDegree.set(v, d);
+            if (d === 0) q.push(v);
+          }
+        }
+      }
+      children.forEach(c => {
+        if (!visited.has(c.id)) {
+          order.push(c);
+          visited.add(c.id);
+        }
+      });
+    } else {
+      order = children;
+    }
+
+    const cols = Math.max(1, Math.ceil(Math.sqrt(order.length))); // square-ish
+    const rows = Math.ceil(order.length / cols);
+
+    const contentW = cols * STATE_NODE_W + (cols > 1 ? (cols - 1) * COMP_CHILD_NODESEP : 0);
+    const contentH = rows * STATE_NODE_H + (rows > 1 ? (rows - 1) * COMP_CHILD_RANKSEP : 0);
+
+    const compW = Math.max(200, contentW + COMP_PAD_X * 2);
+    const compH = Math.max(120, contentH + COMP_PAD_TOP + COMP_PAD_BOTTOM);
+
+    const childPositions = order.map((c, i) => {
+      const row = Math.floor(i / cols);
+      const isEven = row % 2 === 0;
+      const col = isEven ? (i % cols) : (cols - 1 - (i % cols));
+      return {
+        id: c.id,
+        label: c.label,
+        x: COMP_PAD_X + col * (STATE_NODE_W + COMP_CHILD_NODESEP),
+        y: COMP_PAD_TOP + row * (STATE_NODE_H + COMP_CHILD_RANKSEP),
+      };
+    });
+
+    compositeInfoMap.set(comp.id, { width: compW, height: compH, children, childPositions });
   }
-];
+
+  // --- Step 2: Dagre layout for all top-level nodes ---
+  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 80, marginx: 50, marginy: 50 });
+
+  const topLevelIds = new Set<string>([
+    ...initialStates.map((i) => i.id),
+    ...topLevelStates.map((s) => s.id),
+    ...finalStates.map((f) => f.id),
+    ...compositeStates.map((c) => c.id),
+  ]);
+
+  for (const init of initialStates) {
+    g.setNode(init.id, { width: STATE_CIRCLE_SIZE, height: STATE_CIRCLE_SIZE });
+  }
+  for (const s of topLevelStates) {
+    g.setNode(s.id, { width: STATE_NODE_W, height: STATE_NODE_H });
+  }
+  for (const f of finalStates) {
+    g.setNode(f.id, { width: STATE_CIRCLE_SIZE, height: STATE_CIRCLE_SIZE });
+  }
+  for (const comp of compositeStates) {
+    const info = compositeInfoMap.get(comp.id)!;
+    g.setNode(comp.id, { width: info.width, height: info.height });
+  }
+
+  // Resolve child-to-parent for cross-boundary transitions used in outer layout
+  const resolveTopLevel = (id: string): string =>
+    childIdsSet.has(id)
+      ? (compositeStates.find((c) => (c.childIds ?? []).includes(id))?.id ?? id)
+      : id;
+
+  const seenEdges = new Set<string>();
+  
+  for (const t of transitions) {
+    const src = resolveTopLevel(t.source);
+    const tgt = resolveTopLevel(t.target);
+    const key = `${src}->${tgt}`;
+    if (!seenEdges.has(key) && src !== tgt && topLevelIds.has(src) && topLevelIds.has(tgt) && g.hasNode(src) && g.hasNode(tgt)) {
+      // By default Dagre places targets below sources. For final states, we can't safely use minlen: 0
+      // as it breaks Dagre's ranker, but having individualized final states naturally pulls them outwards.
+      g.setEdge(src, tgt);
+      seenEdges.add(key);
+    }
+  }
+
+  Dagre.layout(g);
+
+  // --- Step 3: Emit React Flow nodes ---
+  const nodes: Node[] = [];
+
+  // Helper to pull small boundary nodes (initial/final) closer to their connected block
+  function pullCloser(x: number, y: number, refX: number, refY: number, refW: number, refH: number, gap: number) {
+    const dx = x - refX;
+    const dy = y - refY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 1) return { x, y };
+
+    const tX = (refW / 2) / (Math.abs(dx) || 0.001);
+    const tY = (refH / 2) / (Math.abs(dy) || 0.001);
+    const tBorder = Math.min(tX, tY);
+
+    const borderDist = dist * tBorder;
+    const targetDist = borderDist + gap;
+
+    if (dist > targetDist) {
+      return {
+        x: refX + (dx / dist) * targetDist,
+        y: refY + (dy / dist) * targetDist,
+      };
+    }
+    return { x, y };
+  }
+
+  const initialStateTarget = new Map<string, string>();
+  const finalStateSource = new Map<string, string>();
+  for (const t of transitions) {
+    const src = resolveTopLevel(t.source);
+    const tgt = resolveTopLevel(t.target);
+    if (initialStates.some(i => i.id === src)) initialStateTarget.set(src, tgt);
+    if (finalStates.some(f => f.id === tgt)) finalStateSource.set(tgt, src);
+  }
+
+  for (const init of initialStates) {
+    const pos = g.node(init.id);
+    let ix = pos ? pos.x : 0;
+    let iy = pos ? pos.y : 0;
+
+    const tgtId = initialStateTarget.get(init.id);
+    if (tgtId) {
+      const tgtPos = g.node(tgtId);
+      if (tgtPos) {
+        const adjusted = pullCloser(ix, iy, tgtPos.x, tgtPos.y, tgtPos.width, tgtPos.height, 30);
+        ix = adjusted.x;
+        iy = adjusted.y;
+      }
+    }
+
+    nodes.push({
+      id: init.id,
+      type: 'initialState',
+      position: { x: ix - STATE_CIRCLE_SIZE / 2, y: iy - STATE_CIRCLE_SIZE / 2 },
+      data: {},
+    });
+  }
+
+  for (const s of topLevelStates) {
+    const pos = g.node(s.id);
+    nodes.push({
+      id: s.id,
+      type: 'state',
+      position: { x: pos ? pos.x - STATE_NODE_W / 2 : 0, y: pos ? pos.y - STATE_NODE_H / 2 : 0 },
+      data: { label: s.label },
+    });
+  }
+
+  for (const f of finalStates) {
+    const pos = g.node(f.id);
+    let fx = pos ? pos.x : 0;
+    let fy = pos ? pos.y : 0;
+
+    const srcId = finalStateSource.get(f.id);
+    if (srcId) {
+      const srcPos = g.node(srcId);
+      if (srcPos) {
+        const adjusted = pullCloser(fx, fy, srcPos.x, srcPos.y, srcPos.width, srcPos.height, 30);
+        fx = adjusted.x;
+        fy = adjusted.y;
+      }
+    }
+
+    nodes.push({
+      id: f.id,
+      type: 'finalState',
+      position: { x: fx - STATE_CIRCLE_SIZE / 2, y: fy - STATE_CIRCLE_SIZE / 2 },
+      data: {},
+    });
+  }
+
+  for (const comp of compositeStates) {
+    const info = compositeInfoMap.get(comp.id)!;
+    const pos = g.node(comp.id);
+    nodes.push({
+      id: comp.id,
+      type: 'compositeState',
+      position: { x: pos ? pos.x - info.width / 2 : 0, y: pos ? pos.y - info.height / 2 : 0 },
+      data: { label: comp.label, width: info.width, height: info.height },
+    });
+
+    for (const cp of info.childPositions) {
+      nodes.push({
+        id: cp.id,
+        type: 'state',
+        parentId: comp.id,
+        position: { x: cp.x, y: cp.y },
+        data: { label: cp.label },
+      });
+    }
+  }
+
+  return nodes;
+}
+
+function getStateNodeSide(cx: number, cy: number, w: number, h: number, px: number, py: number): Position {
+  const dx = px - cx;
+  const dy = py - cy;
+  if (Math.abs(dx) * h > Math.abs(dy) * w) {
+    return dx > 0 ? Position.Right : Position.Left;
+  } else {
+    return dy > 0 ? Position.Bottom : Position.Top;
+  }
+}
+
+/** Compute smart border points for state diagrams. */
+function computeStateEdges(nodes: Node[], edgeDefs: { id: string; source: string; target: string; label?: string }[]): Edge[] {
+  const map = new Map(nodes.map((n) => [n.id, n]));
+  return edgeDefs.map((e) => {
+    const sn = map.get(e.source);
+    const tn = map.get(e.target);
+    if (!sn || !tn) return { id: e.id, source: e.source, target: e.target, type: 'stateTransition' as const };
+
+    const getShape = (n: Node) => {
+      if (n.type === 'initialState' || n.type === 'finalState') {
+        return { type: 'circle' as const, r: 15 };
+      }
+      const measuredW = (n as Node & { measured?: { width?: number; height?: number } }).measured?.width;
+      const measuredH = (n as Node & { measured?: { width?: number; height?: number } }).measured?.height;
+      const w = measuredW ?? (n.data?.width as number) ?? 120;
+      const h = measuredH ?? (n.data?.height as number) ?? 50;
+      return { type: 'rect' as const, w, h };
+    };
+
+    const sShape = getShape(sn);
+    const tShape = getShape(tn);
+
+    const sw = sShape.type === 'rect' ? sShape.w : sShape.r * 2;
+    const sh = sShape.type === 'rect' ? sShape.h : sShape.r * 2;
+    const tw = tShape.type === 'rect' ? tShape.w : tShape.r * 2;
+    const th = tShape.type === 'rect' ? tShape.h : tShape.r * 2;
+
+    const spos = getAbsolutePosition(sn, map);
+    const tpos = getAbsolutePosition(tn, map);
+
+    const scx = spos.x + sw / 2;
+    const scy = spos.y + sh / 2;
+    const tcx = tpos.x + tw / 2;
+    const tcy = tpos.y + th / 2;
+
+    const [x1, y1] = sShape.type === 'circle'
+      ? ellipseBorderPoint(scx, scy, sShape.r, sShape.r, tcx, tcy)
+      : borderPoint(scx, scy, sw, sh, tcx, tcy);
+    const [x2, y2] = tShape.type === 'circle'
+      ? ellipseBorderPoint(tcx, tcy, tShape.r, tShape.r, scx, scy)
+      : borderPoint(tcx, tcy, tw, th, scx, scy);
+
+    const sourcePos = getStateNodeSide(scx, scy, sw, sh, x1, y1);
+    const targetPos = getStateNodeSide(tcx, tcy, tw, th, x2, y2);
+
+    return {
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: 'stateTransition',
+      data: { x1, y1, x2, y2, sourcePos, targetPos, label: e.label },
+      markerEnd: { type: 'arrowclosed', color: '#e4e4e7', width: 20, height: 20 },
+    };
+  });
+}
 
 const NODE_WIDTH = 240;
 const NODE_HEIGHT = 220;
@@ -748,7 +952,7 @@ const BorderEdge = memo(BorderEdgeInner, (prev, next) => {
     pd.relationship === nd.relationship && (prev.style as { stroke?: string })?.stroke === (next.style as { stroke?: string })?.stroke;
 });
 
-const edgeTypes = { border: BorderEdge, sequenceMessage: SequenceMessageEdge, sequenceSelfMessage: SequenceSelfMessageEdge, communicationLink: CommunicationLinkEdge, useCaseExtend: UseCaseExtendEdge, useCaseInclude: UseCaseIncludeEdge, useCaseGeneralization: UseCaseGeneralizationEdge };
+const edgeTypes = { border: BorderEdge, sequenceMessage: SequenceMessageEdge, sequenceSelfMessage: SequenceSelfMessageEdge, communicationLink: CommunicationLinkEdge, useCaseExtend: UseCaseExtendEdge, useCaseInclude: UseCaseIncludeEdge, useCaseGeneralization: UseCaseGeneralizationEdge, stateTransition: StateTransitionEdge };
 
 /**
  * Sort classes so base/super classes tend to come before subclasses (by generalization target).
@@ -1159,8 +1363,8 @@ function getLayoutedUmlNodes(nodes: Node[], edgeDefs: EdgeDef[]): Node[] {
   if (nodes.length === 0) return [];
 
   // System boundary, use case actors, and use cases are shown on every page but not laid out
-  const overlayNodes = nodes.filter(n => n.type === 'useCaseSystemBoundary' || n.type === 'useCaseActor' || n.type === 'useCase');
-  const rest = nodes.filter(n => n.type !== 'useCaseSystemBoundary' && n.type !== 'useCaseActor' && n.type !== 'useCase');
+  const overlayNodes = nodes.filter(n => n.type === 'useCaseSystemBoundary' || n.type === 'useCaseActor' || n.type === 'useCase' || n.type === 'initialState' || n.type === 'finalState' || n.type === 'state' || n.type === 'compositeState');
+  const rest = nodes.filter(n => n.type !== 'useCaseSystemBoundary' && n.type !== 'useCaseActor' && n.type !== 'useCase' && n.type !== 'initialState' && n.type !== 'finalState' && n.type !== 'state' && n.type !== 'compositeState');
 
   // Separate sequence nodes from class nodes
   const lifelineNodes = rest.filter(n => n.type === 'lifeline');
@@ -1269,12 +1473,28 @@ export default function DocumentationUmlPage() {
   type ClassDiagramData = { type: 'class'; classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] };
   type SequenceDiagramData = { type: 'sequence'; lifelines: ApiSequenceLifeline[]; messages: ApiSequenceMessage[]; steps: ApiSequenceStep[]; fragments: ApiSequenceFragment[] };
   type UseCaseDiagramData = { type: 'useCase'; systemBoundary: ApiUseCaseSystemBoundary; actors: ApiUseCaseActor[]; useCases: ApiUseCase[]; relationships: ApiUseCaseRelationship[] };
-  const [generatedDiagram, setGeneratedDiagram] = useState<ClassDiagramData | SequenceDiagramData | UseCaseDiagramData | null>(null);
+  type StateDiagramData = {
+    type: 'state';
+    initialStates: ApiStateInitial[];
+    finalStates: ApiStateFinal[];
+    states: ApiStateState[];
+    compositeStates: ApiStateComposite[];
+    transitions: ApiStateTransition[];
+  };
+  const [generatedDiagram, setGeneratedDiagram] = useState<ClassDiagramData | SequenceDiagramData | UseCaseDiagramData | StateDiagramData | null>(null);
   const [generatedLoading, setGeneratedLoading] = useState(false);
   const [generatedError, setGeneratedError] = useState<string | null>(null);
 
   const isSequenceDiagram = generatedDiagram?.type === 'sequence';
   const isUseCaseDiagram = generatedDiagram?.type === 'useCase';
+  const isStateDiagram = generatedDiagram?.type === 'state';
+
+  const stateDiagramNodes = useMemo(() => {
+    if (!isStateDiagram || !generatedDiagram) return null;
+    const sd = generatedDiagram as StateDiagramData;
+    return buildStateDiagramNodes(sd.initialStates, sd.finalStates, sd.states, sd.compositeStates, capTransitions(sd.transitions));
+  }, [isStateDiagram, generatedDiagram]);
+
   const sequenceLayout = useMemo(() => {
     if (!isSequenceDiagram || !generatedDiagram) return null;
     const { lifelines, messages } = generatedDiagram;
@@ -1291,6 +1511,9 @@ export default function DocumentationUmlPage() {
   }, [isUseCaseDiagram, generatedDiagram]);
 
   const displayNodes = useMemo(() => {
+    if (isStateDiagram && stateDiagramNodes) {
+      return stateDiagramNodes;
+    }
     if (isUseCaseDiagram && generatedDiagram) {
       const uc = generatedDiagram as UseCaseDiagramData;
       return buildUseCaseNodesFromGenerated(uc.systemBoundary, uc.actors, uc.useCases);
@@ -1302,22 +1525,13 @@ export default function DocumentationUmlPage() {
         sequenceLayout.messageY,
         seq.lifelines.length
       );
-      return [SYSTEM_BOUNDARY_NODE, DEFAULT_ACTOR_NODE, DEFAULT_ACTOR_NODE_2, DEFAULT_USE_CASE_NODE, DEFAULT_USE_CASE_NODE_2, DEFAULT_USE_CASE_NODE_3, DEFAULT_USE_CASE_NODE_4, ...sequenceLayout.lifelineNodes, ...fragNodes];
+      return [...sequenceLayout.lifelineNodes, ...fragNodes];
     }
     if (generatedDiagram?.type === 'class' && generatedDiagram.classes.length > 0) {
-      return [
-        SYSTEM_BOUNDARY_NODE,
-        DEFAULT_ACTOR_NODE,
-        DEFAULT_ACTOR_NODE_2,
-        DEFAULT_USE_CASE_NODE,
-        DEFAULT_USE_CASE_NODE_2,
-        DEFAULT_USE_CASE_NODE_3,
-        DEFAULT_USE_CASE_NODE_4,
-        ...buildNodesFromGeneratedClasses(generatedDiagram.classes, generatedDiagram.relationships),
-      ];
+      return buildNodesFromGeneratedClasses(generatedDiagram.classes, generatedDiagram.relationships);
     }
-    return TEMP_PLACEHOLDER_NODE;
-  }, [generatedDiagram, isSequenceDiagram, isUseCaseDiagram, sequenceLayout]);
+    return [];
+  }, [generatedDiagram, isSequenceDiagram, isUseCaseDiagram, isStateDiagram, sequenceLayout, stateDiagramNodes]);
 
   const displayEdgeDefs = useMemo(
     () =>
@@ -1328,20 +1542,34 @@ export default function DocumentationUmlPage() {
   );
 
   const layoutedNodes = useMemo(() => {
-    if (isUseCaseDiagram || (isSequenceDiagram && sequenceLayout)) return displayNodes;
+    if (isUseCaseDiagram || isStateDiagram || (isSequenceDiagram && sequenceLayout)) return displayNodes;
     return getLayoutedUmlNodes(displayNodes, displayEdgeDefs);
-  }, [isUseCaseDiagram, isSequenceDiagram, sequenceLayout, displayNodes, displayEdgeDefs]);
+  }, [isUseCaseDiagram, isStateDiagram, isSequenceDiagram, sequenceLayout, displayNodes, displayEdgeDefs]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const edges = useMemo(() => {
+    if (!generatedDiagram) return [];
+    if (isStateDiagram) {
+      const sd = generatedDiagram as StateDiagramData;
+      const stateEdgeDefs = capTransitions(sd.transitions).map((t, i) => ({
+        id: `state-e-${i}`,
+        source: t.source,
+        target: t.target,
+        label: t.label != null ? (t.eventParameter != null && t.eventParameter !== '' ? `${t.label} (${t.eventParameter})` : t.label) : undefined,
+      }));
+      return computeStateEdges(nodes, stateEdgeDefs);
+    }
     if (isUseCaseDiagram) {
       return computeUseCaseEdges(nodes, useCaseEdgeDefs);
     }
-    const ucEdges = computeUseCaseEdges(nodes, useCaseEdgeDefs);
-    if (isSequenceDiagram && sequenceLayout) return [...sequenceLayout.messageEdges, ...ucEdges];
-    const computedEdges = computeSmartEdges(nodes, displayEdgeDefs);
-    return [...computedEdges, ...TEMP_PLACEHOLDER_EDGES, ...ucEdges];
-  }, [isUseCaseDiagram, isSequenceDiagram, sequenceLayout, nodes, displayEdgeDefs, useCaseEdgeDefs]);
+    if (isSequenceDiagram && sequenceLayout) {
+      return sequenceLayout.messageEdges;
+    }
+    if (generatedDiagram?.type === 'class' && generatedDiagram.classes.length > 0) {
+      return computeSmartEdges(nodes, displayEdgeDefs);
+    }
+    return [];
+  }, [isUseCaseDiagram, isStateDiagram, isSequenceDiagram, sequenceLayout, nodes, displayEdgeDefs, useCaseEdgeDefs, generatedDiagram]);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [panelData, setPanelData] = useState<ApiUmlClass | null>(null);
@@ -1355,7 +1583,7 @@ export default function DocumentationUmlPage() {
   }, [generatedDiagram]);
 
   const selectedClassForPanel = useMemo((): ApiUmlClass | null => {
-    if (!selectedNodeId || isSequenceDiagram) return null;
+    if (!selectedNodeId || isSequenceDiagram || isStateDiagram) return null;
     const fromApi = classesById.get(selectedNodeId);
     if (fromApi) return fromApi;
     const node = nodes.find((n) => n.id === selectedNodeId);
@@ -1379,7 +1607,7 @@ export default function DocumentationUmlPage() {
         description: m.description,
       })),
     };
-  }, [selectedNodeId, classesById, nodes, isSequenceDiagram]);
+  }, [selectedNodeId, classesById, nodes, isSequenceDiagram, isStateDiagram]);
 
   useEffect(() => {
     if (selectedClassForPanel) {
@@ -1441,6 +1669,20 @@ export default function DocumentationUmlPage() {
             classes,
             relationships: Array.isArray(relationships) ? relationships : [],
           });
+          return;
+        }
+        const transitions = diagramData?.transitions;
+        const stateStates = diagramData?.states;
+        const initialStates = diagramData?.initialStates;
+        if (Array.isArray(transitions) && (Array.isArray(stateStates) || Array.isArray(initialStates))) {
+          setGeneratedDiagram({
+            type: 'state',
+            initialStates: Array.isArray(diagramData?.initialStates) ? diagramData.initialStates : [{ id: 'initial' }],
+            finalStates: Array.isArray(diagramData?.finalStates) ? diagramData.finalStates : [{ id: 'final' }],
+            states: Array.isArray(diagramData?.states) ? diagramData.states : [],
+            compositeStates: Array.isArray(diagramData?.compositeStates) ? diagramData.compositeStates : [],
+            transitions,
+          });
         } else {
           setGeneratedDiagram(null);
         }
@@ -1469,7 +1711,7 @@ export default function DocumentationUmlPage() {
           </svg>
           <span>Back</span>
         </button>
-        {!isUseCaseDiagram && (
+        {!isUseCaseDiagram && !isStateDiagram && (
           <button
             type="button"
             onClick={() => setHideDetails((v) => !v)}
