@@ -16,7 +16,7 @@ interface GenerateDocumentationModalProps {
 }
 
 type View = 'docTypeChoice' | 'textual';
-type DocType = 'api' | 'architecture' | 'aiAgent' | 'endUser' | 'test' | 'onboarding' | 'fakeLoading';
+type DocType = 'api' | 'architecture' | 'aiAgent' | 'onboarding';
 type AiAgentDocKind = 'context' | 'playbook' | 'custom';
 
 const AI_AGENT_DOC_KIND_OPTIONS: { type: AiAgentDocKind; label: string; description: string }[] = [
@@ -29,10 +29,7 @@ const DOC_TYPE_OPTIONS: { type: DocType; label: string; description: string }[] 
   { type: 'api', label: 'API/Code Documentation', description: 'Functions, classes, parameters, code references and examples' },
   { type: 'architecture', label: 'System Architecture Documentation', description: 'Components, data flow, design decisions and how the system works' },
   { type: 'aiAgent', label: 'AI-Agent (.md)', description: 'Structured markdown for AI agents: clear sections, parseable, minimal prose' },
-  { type: 'endUser', label: 'End-User Documentation', description: 'User manuals, guides, tutorials and FAQs' },
-  { type: 'test', label: 'Test Documentation', description: 'Test strategy, coverage, scenarios and how to run tests' },
   { type: 'onboarding', label: 'Onboarding', description: 'Getting started, setup, conventions and where to find things' },
-  { type: 'fakeLoading', label: 'Test loading (temp)', description: 'Temporary: fake loading UX only, no API call' },
 ];
 
 export default function GenerateDocumentationModal({
@@ -54,7 +51,19 @@ export default function GenerateDocumentationModal({
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [dotCount, setDotCount] = useState(0);
+  const [hasEntered, setHasEntered] = useState(false);
   const router = useRouter();
+
+  // Opening animation: start hidden then transition in
+  useEffect(() => {
+    if (isOpen) {
+      setHasEntered(false);
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setHasEntered(true));
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [isOpen]);
 
   // Progress bar animation
   useEffect(() => {
@@ -135,17 +144,6 @@ export default function GenerateDocumentationModal({
       }
     }
 
-    // Temporary: fake loading UX only (no API call) for testing
-    if (selectedDocType === 'fakeLoading') {
-      setIsGenerating(true);
-      setError(null);
-      setTimeout(() => {
-        setLoadingProgress(100);
-        setTimeout(() => setIsGenerating(false), 400);
-      }, 2500);
-      return;
-    }
-
     setIsGenerating(true);
     setError(null);
     setResult(null);
@@ -203,14 +201,20 @@ export default function GenerateDocumentationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop with blur */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-150"
+      {/* Backdrop with blur - animate in */}
+      <div
+        className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
+          hasEntered ? 'opacity-100' : 'opacity-0'
+        }`}
         onClick={onClose}
       />
-      
-      {/* Modal Content */}
-      <div className="relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out max-w-5xl min-h-[500px] overflow-hidden">
+
+      {/* Modal Content - animate in (scale + opacity) */}
+      <div
+        className={`relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl max-w-5xl min-h-[500px] overflow-hidden transition-all duration-300 ease-out ${
+          hasEntered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+      >
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             {(view === 'docTypeChoice' || view === 'textual') && (

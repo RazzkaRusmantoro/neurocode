@@ -38,7 +38,19 @@ export default function GenerateUmlModal({
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [dotCount, setDotCount] = useState(0);
+  const [hasEntered, setHasEntered] = useState(false);
   const router = useRouter();
+
+  // Opening animation: start hidden then transition in
+  useEffect(() => {
+    if (isOpen) {
+      setHasEntered(false);
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setHasEntered(true));
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -132,10 +144,16 @@ export default function GenerateUmlModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-150"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
+          hasEntered ? 'opacity-100' : 'opacity-0'
+        }`}
         onClick={onClose}
       />
-      <div className="relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl transition-all duration-300 ease-in-out max-w-5xl min-h-[500px] overflow-hidden">
+      <div
+        className={`relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl max-w-5xl min-h-[500px] overflow-hidden transition-all duration-300 ease-out ${
+          hasEntered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+      >
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             {(view === 'umlPrompt') && (

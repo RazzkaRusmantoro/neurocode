@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import JSZip from 'jszip';
 import { useDocumentation } from '../context/DocumentationContext';
 import CodeSnippet from '../components/CodeSnippet';
+import ArchitectureSectionCanvas from '../components/ArchitectureSectionCanvas';
+import ArchitectureClassDiagramCanvas, { type ApiUmlClass, type ApiUmlRelationship } from '../components/ArchitectureClassDiagramCanvas';
 import { slugify } from '@/lib/utils/slug';
 
 // Segment types: paragraph (inline content), fenced code block, or markdown table
@@ -315,11 +317,15 @@ interface DocumentationContent {
       title: string;
       description: string;
       code_references?: string[];
+      diagramType?: 'flowchart' | 'class' | null;
+      diagram?: { nodes: { id: string; label: string }[]; edges: { source: string; target: string }[] } | { classes: Array<{ id: string; className: string; attributes: unknown[]; methods: unknown[] }>; relationships: Array<{ source: string; target: string; relationship: string }> } | null;
       subsections?: Array<{
         id: string;
         title: string;
         description: string;
         code_references?: string[];
+        diagramType?: 'flowchart' | 'class' | null;
+        diagram?: { nodes: { id: string; label: string }[]; edges: { source: string; target: string }[] } | { classes: unknown[]; relationships: unknown[] } | null;
       }>;
     }>;
   };
@@ -809,8 +815,46 @@ export default function DocumentationTitlePage() {
                             )
                           )}
                         </div>
+
+                        {/* Architecture subsection diagram (class or flowchart from doc generation) */}
+                        {content.metadata?.documentation_type === 'architecture' && subsection.diagram != null && (
+                          <div className="mt-6">
+                            {subsection.diagramType === 'class' && 'classes' in subsection.diagram && (subsection.diagram.classes?.length ?? 0) > 0 ? (
+                              <ArchitectureClassDiagramCanvas
+                                sectionId={`${section.id}-${subsection.id}`}
+                                classes={(subsection.diagram as { classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] }).classes}
+                                relationships={(subsection.diagram as { classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] }).relationships}
+                              />
+                            ) : 'nodes' in subsection.diagram && (subsection.diagram.nodes?.length ?? 0) > 0 ? (
+                              <ArchitectureSectionCanvas
+                                sectionId={`${section.id}-${subsection.id}`}
+                                sectionTitle={subsection.title}
+                                diagram={subsection.diagram as { nodes: { id: string; label: string }[]; edges: { source: string; target: string }[] }}
+                              />
+                            ) : null}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Architecture doc: class diagram for Components, flowchart for other sections */}
+                {content.metadata?.documentation_type === 'architecture' && section.diagram != null && (
+                  <div className="mt-8">
+                    {section.diagramType === 'class' && 'classes' in section.diagram && (section.diagram.classes?.length ?? 0) > 0 ? (
+                      <ArchitectureClassDiagramCanvas
+                        sectionId={section.id}
+                        classes={(section.diagram as { classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] }).classes}
+                        relationships={(section.diagram as { classes: ApiUmlClass[]; relationships: ApiUmlRelationship[] }).relationships}
+                      />
+                    ) : 'nodes' in section.diagram && (section.diagram.nodes?.length ?? 0) > 0 ? (
+                      <ArchitectureSectionCanvas
+                        sectionId={section.id}
+                        sectionTitle={section.title}
+                        diagram={section.diagram as { nodes: { id: string; label: string }[]; edges: { source: string; target: string }[] }}
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>
