@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import MainLayoutClient from './MainLayoutClient';
+import OnboardingPathLayoutClient from './OnboardingPathLayoutClient';
 import type { OrganizationWithId } from '@/actions/organization';
 
 interface ConditionalLayoutWrapperProps {
@@ -23,13 +24,30 @@ export default function ConditionalLayoutWrapper({
 }: ConditionalLayoutWrapperProps) {
   const pathname = usePathname();
   const isRepoRoute = pathname?.includes('/repo/');
+  // Onboarding path detail (e.g. /org-xxx/onboarding/getting-started): use page's own doc-style sidebar, no app sidebar
+  const isOnboardingPathDetail = pathname != null && /\/onboarding\/[^/]+$/.test(pathname);
 
-  // If this is a repo route, don't wrap in MainLayoutClient (repo layout will handle it)
+  // Repo route: repo layout handles its own sidebar.
   if (isRepoRoute) {
     return <>{children}</>;
   }
 
-  // Otherwise, use the main layout
+  // Onboarding path detail: same layout as doc page — sidebar left, navbar only over right column.
+  if (isOnboardingPathDetail) {
+    return (
+      <OnboardingPathLayoutClient
+        userEmail={userEmail}
+        userName={userName}
+        userId={userId}
+        organizations={organizations}
+        selectedOrganization={selectedOrganization}
+      >
+        {children}
+      </OnboardingPathLayoutClient>
+    );
+  }
+
+  // Otherwise, use the full main layout (sidebar + navbar)
   return (
     <MainLayoutClient
       userEmail={userEmail}

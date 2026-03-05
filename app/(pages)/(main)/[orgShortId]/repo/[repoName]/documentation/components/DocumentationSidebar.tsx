@@ -29,12 +29,16 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
   const repoMatch = pathname.match(/\/repo\/([^/]+)/);
   const repoName = repoMatch ? repoMatch[1] : null;
 
+  const isOnboardingPath = pathname.includes('/onboarding/');
   const handleBackToDocumentations = useCallback(() => {
-    if (orgShortId && repoName) {
+    if (isOnboardingPath && orgShortId) {
+      startLoading();
+      router.push(`/${orgShortId}/onboarding`);
+    } else if (orgShortId && repoName) {
       startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/documentation`);
     }
-  }, [router, orgShortId, repoName, startLoading]);
+  }, [router, orgShortId, repoName, startLoading, isOnboardingPath]);
 
   // Show skeleton when: no doc loaded, or on documentation index, or on UML page (no TOC for those)
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -142,8 +146,8 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
           </div>
         </div>
 
-        {/* Back to Documentations Button */}
-        {orgShortId && repoName && (
+        {/* Back to Documentations / Onboarding Button */}
+        {orgShortId && (repoName || isOnboardingPath) && (
           <div className="px-4 pt-4 pb-3">
             <button
               onClick={handleBackToDocumentations}
@@ -152,7 +156,7 @@ export default function DocumentationSidebar({ activeSection, onSectionChange }:
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Back to Documentations</span>
+              <span>{isOnboardingPath ? 'Back to Onboarding' : 'Back to Documentations'}</span>
             </button>
           </div>
         )}

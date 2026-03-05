@@ -182,6 +182,10 @@ export async function POST(request: NextRequest) {
             documentationType: result.documentation_type ?? documentationType ?? undefined,
             aiAgentDocKind: result.ai_agent_doc_kind ?? aiAgentDocKind ?? undefined,
             createdBy: new ObjectId(session.user.id),
+            // Worker/sync fields (Python worker uses these for regeneration and file-change detection)
+            filePaths: result.file_paths ?? [],
+            needsSync: false,
+            isUpdating: false,
           }
         );
         

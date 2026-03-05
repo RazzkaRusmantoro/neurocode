@@ -33,6 +33,11 @@ export interface Documentation {
   documentationType?: string; // api | architecture | aiAgent | endUser | test | onboarding
   aiAgentDocKind?: string; // context | playbook | custom (when documentationType === 'aiAgent')
   
+  // Worker/sync fields (used by Python worker for regeneration and file-change detection)
+  filePaths?: string[];
+  needsSync?: boolean;
+  isUpdating?: boolean;
+  
   createdAt: Date;
   updatedAt: Date;
   createdBy?: ObjectId; // User ID who generated this

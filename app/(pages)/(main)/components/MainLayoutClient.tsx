@@ -11,6 +11,8 @@ interface MainLayoutClientProps {
   userId?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
+  /** When true, hide the app sidebar (e.g. onboarding path page uses its own doc sidebar) */
+  hideSidebar?: boolean;
 }
 
 export default function MainLayoutClient({
@@ -19,6 +21,7 @@ export default function MainLayoutClient({
   userId,
   organizations,
   selectedOrganization,
+  hideSidebar = false,
   children,
 }: MainLayoutClientProps & { children: React.ReactNode }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -29,13 +32,15 @@ export default function MainLayoutClient({
 
   return (
     <div className="h-screen flex bg-transparent">
-      {/* Sidebar on the left - full height */}
-      <Sidebar 
-        isExpanded={isSidebarExpanded} 
-        onToggle={toggleSidebar}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      {/* Sidebar on the left - full height (hidden when hideSidebar, e.g. onboarding path) */}
+      {!hideSidebar && (
+        <Sidebar 
+          isExpanded={isSidebarExpanded} 
+          onToggle={toggleSidebar}
+          userName={userName}
+          userEmail={userEmail}
+        />
+      )}
       
       {/* Right side - Navbar and content stacked */}
       <div className="flex-1 flex flex-col overflow-hidden px-16">
