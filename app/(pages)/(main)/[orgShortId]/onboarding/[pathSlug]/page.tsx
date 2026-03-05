@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { slugify } from '@/lib/utils/slug';
 import { setPathProgress, getPathProgress } from '@/lib/onboarding/progress';
-import { useDocumentation } from '@/app/(pages)/(main)/[orgShortId]/repo/[repoName]/documentation/context/DocumentationContext';
+import { useDocumentation, type CodeReferenceDetail } from '@/app/(pages)/(main)/[orgShortId]/repo/[repoName]/documentation/context/DocumentationContext';
 import DocumentationContentBody from '@/app/(pages)/(main)/[orgShortId]/repo/[repoName]/documentation/components/DocumentationContentBody';
 
 interface PathModule {
@@ -36,7 +36,7 @@ function OnboardingPathContent() {
   const [contentDoc, setContentDoc] = useState<{
     title?: string;
     documentation?: { sections?: Array<{ id: string; title: string; description: string; subsections?: Array<{ id: string; title: string; description: string }> }> };
-    code_references?: unknown[];
+    code_references?: (string | CodeReferenceDetail)[];
   } | null>(null);
 
   useEffect(() => {
@@ -46,9 +46,7 @@ function OnboardingPathContent() {
       setIsCompleted(true);
       return;
     }
-    if (!current || current.status !== 'completed') {
-      setPathProgress(orgShortId, path.id, { status: 'started' });
-    }
+    setPathProgress(orgShortId, path.id, { status: 'started' });
   }, [orgShortId, path?.id]);
 
   const handleMarkComplete = useCallback(() => {
@@ -97,7 +95,7 @@ function OnboardingPathContent() {
           setContentDoc({
             title: doc.title,
             documentation: doc.documentation || {},
-            code_references: doc.code_references || [],
+            code_references: (doc.code_references ?? []) as (string | CodeReferenceDetail)[],
           });
         } else {
           setContentDoc(null);
