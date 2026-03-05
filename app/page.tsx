@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Navbar from "./components/Navbar";
 import WorkflowCurvedConnector from "./components/WorkflowCurvedConnector";
+import FeaturesTimeline from "./components/FeaturesTimeline";
 
 export default function Home() {
   const heroRef = useRef<HTMLElement | null>(null);
@@ -174,18 +175,37 @@ export default function Home() {
               From code to comprehension in seconds.
             </p>
 
-            {/* CTA Button */}
-            <button className={`mt-8 px-8 py-4 bg-[#171717] border border-[#262626] hover:bg-[#262626] text-white font-semibold rounded cursor-pointer transition-all duration-300 flex items-center gap-3 ${
-              isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`} style={{ transitionDelay: isVisible.hero ? '150ms' : '0ms' }}>
-              <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Get Started
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
+            <div className="flex flex-col items-center gap-8 mt-8">
+              {/* CTA Button */}
+              <button className={`relative group px-8 py-4 bg-[#171717] border border-[#262626] hover:border-[var(--color-primary)]/50 text-white font-semibold rounded-lg cursor-pointer transition-all duration-500 flex items-center gap-3 overflow-hidden shadow-2xl ${
+                isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`} style={{ transitionDelay: isVisible.hero ? '150ms' : '0ms' }}>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-primary)]/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <div className="absolute -inset-1 bg-[var(--color-primary)]/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <svg className="w-5 h-5 text-[var(--color-primary)] relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="relative z-10">Get Started</span>
+                <svg className="w-5 h-5 relative z-10 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              {/* Fake AI Loading Effect */}
+              <div className={`w-full max-w-sm h-12 flex items-center justify-between px-4 bg-[#171717]/80 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.5)] ${
+                isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`} style={{ transitionDelay: isVisible.hero ? '200ms' : '0ms' }}>
+                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-[var(--color-primary)]/10 to-transparent opacity-50 animate-pulse" />
+                <div className="flex items-center gap-3 relative z-10">
+                  <div className="w-4 h-4 rounded-full border-2 border-[var(--color-primary)] border-t-transparent animate-spin" />
+                  <span className="text-sm text-white/70 font-mono tracking-tight">indexing_repo_context...</span>
+                </div>
+                <div className="flex items-center gap-2 relative z-10">
+                  <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
+                  <span className="text-xs text-[var(--color-primary)] font-mono font-bold">LIVE</span>
+                </div>
+              </div>
+            </div>
 
             {/* Video */}
             <div className={`mt-12 w-full max-w-4xl relative transition-all duration-700 ${
@@ -566,6 +586,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <FeaturesTimeline />
 
         {/* Footer */}
         <footer className="relative border-t border-[#262626] bg-[#171717] overflow-hidden">
