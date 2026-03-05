@@ -32,6 +32,8 @@ const DOC_TYPE_OPTIONS: { type: DocType; label: string; description: string }[] 
   { type: 'onboarding', label: 'Onboarding', description: 'Getting started, setup, conventions and where to find things' },
 ];
 
+const VISIBLE_DOC_TYPES: DocType[] = ['api', 'architecture'];
+
 export default function GenerateDocumentationModal({
   isOpen,
   onClose,
@@ -200,8 +202,8 @@ export default function GenerateDocumentationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop with blur - animate in */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop with blur - animate in (like UML modal) */}
       <div
         className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
           hasEntered ? 'opacity-100' : 'opacity-0'
@@ -209,13 +211,13 @@ export default function GenerateDocumentationModal({
         onClick={onClose}
       />
 
-      {/* Modal Content - animate in (scale + opacity) */}
+      {/* Modal Content - animate in: scale + opacity + translateY (like UML modal) */}
       <div
-        className={`relative z-10 bg-[#1a1a1a] rounded border border-[#424242] p-8 w-full mx-4 shadow-2xl max-w-5xl min-h-[500px] overflow-hidden transition-all duration-300 ease-out ${
-          hasEntered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`relative z-10 bg-[#1a1a1a] rounded-lg border border-[#424242] p-8 w-full max-w-5xl min-h-[500px] overflow-hidden flex flex-col transition-all duration-300 ease-out origin-center ${
+          hasEntered ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-4'
         }`}
       >
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 flex-shrink-0">
           <div className="flex items-center gap-4">
             {(view === 'docTypeChoice' || view === 'textual') && (
               <button
@@ -241,19 +243,19 @@ export default function GenerateDocumentationModal({
           </button>
         </div>
 
-        <div className="relative overflow-hidden p-5">
-          {/* Doc type choice - documentation type options */}
-          <div className={`transition-all duration-500 ease-in-out ${
+        <div className="relative overflow-hidden p-5 flex-1 flex flex-col min-h-0">
+          {/* Doc type choice - documentation type options (fill modal) */}
+          <div className={`flex-1 flex flex-col min-h-0 transition-all duration-500 ease-in-out ${
             view === 'docTypeChoice'
               ? 'transform translate-x-0 opacity-100 relative'
-              : 'transform -translate-x-full opacity-0 absolute w-full'
+              : 'transform -translate-x-full opacity-0 absolute w-full inset-0'
           }`}>
-            <div className="grid grid-cols-2 gap-6">
-              {DOC_TYPE_OPTIONS.map(({ type, label, description }) => (
+            <div className="grid grid-cols-2 grid-rows-[1fr] gap-6 flex-1 min-h-0 w-full">
+              {DOC_TYPE_OPTIONS.filter(({ type }) => VISIBLE_DOC_TYPES.includes(type)).map(({ type, label, description }) => (
                 <div
                   key={type}
                   onClick={() => handleDocTypeSelect(type)}
-                  className="group relative border border-white/10 rounded p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer flex flex-col min-h-[180px] bg-[#212121]"
+                  className="group relative border border-white/10 rounded-lg p-8 hover:border-[#BC4918]/50 transition-all duration-300 cursor-pointer flex flex-col min-h-0 bg-[#212121]"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = '0 0 25px rgba(188, 73, 24, 0.2)';
                     e.currentTarget.style.transform = 'translateY(-2px)';
@@ -266,7 +268,7 @@ export default function GenerateDocumentationModal({
                   <h3 className="text-xl font-bold text-white mb-2 group-hover:text-[#D85A2A] transition-colors duration-300">
                     {label}
                   </h3>
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-white/70 flex-1">
                     {description}
                   </p>
                 </div>

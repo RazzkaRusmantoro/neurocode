@@ -15,6 +15,7 @@ interface Documentation {
   branch: string;
   version: number;
   isLatest: boolean;
+  documentationType?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -145,6 +146,7 @@ export default function DocumentationViewer({
                 onSearchChange={setSearchQuery}
                 orgShortId={orgShortId}
                 repoUrlName={repoUrlName}
+                onDocumentationDeleted={() => fetchDocumentations(true)}
               />
             </div>
           </div>

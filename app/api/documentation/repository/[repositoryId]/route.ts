@@ -78,6 +78,7 @@ export async function GET(
         version: doc.version,
         isLatest: doc.isLatest,
         branch: doc.branch,
+        documentationType: doc.documentationType || null,
         createdAt: doc.createdAt ? doc.createdAt.toISOString() : new Date().toISOString(),
         updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : new Date().toISOString(),
         createdBy: doc.createdBy ? doc.createdBy.toString() : null,

@@ -162,6 +162,14 @@ export async function getDocumentationById(
   return collection.findOne({ _id: new ObjectId(documentationId) });
 }
 
+export async function deleteDocumentationById(
+  documentationId: string
+): Promise<boolean> {
+  const collection = await getDocumentationCollection();
+  const result = await collection.deleteOne({ _id: new ObjectId(documentationId) });
+  return result.deletedCount === 1;
+}
+
 export async function getDocumentationsByOrganization(
   organizationId: string,
   isLatest?: boolean
