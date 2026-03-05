@@ -1830,14 +1830,14 @@ export default function DocumentationUmlPage() {
                   <div className="flex items-center justify-between mb-2.5">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Attributes</h3>
                     <span className="bg-[#2a2a2e] text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                      {panelData.attributes.length}
+                      {(panelData.attributes ?? []).length}
                     </span>
                   </div>
-                  {panelData.attributes.length === 0 ? (
+                  {(panelData.attributes ?? []).length === 0 ? (
                     <p className="text-sm text-gray-600 italic px-1">No attributes</p>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {panelData.attributes.map((a, i) => (
+                      {(panelData.attributes ?? []).map((a, i) => (
                         <div key={i} className="bg-[#1c1c1f] rounded-lg p-3 border border-[#2a2a2e] hover:border-[#3a3a3e] transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-2.5">
@@ -1868,14 +1868,14 @@ export default function DocumentationUmlPage() {
                   <div className="flex items-center justify-between mb-2.5">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Methods</h3>
                     <span className="bg-[#2a2a2e] text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                      {panelData.methods.length}
+                      {(panelData.methods ?? []).length}
                     </span>
                   </div>
-                  {panelData.methods.length === 0 ? (
+                  {(panelData.methods ?? []).length === 0 ? (
                     <p className="text-sm text-gray-600 italic px-1">No methods</p>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {panelData.methods.map((m, i) => (
+                      {(panelData.methods ?? []).map((m, i) => (
                         <div key={i} className="bg-[#1c1c1f] rounded-lg p-3 border border-[#2a2a2e] hover:border-[#3a3a3e] transition-colors">
                           <div className="flex items-center gap-2.5 mb-2">
                             <span className={`text-xs font-black w-4 text-center ${

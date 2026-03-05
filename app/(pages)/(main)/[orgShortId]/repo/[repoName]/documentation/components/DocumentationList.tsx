@@ -6,6 +6,32 @@ import { slugify } from '@/lib/utils/slug';
 import { useLoadingBar } from '@/app/contexts/LoadingBarContext';
 import type { DocumentationListItem } from './DocumentationViewer';
 
+const UML_TYPE_LABELS: Record<string, string> = {
+  class: 'Class',
+  sequence: 'Sequence',
+  useCase: 'Use Case',
+  use_case: 'Use Case',
+  state: 'State',
+};
+
+const UML_TYPE_STYLES: Record<string, string> = {
+  class: 'bg-amber-500/20 text-amber-400 border-amber-400/40',
+  sequence: 'bg-sky-500/20 text-sky-400 border-sky-400/40',
+  useCase: 'bg-emerald-500/20 text-emerald-400 border-emerald-400/40',
+  use_case: 'bg-emerald-500/20 text-emerald-400 border-emerald-400/40',
+  state: 'bg-violet-500/20 text-violet-400 border-violet-400/40',
+};
+
+function UmlTypeLabel({ type }: { type: string }) {
+  const label = UML_TYPE_LABELS[type] ?? (type ? type.replace(/_/g, ' ') : 'UML');
+  const style = UML_TYPE_STYLES[type] ?? 'bg-gray-500/20 text-gray-400 border-gray-400/40';
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider border ${style}`}>
+      {label}
+    </span>
+  );
+}
+
 interface DocumentationListProps {
   items: DocumentationListItem[];
   loading: boolean;
@@ -227,9 +253,7 @@ export default function DocumentationList({
                     <>
                       <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-2 flex-wrap">
                         <span>{item.uml.name}</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-400/40">
-                          UML
-                        </span>
+                        <UmlTypeLabel type={item.uml.type} />
                       </h3>
                       {(item.uml.description ?? item.uml.prompt) && (
                         <p className="text-white/50 text-sm mb-3 line-clamp-3">
