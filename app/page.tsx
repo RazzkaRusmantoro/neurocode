@@ -1,7 +1,62 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import CountUp from 'react-countup';
 import Navbar from "./components/Navbar";
+
+type RevealChar = { char: string; isLetter: boolean };
+
+function useInfinityReveal(trigger: boolean, duration = 2400): RevealChar[] {
+  const initial: RevealChar[] = 'UNLIMITED'.split('').map(c => ({ char: c, isLetter: true }));
+  const [display, setDisplay] = useState<RevealChar[]>(initial);
+  const played = useRef(false);
+
+  useEffect(() => {
+    if (!trigger || played.current) return;
+    played.current = true;
+
+    const word = 'UNLIMITED';
+    const digits = '0123456789';
+    const len = word.length;
+    const totalFrames = 60;
+    const shrinkStart = 0.4;
+    let frame = 0;
+
+    const id = setInterval(() => {
+      const progress = frame / totalFrames;
+
+      if (progress >= 0.95) {
+        clearInterval(id);
+        setDisplay([{ char: '∞', isLetter: true }]);
+        return;
+      }
+
+      let visibleCount: number;
+      if (progress < shrinkStart) {
+        visibleCount = len;
+      } else {
+        const shrinkProgress = (progress - shrinkStart) / (0.95 - shrinkStart);
+        visibleCount = Math.max(1, Math.round(len * (1 - shrinkProgress)));
+      }
+
+      const chars: RevealChar[] = [];
+      for (let i = 0; i < visibleCount; i++) {
+        if (Math.random() < 0.5) {
+          chars.push({ char: word[i], isLetter: true });
+        } else {
+          chars.push({ char: digits[Math.floor(Math.random() * digits.length)], isLetter: false });
+        }
+      }
+
+      setDisplay(chars);
+      frame++;
+    }, duration / totalFrames);
+
+    return () => clearInterval(id);
+  }, [trigger, duration]);
+
+  return display;
+}
 import WorkflowCurvedConnector from "./components/WorkflowCurvedConnector";
 import FeaturesTimeline from "./components/FeaturesTimeline";
 
@@ -9,6 +64,9 @@ export default function Home() {
   const heroRef = useRef<HTMLElement | null>(null);
   const featuresRef = useRef<HTMLElement | null>(null);
   const workflowRef = useRef<HTMLElement | null>(null);
+  const statsPlayedRef = useRef(false);
+  const [statsShouldCount, setStatsShouldCount] = useState(false);
+  const infinityDisplay = useInfinityReveal(statsShouldCount, 2400);
   const [isVisible, setIsVisible] = useState({
     hero: false,
     features: false,
@@ -136,6 +194,12 @@ export default function Home() {
       observers.forEach((observer) => observer.disconnect());
     };
   }, []);
+
+  useEffect(() => {
+    if (!isVisible.features || statsPlayedRef.current) return;
+    statsPlayedRef.current = true;
+    setStatsShouldCount(true);
+  }, [isVisible.features]);
 
   return (
     <>
@@ -286,19 +350,29 @@ export default function Home() {
                     </p>
                   </div>
                   
-                  <div className="mt-10 flex flex-wrap gap-6">
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-bold text-white">90%</span>
+                  <div className="mt-10 flex flex-nowrap gap-6 items-end">
+                    <div className="flex flex-col shrink-0">
+                      <span className="text-3xl font-bold text-white font-mono tabular-nums">
+                        {statsShouldCount ? <CountUp start={0} end={90} duration={2.0} suffix="%" /> : '0%'}
+                      </span>
                       <span className="text-sm text-white/50 uppercase tracking-wider font-semibold">Faster Onboarding</span>
                     </div>
-                    <div className="w-px h-12 bg-white/10 hidden sm:block"></div>
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-bold text-white">100%</span>
+                    <div className="w-px h-12 bg-white/10 hidden sm:block shrink-0"></div>
+                    <div className="flex flex-col shrink-0">
+                      <span className="text-3xl font-bold text-white font-mono tabular-nums">
+                        {statsShouldCount ? <CountUp start={0} end={100} duration={2.0} suffix="%" /> : '0%'}
+                      </span>
                       <span className="text-sm text-white/50 uppercase tracking-wider font-semibold">Auto-Documented</span>
                     </div>
-                    <div className="w-px h-12 bg-white/10 hidden sm:block"></div>
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-bold text-white">∞</span>
+                    <div className="w-px h-12 bg-white/10 hidden sm:block shrink-0"></div>
+                    <div className="flex flex-col shrink-0 min-w-0">
+                      <span className="text-3xl font-bold font-mono tabular-nums whitespace-nowrap">
+                        {infinityDisplay.map((c, i) => (
+                          <span key={i} className={c.isLetter ? 'text-[var(--color-accent)]' : 'text-white'}>
+                            {c.char}
+                          </span>
+                        ))}
+                      </span>
                       <span className="text-sm text-white/50 uppercase tracking-wider font-semibold">Intelligence</span>
                     </div>
                   </div>

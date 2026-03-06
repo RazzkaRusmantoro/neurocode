@@ -152,7 +152,9 @@ export default function FeaturesTimeline() {
                 key={feature.id} 
                 feature={feature} 
                 index={index} 
-                isEven={index % 2 === 0} 
+                isEven={index % 2 === 0}
+                totalItems={features.length}
+                scrollYProgress={scrollYProgress}
               />
             ))}
           </div>
@@ -162,23 +164,22 @@ export default function FeaturesTimeline() {
   );
 }
 
-function TimelineItem({ feature, index, isEven }: { feature: typeof features[number], index: number, isEven: boolean }) {
+function TimelineItem({ feature, index, isEven, totalItems, scrollYProgress }: { feature: typeof features[number], index: number, isEven: boolean, totalItems: number, scrollYProgress: any }) {
   const itemRef = useRef<HTMLDivElement>(null);
 
-  // Each item tracks its own scroll position relative to the viewport.
-  // Triggers when the item's center crosses from the 70% line toward the 40% line.
-  const { scrollYProgress: itemProgress } = useScroll({
-    target: itemRef,
-    offset: ["center 0.7", "center 0.4"]
-  });
+  const triggerPoint = index === 0 ? 0.05 : (index / totalItems) + 0.05;
 
   const [isTriggered, setIsTriggered] = useState(false);
 
   useEffect(() => {
-    return itemProgress.onChange((latest: number) => {
-      setIsTriggered(latest > 0);
+    return scrollYProgress.onChange((latest: number) => {
+      if (latest >= triggerPoint && !isTriggered) {
+        setIsTriggered(true);
+      } else if (latest < triggerPoint && isTriggered) {
+        setIsTriggered(false);
+      }
     });
-  }, [itemProgress]);
+  }, [scrollYProgress, triggerPoint, isTriggered]);
 
   const Icon = feature.icon;
 
@@ -298,8 +299,8 @@ function FeatureCard({ feature, index, align, isActive }: { feature: typeof feat
         align === 'right' 
           ? 'right-[calc(100%+2rem)] lg:right-[calc(100%+3rem)]' 
           : 'left-[calc(100%+2rem)] lg:left-[calc(100%+3rem)]'
-      } font-mono font-extrabold text-[8rem] lg:text-[12rem] leading-none transition-all duration-700 select-none pointer-events-none ${
-        isActive ? 'text-orange-500/10 scale-100' : 'text-white/[0.02] scale-90'
+      } font-mono font-extrabold text-[8rem] lg:text-[12rem] leading-none transition-all duration-700 select-none pointer-events-none timeline-number-outline ${
+        isActive ? 'timeline-number-outline-active scale-100' : 'scale-90'
       }`}>
         {numberDisplay}
       </div>
@@ -310,8 +311,8 @@ function FeatureCard({ feature, index, align, isActive }: { feature: typeof feat
       }`}>
         
         {/* Mobile Number Display (Fallback for small screens where outside won't fit) */}
-        <div className={`md:hidden font-mono font-bold text-5xl mb-6 transition-colors duration-500 ${
-          isActive ? 'text-orange-500/20' : 'text-white/10'
+        <div className={`md:hidden font-mono font-bold text-5xl mb-6 timeline-number-outline-mobile ${
+          isActive ? 'timeline-number-outline-mobile-active' : ''
         }`}>
           {numberDisplay}
         </div>

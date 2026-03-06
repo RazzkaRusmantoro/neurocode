@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Red_Hat_Text, Red_Hat_Display } from "next/font/google";
+import { Geist_Mono, Red_Hat_Text, Red_Hat_Display, Red_Hat_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import SmoothScroll from "./components/SmoothScroll";
@@ -24,6 +24,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const redHatMono = Red_Hat_Mono({
+  variable: "--font-red-hat-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "NeuroCode: AI-Powered Documentation & Onboarding",
   description: "Next Level AI-Powered Documentation & Onboarding for Developers",
@@ -37,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${redHatText.variable} ${redHatDisplay.variable} ${geistMono.variable} antialiased`}
+        className={`${redHatText.variable} ${redHatDisplay.variable} ${geistMono.variable} ${redHatMono.variable} antialiased`}
       >
         <SmoothScroll>
           <Providers>{children}</Providers>
