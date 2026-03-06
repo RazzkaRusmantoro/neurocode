@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import Chatbot from '@/app/components/Chatbot';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { useRef, useState, useEffect } from 'react';
 import { slugify } from '@/lib/utils/slug';
@@ -1186,7 +1185,6 @@ export default function OnboardingPage() {
           )}
         </div>
       </div>
-      <Chatbot orgContext={orgShortId ? { orgShortId } : undefined} />
     </>
   );
 }

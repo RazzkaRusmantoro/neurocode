@@ -126,9 +126,10 @@ export default function RepoLayoutClient({
         </div>
 
         {/* Right: full-height chat panel (only on documentation title pages, outside navbar+main div) */}
-        {isDocumentationTitlePage && docChatPanelOpen && (
+        {isDocumentationTitlePage && docChatPanelOpen && orgShortId && currentRepoName && (
           <DocumentationChatPanel
             orgContext={orgShortId ? { orgShortId } : undefined}
+            contextId={`repo-doc:${orgShortId}:${currentRepoName}`}
           />
         )}
       </div>

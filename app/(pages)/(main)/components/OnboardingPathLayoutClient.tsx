@@ -30,7 +30,7 @@ interface OnboardingPathLayoutClientProps {
 /**
  * Layout for onboarding path detail pages: same structure as repo documentation page —
  * DocumentationSidebar on the left (full height), then right column with Navbar on top and content below.
- * Chat panel on the right (same as doc page).
+ * Chat panel on the right (same as doc page). Chats are scoped per path (contextId).
  */
 export default function OnboardingPathLayoutClient({
   userEmail,
@@ -44,6 +44,9 @@ export default function OnboardingPathLayoutClient({
   const pathname = usePathname();
   const orgShortIdMatch = pathname?.match(/\/org-([^/]+)/);
   const orgShortId = orgShortIdMatch ? `org-${orgShortIdMatch[1]}` : undefined;
+  const pathSlugMatch = pathname?.match(/\/onboarding\/([^/]+)/);
+  const pathSlug = pathSlugMatch ? pathSlugMatch[1] : undefined;
+  const chatContextId = orgShortId && pathSlug ? `onboarding:${orgShortId}:${pathSlug}` : undefined;
 
   return (
     <DocumentationProvider>
@@ -81,10 +84,11 @@ export default function OnboardingPathLayoutClient({
           )}
         </div>
 
-        {/* Right: full-height chat panel (same as doc page) */}
+        {/* Right: full-height chat panel (same as doc page, chats scoped per path) */}
         {docChatPanelOpen && (
           <DocumentationChatPanel
             orgContext={orgShortId ? { orgShortId } : undefined}
+            contextId={chatContextId}
           />
         )}
       </div>

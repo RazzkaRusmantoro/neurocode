@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import type { ChatbotOrgContext } from '@/app/components/Chatbot';
+import ChatMessageMarkdown from '@/app/components/ChatMessageMarkdown';
+import { useDocumentation } from '../context/DocumentationContext';
+
+/** Typewriter: tick interval (ms). Browsers clamp setTimeout to ~4ms min, so we reveal multiple chars per tick. */
+const TYPEWRITER_TICK_MS = 8;
+/** Chars to reveal per tick. Higher = faster (e.g. 10 → ~1250 chars/sec). */
+const TYPEWRITER_CHARS_PER_TICK = 10;
 
 interface Message {
   id: string;
@@ -57,13 +65,74 @@ function getChatSubtitle(chat: Chat): string {
   return text.length > 24 ? text.slice(0, 24) + '…' : text;
 }
 
+function isServerChatId(id: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(id) && !id.startsWith('chat-');
+}
+
+function serverMessageToMessage(m: { id?: string; role?: string; content?: string; text?: string; sender?: string; createdAt?: string }): Message {
+  const content = (m.content ?? m.text ?? '').trim();
+  const sender = (m.sender === 'bot' || m.role === 'assistant') ? ('bot' as const) : ('user' as const);
+  return {
+    id: m.id ?? `msg-${Date.now()}`,
+    text: content,
+    sender,
+    timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
+  };
+}
+
+function serverChatToChat(server: { id: string; title?: string; messages?: unknown[] }): Chat {
+  const messages = (server.messages ?? []).map((m) => serverMessageToMessage(m as Parameters<typeof serverMessageToMessage>[0]));
+  return {
+    id: server.id,
+    title: server.title ?? 'New chat',
+    messages,
+  };
+}
+
+/** Build full documentation as plain text for the chat prompt (doc + history each time). */
+function buildDocumentationContent(doc: { title: string; sections: Array<{ id: string; title: string; description: string; subsections?: Array<{ id: string; title: string; description: string }> }> } | null): string {
+  if (!doc?.sections?.length) return '';
+  const parts: string[] = [`# ${doc.title}\n`];
+  for (const s of doc.sections) {
+    parts.push(`## ${s.id}. ${s.title}\n\n${(s.description || '').trimEnd()}\n`);
+    if (s.subsections?.length) {
+      for (const sub of s.subsections) {
+        parts.push(`### ${sub.id}. ${sub.title}\n\n${(sub.description || '').trimEnd()}\n`);
+      }
+    }
+  }
+  return parts.join('\n');
+}
+
+/** Animated typing indicator (three dots) shown while waiting for AI response */
+function TypingIndicator() {
+  return (
+    <div className="flex justify-start w-full">
+      <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90">
+        <span className="inline-flex gap-1 items-center text-sm">
+          <span className="w-2 h-2 rounded-full bg-white/70 animate-[typing-bounce_1.4s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 rounded-full bg-white/70 animate-[typing-bounce_1.4s_ease-in-out_infinite]" style={{ animationDelay: '200ms' }} />
+          <span className="w-2 h-2 rounded-full bg-white/70 animate-[typing-bounce_1.4s_ease-in-out_infinite]" style={{ animationDelay: '400ms' }} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 interface DocumentationChatPanelProps {
   orgContext?: ChatbotOrgContext;
+  /** Scope chats to this doc (e.g. repo-doc:org:repo, onboarding:org:pathSlug). Different docs get separate chat lists. */
+  contextId?: string;
   /** Optional width when expanded (default: 400px or min(400, 35vw)) */
   width?: number;
 }
 
-export default function DocumentationChatPanel({ orgContext, width: propWidth }: DocumentationChatPanelProps) {
+export default function DocumentationChatPanel({ orgContext, contextId, width: propWidth }: DocumentationChatPanelProps) {
+  const { data: session, status: sessionStatus } = useSession();
+  const userId = session?.user?.id ?? null;
+  const { documentation } = useDocumentation();
+  const documentationContent = buildDocumentationContent(documentation);
+
   const [chats, setChats] = useState<Chat[]>(() => [createNewChat()]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -71,6 +140,14 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
   const [isSending, setIsSending] = useState(false);
   const [headerIconError, setHeaderIconError] = useState(false);
   const [chatsDrawerOpen, setChatsDrawerOpen] = useState(false);
+  const [chatsLoaded, setChatsLoaded] = useState(false);
+  /** Letter-by-letter reveal for the latest bot message. */
+  const [typewriter, setTypewriter] = useState<{
+    messageId: string;
+    fullText: string;
+    visibleLength: number;
+    chatId: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -78,6 +155,8 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
     ? chats.find((c) => c.id === activeChatId) ?? chats[0]
     : chats[0];
   const messages = activeChat?.messages ?? [];
+  /** Hide backend welcome message so we keep "Ask me anything" until the user sends something. */
+  const displayMessages = messages.filter((m) => m.id !== 'welcome');
 
   const filteredChats = chatSearchQuery.trim()
     ? chats.filter((c) =>
@@ -86,6 +165,71 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
     : chats;
 
   const panelWidth = propWidth ?? 400;
+
+  // Load persisted chats when user is available (scoped by contextId when provided)
+  useEffect(() => {
+    if (sessionStatus === 'loading' || !userId) {
+      if (sessionStatus === 'unauthenticated') setChatsLoaded(true);
+      return;
+    }
+    if (contextId) {
+      setChats([createNewChat()]);
+      setActiveChatId(null);
+      setChatsLoaded(false);
+    }
+    let cancelled = false;
+    const listUrl = contextId
+      ? `/api/chat/list?context_id=${encodeURIComponent(contextId)}`
+      : '/api/chat/list';
+    (async () => {
+      try {
+        const res = await fetch(listUrl);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const list = data.chats ?? [];
+        const createBody = contextId
+          ? JSON.stringify({ title: 'New chat', context_id: contextId })
+          : JSON.stringify({ title: 'New chat' });
+        if (list.length === 0) {
+          const createRes = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: createBody });
+          if (!createRes.ok || cancelled) {
+            setChatsLoaded(true);
+            return;
+          }
+          const createData = await createRes.json();
+          const chat = createData.chat ? serverChatToChat(createData.chat) : serverChatToChat({ id: createData.chatId ?? createData.chat_id, title: 'New chat', messages: [] });
+          if (!cancelled) {
+            setChats([chat]);
+            setActiveChatId(chat.id);
+          }
+        } else {
+          const loaded = list.map((c: { id: string; title?: string }) => ({ id: c.id, title: c.title ?? 'New chat', messages: [] as Message[] }));
+          if (!cancelled) {
+            setChats(loaded);
+            setActiveChatId(loaded[0]?.id ?? null);
+          }
+          const firstId = loaded[0]?.id;
+          if (firstId && !cancelled) {
+            try {
+              const getRes = await fetch(`/api/chat/${encodeURIComponent(firstId)}`);
+              if (getRes.ok) {
+                const getData = await getRes.json();
+                const full = serverChatToChat(getData.chat ?? getData);
+                if (!cancelled) setChats((prev) => prev.map((c) => (c.id === firstId ? full : c)));
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch {
+        // keep default [createNewChat()]
+      } finally {
+        if (!cancelled) setChatsLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, sessionStatus, contextId]);
 
   useEffect(() => {
     if (chats.length === 0) return;
@@ -108,21 +252,84 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
     adjustTextareaHeight();
   }, [inputValue]);
 
+  // Scroll to bottom only when messages change (e.g. new message), not on every typewriter tick, so user can scroll up during animation
   useEffect(() => {
     scrollToBottom();
   }, [messages.length]);
 
-  const handleNewChat = () => {
-    const newChat = createNewChat();
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
-    setInputValue('');
-    setChatsDrawerOpen(false);
+  // Fast letter-by-letter typewriter for new bot messages
+  useEffect(() => {
+    if (!typewriter) return;
+    const { messageId, fullText, chatId } = typewriter;
+    if (typewriter.visibleLength >= fullText.length) {
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                messages: chat.messages.map((m) =>
+                  m.id === messageId ? { ...m, text: fullText } : m
+                ),
+              }
+            : chat
+        )
+      );
+      setTypewriter(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      setTypewriter((tw) =>
+        !tw ? null : { ...tw, visibleLength: Math.min(tw.visibleLength + TYPEWRITER_CHARS_PER_TICK, tw.fullText.length) }
+      );
+    }, TYPEWRITER_TICK_MS);
+    return () => clearTimeout(t);
+  }, [typewriter]);
+
+  const handleNewChat = async () => {
+    if (!userId) {
+      const newChat = createNewChat();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+      setInputValue('');
+      setChatsDrawerOpen(false);
+      return;
+    }
+    try {
+      const createBody = contextId
+        ? JSON.stringify({ title: 'New chat', context_id: contextId })
+        : JSON.stringify({ title: 'New chat' });
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: createBody });
+      if (!res.ok) throw new Error('Failed to create chat');
+      const data = await res.json();
+      const chat = data.chat ? serverChatToChat(data.chat) : serverChatToChat({ id: data.chatId ?? data.chat_id, title: 'New chat', messages: [] });
+      setChats((prev) => [chat, ...prev]);
+      setActiveChatId(chat.id);
+      setInputValue('');
+      setChatsDrawerOpen(false);
+    } catch {
+      const newChat = createNewChat();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+      setInputValue('');
+      setChatsDrawerOpen(false);
+    }
   };
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = async (chatId: string) => {
     setActiveChatId(chatId);
     setChatsDrawerOpen(false);
+    if (!userId || !isServerChatId(chatId)) return;
+    const chat = chats.find((c) => c.id === chatId);
+    if (chat && chat.messages.length > 0) return;
+    try {
+      const res = await fetch(`/api/chat/${encodeURIComponent(chatId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const full = serverChatToChat(data.chat ?? data);
+      setChats((prev) => prev.map((c) => (c.id === chatId ? full : c)));
+    } catch {
+      // ignore
+    }
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -156,35 +363,96 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
     );
 
     setIsSending(true);
-    const history = activeChat.messages
-      .filter((m) => m.sender === 'user' || m.sender === 'bot')
-      .map((m) => ({ role: m.sender === 'user' ? ('user' as const) : ('assistant' as const), content: m.text }));
+    let chatIdToUse = activeChat.id;
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage.text,
-          history,
-          orgContext: orgContext ?? undefined,
-        }),
-      });
-      const data = await res.json();
-      const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: reply,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChat.id
-            ? { ...chat, messages: [...chat.messages, botMessage] }
-            : chat
-        )
-      );
+      if (userId && !isServerChatId(activeChat.id)) {
+        const existingServer = chats.find((c) => isServerChatId(c.id));
+        if (existingServer) {
+          chatIdToUse = existingServer.id;
+          setActiveChatId(chatIdToUse);
+          setChats((prev) =>
+            prev
+              .filter((c) => c.id !== activeChat.id)
+              .map((c) => (c.id === chatIdToUse ? { ...c, messages: [...c.messages, userMessage] } : c))
+          );
+        } else {
+          const createRes = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: activeChat.title === 'New chat' ? userMessage.text.slice(0, 36).trim() + (userMessage.text.length > 36 ? '…' : '') : activeChat.title,
+              ...(contextId ? { context_id: contextId } : {}),
+            }),
+          });
+          if (!createRes.ok) throw new Error('Failed to create chat');
+          const createData = await createRes.json();
+          chatIdToUse = createData.chatId ?? createData.chat_id;
+          const newChat = createData.chat ? serverChatToChat(createData.chat) : serverChatToChat({ id: chatIdToUse, title: activeChat.title, messages: [...activeChat.messages, userMessage] });
+          setChats((prev) => prev.map((c) => (c.id === activeChat.id ? { ...newChat, id: chatIdToUse } : c)));
+          setActiveChatId(chatIdToUse);
+        }
+      }
+
+      if (userId && isServerChatId(chatIdToUse)) {
+        const res = await fetch(`/api/chat/${encodeURIComponent(chatIdToUse)}/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMessage.text,
+            ...(documentationContent ? { documentation_content: documentationContent } : {}),
+          }),
+        });
+        const data = await res.json();
+        const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
+        if (res.ok && data.chat) {
+          const updated = serverChatToChat(data.chat);
+          setChats((prev) => prev.map((c) => (c.id === chatIdToUse ? updated : c)));
+          const lastBot = updated.messages.filter((m) => m.sender === 'bot').pop();
+          if (lastBot) {
+            setTypewriter({ messageId: lastBot.id, fullText: lastBot.text, visibleLength: 0, chatId: chatIdToUse });
+          }
+        } else {
+          const botMessageId = (Date.now() + 1).toString();
+          const botMessage: Message = {
+            id: botMessageId,
+            text: '',
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setChats((prev) =>
+            prev.map((c) => (c.id === chatIdToUse ? { ...c, messages: [...c.messages, botMessage] } : c))
+          );
+          setTypewriter({ messageId: botMessageId, fullText: reply, visibleLength: 0, chatId: chatIdToUse });
+        }
+      } else if (!userId) {
+        const res = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMessage.text,
+            history: activeChat.messages
+              .filter((m) => m.sender === 'user' || m.sender === 'bot')
+              .map((m) => ({ role: m.sender === 'user' ? ('user' as const) : ('assistant' as const), content: m.text })),
+            ...(documentationContent ? { documentation_content: documentationContent } : {}),
+          }),
+        });
+        const data = await res.json();
+        const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
+        const botMessageId = (Date.now() + 1).toString();
+        const botMessage: Message = {
+          id: botMessageId,
+          text: '',
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === (chatIdToUse || activeChat.id) ? { ...chat, messages: [...chat.messages, botMessage] } : chat
+          )
+        );
+        setTypewriter({ messageId: botMessageId, fullText: reply, visibleLength: 0, chatId: chatIdToUse || activeChat.id });
+      }
     } catch {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -194,9 +462,7 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
       };
       setChats((prev) =>
         prev.map((chat) =>
-          chat.id === activeChat.id
-            ? { ...chat, messages: [...chat.messages, botMessage] }
-            : chat
+          chat.id === (chatIdToUse || activeChat.id) ? { ...chat, messages: [...chat.messages, botMessage] } : chat
         )
       );
     } finally {
@@ -252,7 +518,7 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
       {/* Main content: always the conversation */}
       <div className="flex flex-1 flex-col min-h-0 min-w-0 relative">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-          {messages.length === 0 ? (
+          {displayMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[240px] gap-5">
               <p className="doc-chat-welcome-text text-white/70 text-sm text-center">
                 Ask me anything about this documentation
@@ -288,7 +554,7 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
             </div>
           ) : (
             <>
-              {messages.map((message) =>
+              {displayMessages.map((message) =>
                 message.sender === 'user' ? (
                   <div key={message.id} className="w-full">
                     <div className="w-full rounded-lg px-4 py-2.5 bg-[#1a1a1d] text-white border border-[#262626]">
@@ -297,15 +563,27 @@ export default function DocumentationChatPanel({ orgContext, width: propWidth }:
                   </div>
                 ) : (
                   <div key={message.id} className="flex justify-start w-full">
-                    <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                      <p className="text-xs mt-1 text-white/50">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                    <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90 min-w-0">
+                      <div className="text-sm">
+                        <ChatMessageMarkdown>
+                          {typewriter?.messageId === message.id
+                            ? typewriter.fullText.slice(0, typewriter.visibleLength)
+                            : message.text}
+                        </ChatMessageMarkdown>
+                        {typewriter?.messageId === message.id && (
+                          <span className="inline-block w-2 h-4 ml-0.5 bg-white/80 animate-pulse align-middle" aria-hidden />
+                        )}
+                      </div>
+                      {typewriter?.messageId !== message.id && (
+                        <p className="text-xs mt-1 text-white/50">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )
               )}
+              {isSending && <TypingIndicator />}
               <div ref={messagesEndRef} />
             </>
           )}

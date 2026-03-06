@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSession } from 'next-auth/react';
+import ChatMessageMarkdown from '@/app/components/ChatMessageMarkdown';
 
 interface Message {
   id: string;
@@ -57,6 +59,31 @@ function getChatSubtitle(chat: Chat): string {
   return text.length > 24 ? text.slice(0, 24) + '…' : text;
 }
 
+/** Server message shape: { id, role, content?, text?, sender?, createdAt? } */
+function serverMessageToMessage(m: { id?: string; role?: string; content?: string; text?: string; sender?: string; createdAt?: string }): Message {
+  const content = (m.content ?? m.text ?? '').trim();
+  const sender = (m.sender === 'bot' || m.role === 'assistant') ? 'bot' as const : 'user' as const;
+  return {
+    id: m.id ?? `msg-${Date.now()}`,
+    text: content,
+    sender,
+    timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
+  };
+}
+
+function serverChatToChat(server: { id: string; title?: string; messages?: unknown[] }): Chat {
+  const messages = (server.messages ?? []).map((m) => serverMessageToMessage(m as Parameters<typeof serverMessageToMessage>[0]));
+  return {
+    id: server.id,
+    title: server.title ?? 'New chat',
+    messages: messages.length ? messages : [DEFAULT_WELCOME],
+  };
+}
+
+function isServerChatId(id: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(id) && !id.startsWith('chat-');
+}
+
 export interface ChatbotOrgContext {
   orgShortId: string;
 }
@@ -66,6 +93,9 @@ interface ChatbotProps {
 }
 
 export default function Chatbot({ orgContext }: ChatbotProps = {}) {
+  const { data: session, status: sessionStatus } = useSession();
+  const userId = session?.user?.id ?? null;
+
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [chats, setChats] = useState<Chat[]>(() => [createNewChat()]);
@@ -75,7 +105,63 @@ export default function Chatbot({ orgContext }: ChatbotProps = {}) {
   const [iconError, setIconError] = useState(false);
   const [headerIconError, setHeaderIconError] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  
+  const [chatsLoaded, setChatsLoaded] = useState(false);
+
+  // Load persisted chats when user is available (only server chats when logged in)
+  useEffect(() => {
+    if (sessionStatus === 'loading' || !userId) {
+      if (sessionStatus === 'unauthenticated') setChatsLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/chat/list');
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const list = data.chats ?? [];
+        if (list.length === 0) {
+          const createRes = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'New chat' }) });
+          if (!createRes.ok || cancelled) {
+            setChats([createNewChat()]);
+            setChatsLoaded(true);
+            return;
+          }
+          const createData = await createRes.json();
+          const chat = createData.chat ? serverChatToChat(createData.chat) : serverChatToChat({ id: createData.chatId ?? createData.chat_id, title: 'New chat', messages: [] });
+          if (!cancelled) {
+            setChats([chat]);
+            setActiveChatId(chat.id);
+          }
+        } else {
+          const loaded = list.map((c: { id: string; title?: string }) => ({ id: c.id, title: c.title ?? 'New chat', messages: [] as Message[] }));
+          if (!cancelled) {
+            setChats(loaded);
+            setActiveChatId(loaded[0]?.id ?? null);
+          }
+          const firstId = loaded[0]?.id;
+          if (firstId && !cancelled) {
+            try {
+              const getRes = await fetch(`/api/chat/${encodeURIComponent(firstId)}`);
+              if (getRes.ok) {
+                const getData = await getRes.json();
+                const full = serverChatToChat(getData.chat ?? getData);
+                if (!cancelled) setChats((prev) => prev.map((c) => (c.id === firstId ? full : c)));
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch {
+        if (!cancelled) setChats([createNewChat()]);
+      } finally {
+        if (!cancelled) setChatsLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, sessionStatus]);
+
   // Resolved active chat (sidebar + multiple chats)
   const activeChat = activeChatId
     ? chats.find((c) => c.id === activeChatId) ?? chats[0]
@@ -423,15 +509,44 @@ export default function Chatbot({ orgContext }: ChatbotProps = {}) {
     }
   };
 
-  const handleNewChat = () => {
-    const newChat = createNewChat();
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
-    setInputValue('');
+  const handleNewChat = async () => {
+    if (!userId) {
+      const newChat = createNewChat();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+      setInputValue('');
+      return;
+    }
+    try {
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'New chat' }) });
+      if (!res.ok) throw new Error('Failed to create chat');
+      const data = await res.json();
+      const chat = data.chat ? serverChatToChat(data.chat) : serverChatToChat({ id: data.chatId, title: 'New chat', messages: [] });
+      setChats((prev) => [chat, ...prev]);
+      setActiveChatId(chat.id);
+      setInputValue('');
+    } catch {
+      const newChat = createNewChat();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+      setInputValue('');
+    }
   };
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = async (chatId: string) => {
     setActiveChatId(chatId);
+    if (!userId || !isServerChatId(chatId)) return;
+    const chat = chats.find((c) => c.id === chatId);
+    if (chat && chat.messages.length > 0) return; // already loaded
+    try {
+      const res = await fetch(`/api/chat/${encodeURIComponent(chatId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const full = serverChatToChat(data.chat ?? data);
+      setChats((prev) => prev.map((c) => (c.id === chatId ? full : c)));
+    } catch {
+      // ignore
+    }
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -460,35 +575,90 @@ export default function Chatbot({ orgContext }: ChatbotProps = {}) {
     );
 
     setIsSending(true);
-    const history = activeChat.messages
-      .filter((m) => m.sender === 'user' || m.sender === 'bot')
-      .map((m) => ({ role: m.sender === 'user' ? 'user' as const : 'assistant' as const, content: m.text }));
+    let chatIdToUse = activeChat.id;
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage.text,
-          history,
-          orgContext: orgContext ?? undefined,
-        }),
-      });
-      const data = await res.json();
-      const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: reply,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChat.id
-            ? { ...chat, messages: [...chat.messages, botMessage] }
-            : chat
-        )
-      );
+      if (userId && !isServerChatId(activeChat.id)) {
+        // Local chat: use existing server chat if we have one (avoid creating a new doc every time), else create one
+        const existingServer = chats.find((c) => isServerChatId(c.id));
+        if (existingServer) {
+          chatIdToUse = existingServer.id;
+          setActiveChatId(chatIdToUse);
+          setChats((prev) =>
+            prev
+              .filter((c) => c.id !== activeChat.id)
+              .map((c) => (c.id === chatIdToUse ? { ...c, messages: [...c.messages, userMessage] } : c))
+          );
+        } else {
+          const createRes = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: activeChat.title === 'New chat' ? userMessage.text.slice(0, 36).trim() + (userMessage.text.length > 36 ? '…' : '') : activeChat.title,
+            }),
+          });
+          if (!createRes.ok) throw new Error('Failed to create chat');
+          const createData = await createRes.json();
+          chatIdToUse = createData.chatId ?? createData.chat_id;
+          const newChat = createData.chat ? serverChatToChat(createData.chat) : serverChatToChat({ id: chatIdToUse, title: activeChat.title, messages: [...activeChat.messages, userMessage] });
+          setChats((prev) => prev.map((c) => (c.id === activeChat.id ? { ...newChat, id: chatIdToUse } : c)));
+          setActiveChatId(chatIdToUse);
+        }
+      }
+
+      if (userId && isServerChatId(chatIdToUse)) {
+        const res = await fetch(`/api/chat/${encodeURIComponent(chatIdToUse)}/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage.text }),
+        });
+        const data = await res.json();
+        const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
+        if (res.ok) {
+          if (data.chat) {
+            const updated = serverChatToChat(data.chat);
+            setChats((prev) => prev.map((c) => (c.id === chatIdToUse ? updated : c)));
+          } else {
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              text: reply,
+              sender: 'bot',
+              timestamp: new Date(),
+            };
+            setChats((prev) => prev.map((c) => (c.id === chatIdToUse ? { ...c, messages: [...c.messages, botMessage] } : c)));
+          }
+        } else {
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: reply || 'Something went wrong.',
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setChats((prev) => prev.map((c) => (c.id === chatIdToUse ? { ...c, messages: [...c.messages, botMessage] } : c)));
+        }
+      } else if (!userId) {
+        // No userId or fallback: call legacy stateless endpoint (no persistence)
+        const res = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMessage.text,
+            history: activeChat.messages
+              .filter((m) => m.sender === 'user' || m.sender === 'bot')
+              .map((m) => ({ role: m.sender === 'user' ? ('user' as const) : ('assistant' as const), content: m.text })),
+            orgContext: orgContext ?? undefined,
+          }),
+        });
+        const data = await res.json();
+        const reply = res.ok ? (data.reply ?? '') : (data.error ?? data.details ?? 'Something went wrong.');
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: reply,
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        setChats((prev) => prev.map((c) => (c.id === (chatIdToUse || activeChat.id) ? { ...c, messages: [...c.messages, botMessage] } : c)));
+      }
     } catch (err) {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -497,11 +667,7 @@ export default function Chatbot({ orgContext }: ChatbotProps = {}) {
         timestamp: new Date(),
       };
       setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChat.id
-            ? { ...chat, messages: [...chat.messages, botMessage] }
-            : chat
-        )
+        prev.map((c) => (c.id === (chatIdToUse || activeChat.id) ? { ...c, messages: [...c.messages, botMessage] } : c))
       );
     } finally {
       setIsSending(false);
@@ -639,10 +805,10 @@ export default function Chatbot({ orgContext }: ChatbotProps = {}) {
                 </div>
               ) : (
                 <div key={message.id} className="flex justify-start w-full">
-                  <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.text}
-                    </p>
+                  <div className="w-full py-2 border-l-2 border-[var(--color-primary)]/50 pl-3 text-white/90 min-w-0">
+                    <div className="text-sm">
+                      <ChatMessageMarkdown>{message.text}</ChatMessageMarkdown>
+                    </div>
                     <p className="text-xs mt-1 text-white/50">
                       {message.timestamp.toLocaleTimeString([], {
                         hour: '2-digit',
