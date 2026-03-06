@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Red_Hat_Text, Red_Hat_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import SmoothScroll from "./components/SmoothScroll";
 
 // Use Red Hat Text as the primary sans-serif font across the site
 // Available weights for Red Hat Text in next/font: 300, 400, 500, 600, 700 (and "variable")
@@ -38,7 +39,9 @@ export default function RootLayout({
       <body
         className={`${redHatText.variable} ${redHatDisplay.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <SmoothScroll>
+          <Providers>{children}</Providers>
+        </SmoothScroll>
       </body>
     </html>
   );
