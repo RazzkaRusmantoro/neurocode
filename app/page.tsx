@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import CountUp from 'react-countup';
 import Navbar from "./components/Navbar";
+import SmoothScroll from "./components/SmoothScroll";
 
 type RevealChar = { char: string; isLetter: boolean };
 
@@ -202,7 +203,7 @@ export default function Home() {
   }, [isVisible.features]);
 
   return (
-    <>
+    <SmoothScroll>
       <Navbar />
       <div className="min-h-screen bg-[#0f0f11]">
         {/* Hero Section */}
@@ -765,6 +766,6 @@ export default function Home() {
         </footer>
 
       </div>
-    </>
+    </SmoothScroll>
   );
 }
