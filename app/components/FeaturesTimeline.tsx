@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { Compass, Network, Flame, MessageSquare, GitMerge } from 'lucide-react';
+import CountUp from 'react-countup';
 
 const features = [
   {
@@ -37,16 +38,59 @@ const features = [
   }
 ];
 
+const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*';
+
+function useTextScramble(finalText: string, trigger: boolean, duration = 1000): string {
+  const [output, setOutput] = useState(finalText);
+  const played = useRef(false);
+
+  useEffect(() => {
+    if (!trigger || played.current) return;
+    played.current = true;
+
+    const len = finalText.length;
+    const totalFrames = 30;
+    let frame = 0;
+
+    const id = setInterval(() => {
+      const progress = frame / totalFrames;
+      const revealCount = Math.floor(progress * len * 1.3);
+      let result = '';
+
+      for (let i = 0; i < len; i++) {
+        if (finalText[i] === ' ') {
+          result += ' ';
+        } else if (i < revealCount) {
+          result += finalText[i];
+        } else {
+          result += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+        }
+      }
+
+      setOutput(result);
+      frame++;
+
+      if (frame >= totalFrames) {
+        clearInterval(id);
+        setOutput(finalText);
+      }
+    }, duration / totalFrames);
+
+    return () => clearInterval(id);
+  }, [trigger, finalText, duration]);
+
+  return output;
+}
+
 export default function FeaturesTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
 
-  // Track the overall scroll progress of the container
-  // "start center" = when the top of the container hits the center of the viewport
-  // "end center" = when the bottom of the container hits the center of the viewport
+  // "end 0.85" ensures the line reaches 100% even on tall viewports where
+  // there isn't enough content below to scroll the container bottom to center.
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start center", "end center"]
+    offset: ["start center", "end 0.85"]
   });
 
   const { scrollYProgress: headingScroll } = useScroll({
@@ -59,6 +103,9 @@ export default function FeaturesTimeline() {
   const headingY = useTransform(headingScroll, [0, 0.4, 0.8, 1], [100, 0, 0, -50]);
   const headingOpacity = useTransform(headingScroll, [0, 0.3, 0.8, 1], [0, 1, 1, 0]);
   const headingScale = useTransform(headingScroll, [0, 0.3, 0.8, 1], [0.9, 1, 1, 0.95]);
+
+  const headingInView = useInView(headingRef, { once: true, margin: "-5%" });
+  const scrambledText = useTextScramble('in seconds.', headingInView, 1000);
 
   return (
     <section className="py-24 md:py-32 relative bg-[#0a0a0b] overflow-hidden">
@@ -77,8 +124,8 @@ export default function FeaturesTimeline() {
         >
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-tight">
             From codebase to context <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">
-              in seconds.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600 inline-block">
+              {scrambledText}
             </span>
           </h2>
           <p className="text-white/60 max-w-2xl text-lg md:text-xl leading-relaxed font-medium">
@@ -100,20 +147,14 @@ export default function FeaturesTimeline() {
           </div>
 
           <div className="space-y-24 md:space-y-40 relative z-10 pt-10 pb-10">
-            {features.map((feature, index) => {
-              const isEven = index % 2 === 0;
-              // Pass the global scrollYProgress and the index so the item knows when the line reaches it
-              return (
-                <TimelineItem 
-                  key={feature.id} 
-                  feature={feature} 
-                  index={index} 
-                  isEven={isEven} 
-                  totalItems={features.length}
-                  scrollYProgress={scrollYProgress}
-                />
-              );
-            })}
+            {features.map((feature, index) => (
+              <TimelineItem 
+                key={feature.id} 
+                feature={feature} 
+                index={index} 
+                isEven={index % 2 === 0} 
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -121,25 +162,23 @@ export default function FeaturesTimeline() {
   );
 }
 
-function TimelineItem({ feature, index, isEven, totalItems, scrollYProgress }: { feature: any, index: number, isEven: boolean, totalItems: number, scrollYProgress: any }) {
+function TimelineItem({ feature, index, isEven }: { feature: typeof features[number], index: number, isEven: boolean }) {
   const itemRef = useRef<HTMLDivElement>(null);
-  
-  // Adjusted trigger point: We want the trigger to happen exactly when the moving line
-  // (which is 0 at top, 1 at bottom of the entire container) reaches this item's circle.
-  // We use an offset based on its index so they trigger sequentially.
-  const triggerPoint = index === 0 ? 0.05 : (index / totalItems) + 0.05;
-  
+
+  // Each item tracks its own scroll position relative to the viewport.
+  // Triggers when the item's center crosses from the 70% line toward the 40% line.
+  const { scrollYProgress: itemProgress } = useScroll({
+    target: itemRef,
+    offset: ["center 0.7", "center 0.4"]
+  });
+
   const [isTriggered, setIsTriggered] = useState(false);
 
   useEffect(() => {
-    return scrollYProgress.onChange((latest: number) => {
-      if (latest >= triggerPoint && !isTriggered) {
-        setIsTriggered(true);
-      } else if (latest < triggerPoint && isTriggered) {
-        setIsTriggered(false);
-      }
+    return itemProgress.onChange((latest: number) => {
+      setIsTriggered(latest > 0);
     });
-  }, [scrollYProgress, triggerPoint, isTriggered]);
+  }, [itemProgress]);
 
   const Icon = feature.icon;
 
@@ -165,16 +204,17 @@ function TimelineItem({ feature, index, isEven, totalItems, scrollYProgress }: {
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="absolute left-8 md:left-1/2 top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-12 h-12 md:w-16 md:h-16 rounded-full z-20 flex items-center justify-center border bg-[#0a0a0b]"
       >
-        {/* Ripple effect */}
-        {isTriggered && (
-          <motion.div 
-            initial={{ scale: 1, opacity: 0.8 }}
-            animate={{ scale: 3, opacity: 0 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+        {/* Ripple effect — staggered rings to avoid flash on repeat */} 
+        {isTriggered && [0, 0.6, 1.2].map((delay) => (
+          <motion.div
+            key={delay}
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{ scale: 3, opacity: [0, 0.5, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut", delay }}
             className="absolute inset-0 border border-orange-500 rounded-full pointer-events-none"
             style={{ zIndex: -1 }}
           />
-        )}
+        ))}
         
         {/* Core glow */}
         {isTriggered && (
@@ -232,8 +272,23 @@ function TimelineItem({ feature, index, isEven, totalItems, scrollYProgress }: {
   );
 }
 
-function FeatureCard({ feature, index, align, isActive }: { feature: any, index: number, align: 'left' | 'right', isActive: boolean }) {
-  const number = String(index + 1).padStart(2, '0');
+const formatNumber = (n: number) => String(Math.round(n)).padStart(2, '0');
+
+function FeatureCard({ feature, index, align, isActive }: { feature: typeof features[number], index: number, align: 'left' | 'right', isActive: boolean }) {
+  const targetNumber = index + 1;
+  const [shouldCount, setShouldCount] = useState(false);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (isActive && !hasAnimated.current) {
+      hasAnimated.current = true;
+      setShouldCount(true);
+    }
+  }, [isActive]);
+
+  const numberDisplay = shouldCount
+    ? <CountUp start={0} end={targetNumber} duration={1.0} formattingFn={formatNumber} />
+    : '00';
   
   return (
     <div className="relative group w-full max-w-[480px]">
@@ -246,7 +301,7 @@ function FeatureCard({ feature, index, align, isActive }: { feature: any, index:
       } font-mono font-extrabold text-[8rem] lg:text-[12rem] leading-none transition-all duration-700 select-none pointer-events-none ${
         isActive ? 'text-orange-500/10 scale-100' : 'text-white/[0.02] scale-90'
       }`}>
-        {number}
+        {numberDisplay}
       </div>
 
       {/* Main Card */}
@@ -258,7 +313,7 @@ function FeatureCard({ feature, index, align, isActive }: { feature: any, index:
         <div className={`md:hidden font-mono font-bold text-5xl mb-6 transition-colors duration-500 ${
           isActive ? 'text-orange-500/20' : 'text-white/10'
         }`}>
-          {number}
+          {numberDisplay}
         </div>
 
         <div className={`flex flex-col relative z-10 ${align === 'right' ? 'items-end text-right' : 'items-start text-left'}`}>

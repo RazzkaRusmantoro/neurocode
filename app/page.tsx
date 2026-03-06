@@ -265,7 +265,24 @@ export default function Home() {
                       NeuroCode isn't just a platform; it's a new way of understanding code. We are an <span className="text-white font-medium">AI-driven organization</span> where intelligent agents autonomously document, analyze, and optimize your entire codebase.
                     </p>
                     <p>
-                      We believe documentation should be <span className="text-[var(--color-accent)] font-medium italic">automatically generated</span>. By leveraging multi-agent AI systems, we close the gap between code complexity and developer understanding, allowing teams to onboard faster while AI handles the heavy lifting.
+                      We believe documentation should be {' '}
+                      <span className="relative inline-block">
+                        <span
+                          className={`absolute inset-y-[-2px] inset-x-[-6px] bg-[var(--color-accent)]/15 rounded-sm transition-transform duration-1000 ease-out origin-left ${
+                            isVisible.features ? 'scale-x-100' : 'scale-x-0'
+                          }`}
+                          style={{ transitionDelay: '600ms' }}
+                        />
+                        <span
+                          className={`relative font-medium italic transition-colors duration-700 ${
+                            isVisible.features ? 'text-[var(--color-accent)]' : 'text-white/70'
+                          }`}
+                          style={{ transitionDelay: '600ms' }}
+                        >
+                          automatically generated
+                        </span>
+                      </span>
+                      . By leveraging multi-agent AI systems, we close the gap between code complexity and developer understanding, allowing teams to onboard faster while AI handles the heavy lifting.
                     </p>
                   </div>
                   
