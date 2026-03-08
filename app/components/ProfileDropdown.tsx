@@ -8,9 +8,10 @@ import { useLoadingBar } from '../contexts/LoadingBarContext';
 interface ProfileDropdownProps {
   userEmail?: string | null;
   userName?: string | null;
+  userImageUrl?: string | null;
 }
 
-export default function ProfileDropdown({ userEmail, userName }: ProfileDropdownProps) {
+export default function ProfileDropdown({ userEmail, userName, userImageUrl }: ProfileDropdownProps) {
   const router = useRouter();
   const { startLoading } = useLoadingBar();
   const [isOpen, setIsOpen] = useState(false);
@@ -53,11 +54,11 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
         className="flex items-center gap-2 px-3 py-2 rounded hover:bg-white/5 transition-colors duration-200 cursor-pointer"
         aria-label="Profile"
       >
-        <img 
-          src="/Pfp-placeholder.png" 
-          alt="Profile" 
-          className="w-8 h-8 rounded object-cover"
-        />
+        {userImageUrl ? (
+          <img src={userImageUrl} alt="Profile" className="w-8 h-8 rounded object-cover" />
+        ) : (
+          <img src="/Pfp-placeholder.png" alt="Profile" className="w-8 h-8 rounded object-cover" />
+        )}
         {userName && (
           <span className="text-sm text-white/70 hover:text-white">
             {userName}
@@ -76,11 +77,11 @@ export default function ProfileDropdown({ userEmail, userName }: ProfileDropdown
         {/* Profile Header */}
         <div className="px-4 py-3 border-b border-[#262626]">
           <div className="flex items-center gap-3">
-            <img 
-              src="/Pfp-placeholder.png" 
-              alt="Profile" 
-              className="w-10 h-10 rounded object-cover"
-            />
+            {userImageUrl ? (
+              <img src={userImageUrl} alt="Profile" className="w-10 h-10 rounded object-cover" />
+            ) : (
+              <img src="/Pfp-placeholder.png" alt="Profile" className="w-10 h-10 rounded object-cover" />
+            )}
             <div className="flex flex-col">
               <span className="text-sm font-medium text-white">
                 {userName || 'User'}

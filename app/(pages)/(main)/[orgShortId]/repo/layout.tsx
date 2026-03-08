@@ -2,8 +2,14 @@ import { redirect } from 'next/navigation';
 import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getUserOrganizations } from '@/actions/organization';
 import { getCachedSession } from '@/lib/session';
+import { getCachedUserById } from '@/lib/models/user';
 import { getRepositoriesByOrganization } from '@/lib/models/repository';
 import RepoLayoutClient from '../../components/RepoLayoutClient';
+
+function getGitHubAvatarUrl(user: { github?: { status: string; providerUserId?: string } } | null): string | null {
+  if (!user?.github?.providerUserId || user.github.status !== 'active') return null;
+  return `https://avatars.githubusercontent.com/u/${user.github.providerUserId}`;
+}
 
 export default async function RepoLayout({ 
   children,
@@ -68,11 +74,15 @@ export default async function RepoLayout({
     addedAt: repo.addedAt.toISOString(),
   }));
 
+  const user = await getCachedUserById(session.user.id);
+  const userImageUrl = getGitHubAvatarUrl(user);
+
   return (
     <RepoLayoutClient
       userEmail={session.user.email}
       userName={session.user.name}
       userId={session.user.id}
+      userImageUrl={userImageUrl}
       organizations={organizations}
       selectedOrganization={selectedOrganization}
       repositories={repositoriesWithId}

@@ -9,6 +9,7 @@ interface MainLayoutClientProps {
   userEmail?: string | null;
   userName?: string | null;
   userId?: string | null;
+  userImageUrl?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
   /** When true, hide the app sidebar (e.g. onboarding path page uses its own doc sidebar) */
@@ -19,6 +20,7 @@ export default function MainLayoutClient({
   userEmail,
   userName,
   userId,
+  userImageUrl,
   organizations,
   selectedOrganization,
   hideSidebar = false,
@@ -39,6 +41,7 @@ export default function MainLayoutClient({
           onToggle={toggleSidebar}
           userName={userName}
           userEmail={userEmail}
+          userImageUrl={userImageUrl}
         />
       )}
       
@@ -48,6 +51,7 @@ export default function MainLayoutClient({
         <DashboardNavbar 
           userEmail={userEmail} 
           userName={userName}
+          userImageUrl={userImageUrl}
           organizations={organizations}
           selectedOrganization={selectedOrganization}
         />

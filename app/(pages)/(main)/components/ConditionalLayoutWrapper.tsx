@@ -9,6 +9,7 @@ interface ConditionalLayoutWrapperProps {
   userEmail?: string | null;
   userName?: string | null;
   userId?: string | null;
+  userImageUrl?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export default function ConditionalLayoutWrapper({
   userEmail,
   userName,
   userId,
+  userImageUrl,
   organizations,
   selectedOrganization,
   children,
@@ -39,6 +41,7 @@ export default function ConditionalLayoutWrapper({
         userEmail={userEmail}
         userName={userName}
         userId={userId}
+        userImageUrl={userImageUrl}
         organizations={organizations}
         selectedOrganization={selectedOrganization}
       >
@@ -53,6 +56,7 @@ export default function ConditionalLayoutWrapper({
       userEmail={userEmail}
       userName={userName}
       userId={userId}
+      userImageUrl={userImageUrl}
       organizations={organizations}
       selectedOrganization={selectedOrganization}
     >

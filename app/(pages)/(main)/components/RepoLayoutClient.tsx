@@ -30,6 +30,7 @@ interface RepoLayoutClientProps {
   userEmail?: string | null;
   userName?: string | null;
   userId?: string | null;
+  userImageUrl?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
   repositories: RepositoryWithId[];
@@ -39,6 +40,7 @@ export default function RepoLayoutClient({
   userEmail,
   userName,
   userId,
+  userImageUrl,
   organizations,
   selectedOrganization,
   repositories,
@@ -86,6 +88,7 @@ export default function RepoLayoutClient({
             onToggle={toggleSidebar}
             userName={userName}
             userEmail={userEmail}
+            userImageUrl={userImageUrl}
           />
         )}
 
@@ -95,6 +98,7 @@ export default function RepoLayoutClient({
             <DashboardNavbar
               userEmail={userEmail}
               userName={userName}
+              userImageUrl={userImageUrl}
               organizations={organizations}
               selectedOrganization={selectedOrganization}
               repositories={repositories}

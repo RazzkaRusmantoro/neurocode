@@ -22,6 +22,7 @@ interface OnboardingPathLayoutClientProps {
   userEmail?: string | null;
   userName?: string | null;
   userId?: string | null;
+  userImageUrl?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export default function OnboardingPathLayoutClient({
   userEmail,
   userName,
   userId,
+  userImageUrl,
   organizations,
   selectedOrganization,
   children,
@@ -59,6 +61,7 @@ export default function OnboardingPathLayoutClient({
           <DashboardNavbar
             userEmail={userEmail}
             userName={userName}
+            userImageUrl={userImageUrl}
             organizations={organizations}
             selectedOrganization={selectedOrganization}
           />

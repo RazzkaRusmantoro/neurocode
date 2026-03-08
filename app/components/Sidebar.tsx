@@ -11,6 +11,7 @@ interface SidebarProps {
   onToggle: () => void;
   userName?: string | null;
   userEmail?: string | null;
+  userImageUrl?: string | null;
 }
 
 // Types for menu items
@@ -247,6 +248,7 @@ export default function Sidebar({
   onToggle,
   userName: propUserName,
   userEmail: propUserEmail,
+  userImageUrl,
 }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -509,11 +511,11 @@ export default function Sidebar({
           <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-2.5'} p-2.5`}>
             {/* Profile Picture */}
             <div className="flex-shrink-0">
-              <img 
-                src="/Pfp-placeholder.png" 
-                alt="Profile" 
-                className="w-10 h-10 rounded object-cover shadow-sm"
-              />
+              {userImageUrl ? (
+                <img src={userImageUrl} alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm" />
+              ) : (
+                <img src="/Pfp-placeholder.png" alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm" />
+              )}
             </div>
             {/* Full Name */}
             {!isMinimized && (

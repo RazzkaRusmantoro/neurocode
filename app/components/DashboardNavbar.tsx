@@ -13,6 +13,7 @@ interface RepositoryWithId extends SerializedRepository {
 interface DashboardNavbarProps {
   userEmail?: string | null;
   userName?: string | null;
+  userImageUrl?: string | null;
   organizations: OrganizationWithId[];
   selectedOrganization: OrganizationWithId | null;
   repositories?: RepositoryWithId[];
@@ -22,6 +23,7 @@ interface DashboardNavbarProps {
 export default function DashboardNavbar({ 
   userEmail, 
   userName,
+  userImageUrl,
   organizations,
   selectedOrganization,
   repositories,
@@ -92,7 +94,7 @@ export default function DashboardNavbar({
             </button>
 
             {/* Profile Dropdown */}
-            <ProfileDropdown userEmail={userEmail} userName={userName} />
+            <ProfileDropdown userEmail={userEmail} userName={userName} userImageUrl={userImageUrl} />
           </div>
         </div>
       </div>
