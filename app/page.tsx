@@ -306,7 +306,7 @@ export default function Home() {
   return (
     <SmoothScroll>
       <Navbar />
-      <div className="min-h-screen bg-[#0f0f11]">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0f0f11]">
         {/* Hero Section */}
         <section 
           ref={heroRef}
@@ -343,34 +343,19 @@ export default function Home() {
 
             <div className="flex flex-col items-center gap-8 mt-8">
               {/* CTA Button */}
-              <button className={`relative group px-8 py-4 bg-[#171717] border border-[#262626] hover:border-[var(--color-primary)]/50 text-white font-semibold rounded-lg cursor-pointer transition-all duration-500 flex items-center gap-3 overflow-hidden shadow-2xl ${
+              <button className={`relative group cta-hero-idle hover:[animation-play-state:paused] px-8 py-3.5 bg-[#171717] border border-[#262626] hover:border-[var(--color-primary)]/60 hover:scale-[1.02] active:scale-[0.98] text-white font-medium rounded-full cursor-pointer transition-all duration-300 flex items-center gap-3 overflow-hidden ${
                 isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`} style={{ transitionDelay: isVisible.hero ? '150ms' : '0ms' }}>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-primary)]/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                <div className="absolute -inset-1 bg-[var(--color-primary)]/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <svg className="w-5 h-5 text-[var(--color-primary)] relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <div className="absolute inset-0 rounded-full bg-[var(--color-primary)]/0 group-hover:bg-[var(--color-primary)]/10 transition-colors duration-300" />
+                <div className="absolute -inset-px rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[var(--color-primary)]/20 blur-sm" aria-hidden />
+                <svg className="w-4 h-4 relative z-10 text-[var(--color-primary)]/80 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M8 5v14l11-7L8 5z" />
                 </svg>
-                <span className="relative z-10">Get Started</span>
-                <svg className="w-5 h-5 relative z-10 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <span className="relative z-10 tracking-tight">Get Started</span>
+                <svg className="w-4 h-4 relative z-10 text-white/60 group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </button>
-
-              {/* Fake AI Loading Effect */}
-              <div className={`w-full max-w-sm h-12 flex items-center justify-between px-4 bg-[#171717]/80 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.5)] ${
-                isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`} style={{ transitionDelay: isVisible.hero ? '200ms' : '0ms' }}>
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-[var(--color-primary)]/10 to-transparent opacity-50 animate-pulse" />
-                <div className="flex items-center gap-3 relative z-10">
-                  <div className="w-4 h-4 rounded-full border-2 border-[var(--color-primary)] border-t-transparent animate-spin" />
-                  <span className="text-sm text-white/70 font-mono tracking-tight">indexing_repo_context...</span>
-                </div>
-                <div className="flex items-center gap-2 relative z-10">
-                  <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
-                  <span className="text-xs text-[var(--color-primary)] font-mono font-bold">LIVE</span>
-                </div>
-              </div>
             </div>
 
             {/* Video */}
@@ -380,7 +365,7 @@ export default function Home() {
               {/* Glow Effect */}
               <div className="absolute inset-0 bg-[var(--color-primary)]/40 rounded-2xl blur-[80px] -z-10 opacity-75"></div>
               <video
-                src="/videos/landing-video.mp4"
+                src="/videos/Product_Preview.mp4"
                 autoPlay
                 loop
                 muted
@@ -782,8 +767,8 @@ export default function Home() {
 
         <FeaturesTimeline />
 
-        <section className="relative bg-[#0a0a0b] overflow-visible">
-          <div className="container mx-auto w-full max-w-6xl px-4 pt-0 pb-32 md:pb-44">
+        <section className="relative overflow-x-hidden bg-[#0a0a0b]">
+          <div className="container mx-auto w-full max-w-6xl overflow-x-hidden px-4 pt-0 pb-32 md:pb-44">
             <HorizontalAccordion items={accordionFeatures} />
           </div>
         </section>

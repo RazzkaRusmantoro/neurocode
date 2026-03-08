@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+html {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -913,5 +926,27 @@ body {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+}
+
+.cta-hero-idle {
+  animation: cta-hero-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes cta-hero-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(var(--color-primary-rgb), 0);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-hero-idle {
+    animation: none;
   }
 }
