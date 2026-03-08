@@ -132,7 +132,7 @@ export default function FeaturesTimeline() {
             </span>
           </h2>
           <p className="text-white/60 max-w-2xl text-lg md:text-xl leading-relaxed font-medium">
-            Our five-step intelligent pipeline handles everything automatically — <br className="hidden md:block" />
+            Our intelligent pipeline handles everything automatically — <br className="hidden md:block" />
             just connect your repo and let AI do the rest.
           </p>
         </motion.div>
