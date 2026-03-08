@@ -85,6 +85,7 @@ function useTextScramble(finalText: string, trigger: boolean, duration = 1000): 
 export default function FeaturesTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
+  const scrollCtaRef = useRef<HTMLDivElement>(null);
 
   // "end 0.85" ensures the line reaches 100% even on tall viewports where
   // there isn't enough content below to scroll the container bottom to center.
@@ -106,6 +107,8 @@ export default function FeaturesTimeline() {
 
   const headingInView = useInView(headingRef, { once: true, margin: "-5%" });
   const scrambledText = useTextScramble('in seconds.', headingInView, 1000);
+
+  const scrollCtaInView = useInView(scrollCtaRef, { once: false, amount: 0.5 });
 
   return (
     <section className="py-24 md:py-32 relative bg-[#0a0a0b] overflow-hidden">
@@ -159,6 +162,22 @@ export default function FeaturesTimeline() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* There's more. — equal gap above and below */}
+      <div ref={scrollCtaRef} className="flex flex-col items-center pt-12 pb-7 md:pt-16 md:pb-10 relative z-10">
+        <motion.p
+          initial={false}
+          animate={
+            scrollCtaInView
+              ? { opacity: 1, y: 0, scale: 1 }
+              : { opacity: 0, y: 24, scale: 0.96 }
+          }
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white/70 tracking-tight"
+        >
+          There's more.
+        </motion.p>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion, useInView } from 'framer-motion';
 import CountUp from 'react-countup';
 import Navbar from "./components/Navbar";
 import SmoothScroll from "./components/SmoothScroll";
@@ -60,6 +61,106 @@ function useInfinityReveal(trigger: boolean, duration = 2400): RevealChar[] {
 }
 import WorkflowCurvedConnector from "./components/WorkflowCurvedConnector";
 import FeaturesTimeline from "./components/FeaturesTimeline";
+import { HorizontalAccordion } from "./components/HorizontalAccordion";
+import { CtaButton } from "./components/CtaButton";
+
+const accordionFeatures = [
+  {
+    id: "live-docs",
+    title: "Live Documentation",
+    description:
+      "AI-generated docs that stay in sync with your codebase. Connect your repo and get architecture overviews, API references, and guides that update automatically.",
+  },
+  {
+    id: "onboarding-paths",
+    title: "Onboarding Paths",
+    description:
+      "Personalized paths for new developers. Generate role-specific modules covering setup, architecture, and contributing\u2014so they ship in hours, not weeks.",
+  },
+  {
+    id: "rag-pipeline",
+    title: "RAG Pipeline",
+    description:
+      "Your code flows through ingest, chunk, embed, index, and generate. One pipeline turns repositories into searchable, queryable context for AI and humans.",
+  },
+  {
+    id: "uml-diagrams",
+    title: "UML & Diagrams",
+    description:
+      "Sequence, class, use-case, and state diagrams generated from your code. Navigate and share architecture visually without maintaining diagrams by hand.",
+  },
+  {
+    id: "glossary-refs",
+    title: "Glossary & Code Reference",
+    description:
+      "Central glossary and code reference views. Definitions, usages, and cross-links so everyone speaks the same language about your codebase.",
+  },
+];
+
+const CTA_TEXT = "Ready to get started?";
+const CTA_ORANGE_START = 12; // "started?" starts at index 12
+
+function CTAStillMore() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, amount: 0.3 });
+  const prevInView = useRef(false);
+  const [scrollKey, setScrollKey] = useState(0);
+  const letters = CTA_TEXT.split('');
+
+  useEffect(() => {
+    if (inView && !prevInView.current) setScrollKey((k) => k + 1);
+    prevInView.current = inView;
+  }, [inView]);
+
+  return (
+    <section ref={ref} className="relative bg-[#0a0a0b] overflow-hidden">
+      <div className="container relative mx-auto max-w-6xl px-4 py-40 md:py-56 lg:py-64 flex flex-col items-center justify-center text-center">
+        {/* 2% circle glow outside (centered) — replay entrance every time section is scrolled into view */}
+        <motion.div
+          key={`glow-${scrollKey}`}
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,600px)] h-[min(80vw,600px)] rounded-full bg-orange-500/[0.02] blur-[80px]"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+          transition={{ duration: inView ? 0.35 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+          aria-hidden
+        />
+        {/* NeuroCode — replay entrance every time section is scrolled into view */}
+        <motion.span
+          key={`neurocode-${scrollKey}`}
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono font-bold select-none whitespace-nowrap text-[8rem] md:text-[12rem] lg:text-[14rem] leading-none bg-clip-text text-transparent"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.18) 0%, rgba(249, 115, 22, 0.08) 40%, rgba(249, 115, 22, 0.05) 100%)',
+            WebkitBackgroundClip: 'text',
+          }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
+          transition={{ duration: inView ? 0.35 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+          aria-hidden
+        >
+          NeuroCode
+        </motion.span>
+        <p className="relative z-10 text-3xl md:text-4xl lg:text-5xl font-semibold text-white/80 tracking-tight mb-10 inline-flex flex-wrap justify-center">
+          {letters.map((char, i) => (
+            <motion.span
+              key={i}
+              className={`inline-block ${i >= CTA_ORANGE_START ? 'text-orange-400' : ''}`}
+              initial={{ y: 28, opacity: 0 }}
+              animate={inView ? { y: 0, opacity: 1 } : { y: 28, opacity: 0 }}
+              transition={{
+                duration: inView ? 0.25 : 0.1,
+                delay: inView ? i * 0.02 : 0,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </motion.span>
+          ))}
+        </p>
+        <CtaButton href="/login" text="Join now" />
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const heroRef = useRef<HTMLElement | null>(null);
@@ -680,6 +781,15 @@ export default function Home() {
         </section>
 
         <FeaturesTimeline />
+
+        <section className="relative bg-[#0a0a0b] overflow-visible">
+          <div className="container mx-auto w-full max-w-6xl px-4 pt-0 pb-32 md:pb-44">
+            <HorizontalAccordion items={accordionFeatures} />
+          </div>
+        </section>
+
+        {/* CTA: Ready to get started? */}
+        <CTAStillMore />
 
         {/* Footer */}
         <footer className="relative border-t border-[#262626] bg-[#171717] overflow-hidden">
