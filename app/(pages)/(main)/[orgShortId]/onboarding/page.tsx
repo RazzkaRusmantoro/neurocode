@@ -26,7 +26,7 @@ function PathCard({
   return (
     <div
       onClick={onOpen}
-      className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-lg p-4 hover:border-[var(--color-primary)]/50 hover:bg-[#171717]/70 transition-all cursor-pointer"
+      className="bg-[#262626]/50 border border-[#262626] rounded-lg p-4 hover:border-[var(--color-primary)]/50 hover:bg-[#262626]/70 transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="text-base font-semibold text-white flex-1">{path.title}</h4>
@@ -73,10 +73,10 @@ function LearningPathCarouselCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => e.key === 'Enter' && onOpen()}
-      className="flex-shrink-0 w-80 bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-lg overflow-hidden hover:border-[var(--color-primary)]/50 hover:bg-[#171717]/70 transition-all group cursor-pointer"
+      className="flex-shrink-0 w-80 bg-[#262626]/50 border border-[#262626] rounded-lg overflow-hidden hover:border-[var(--color-primary)]/50 hover:bg-[#262626]/70 transition-all group cursor-pointer"
     >
       {showTopBanner && (
-        <div className="relative h-32 bg-gradient-to-br from-[#262626] to-[#171717]" />
+        <div className="relative h-32 bg-gradient-to-br from-[#262626] to-[#1a1a1a]" />
       )}
       <div className="p-4 flex flex-col">
         <h3 className="text-base font-semibold text-white mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">{path.title}</h3>
@@ -523,7 +523,7 @@ export default function OnboardingPage() {
                             className={`p-4 text-center rounded-xl border transition-all duration-200 group hover:-translate-y-1 cursor-pointer ${
                               role === opt.id 
                                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white' 
-                                : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50 text-white/70'
+                                : 'border-[#262626] hover:border-[#404040] bg-[#262626]/50 text-white/70'
                             }`}
                           >
                             <div className="font-medium text-sm">{opt.title}</div>
@@ -561,7 +561,7 @@ export default function OnboardingPage() {
                             className={`w-full p-4 text-left rounded-xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
                               experience === opt.id 
                                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
-                                : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                                : 'border-[#262626] hover:border-[#404040] bg-[#262626]/50'
                             }`}
                           >
                             <div>
@@ -606,7 +606,7 @@ export default function OnboardingPage() {
                             className={`w-full p-4 text-left rounded-xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
                               teamSize === opt.id 
                                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
-                                : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                                : 'border-[#262626] hover:border-[#404040] bg-[#262626]/50'
                             }`}
                           >
                             <div>
@@ -651,7 +651,7 @@ export default function OnboardingPage() {
                             className={`p-4 text-left rounded-xl border transition-all duration-200 group hover:-translate-y-1 cursor-pointer ${
                               learningStyle === opt.id 
                                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' 
-                                : 'border-[#262626] hover:border-[#404040] bg-[#171717]/50'
+                                : 'border-[#262626] hover:border-[#404040] bg-[#262626]/50'
                             }`}
                           >
                             <div className="font-medium text-white mb-1">{opt.title}</div>
@@ -858,7 +858,7 @@ export default function OnboardingPage() {
                           } ${
                             selectedPathsToGenerate.includes(path.id)
                               ? 'bg-[var(--color-primary)]/10 ring-1 ring-[var(--color-primary)]/50' 
-                              : 'bg-[#171717] hover:bg-[#212121] ring-1 ring-[#262626]'
+                              : 'bg-[#262626] hover:bg-[#333333] ring-1 ring-[#262626]'
                           }`}
                           style={{ transitionDelay: `${index * 100}ms` }}
                         >
@@ -991,7 +991,7 @@ export default function OnboardingPage() {
               {!allCompleted && (
                 <>
                   <div className="flex items-center gap-4 mb-8">
-                    <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded-lg px-4 py-2">
+                    <div className="bg-[#262626]/50 border border-[#262626] rounded-lg px-4 py-2">
                       <div className="text-xs text-white/50 mb-1">Overall Progress</div>
                       <div className="flex items-center gap-3">
                         <div className="w-32 bg-[#262626] rounded-full h-2">
@@ -1058,7 +1058,7 @@ export default function OnboardingPage() {
                         />
                       ))}
                       {waitingPaths.length === 0 && (
-                        <div className="bg-[#171717]/30 border border-[#262626] rounded-lg p-6 text-center">
+                        <div className="bg-[#262626]/30 border border-[#262626] rounded-lg p-6 text-center">
                           <p className="text-white/50 text-sm">All paths started or completed</p>
                         </div>
                       )}
@@ -1079,7 +1079,7 @@ export default function OnboardingPage() {
                         />
                       ))}
                       {inProgressPaths.length === 0 && (
-                        <div className="bg-[#171717]/30 border border-[#262626] rounded-lg p-6 text-center">
+                        <div className="bg-[#262626]/30 border border-[#262626] rounded-lg p-6 text-center">
                           <p className="text-white/50 text-sm">No paths in progress</p>
                         </div>
                       )}
@@ -1100,7 +1100,7 @@ export default function OnboardingPage() {
                         />
                       ))}
                       {completedPaths.length === 0 && (
-                        <div className="bg-[#171717]/30 border border-[#262626] rounded-lg p-6 text-center">
+                        <div className="bg-[#262626]/30 border border-[#262626] rounded-lg p-6 text-center">
                           <p className="text-white/50 text-sm">Complete a path and pass the quiz to see it here</p>
                         </div>
                       )}
@@ -1128,7 +1128,7 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Org Paths */}
                 <div 
-                  className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#171717] to-[#121215] group cursor-pointer flex flex-col"
+                  className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#262626] to-[#121215] group cursor-pointer flex flex-col"
                   onClick={() => setShowPathsModal(true)}
                 >
                   {/* Decorative background glow */}
@@ -1156,7 +1156,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Personalized Doc */}
-                <div className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#171717] to-[#121215] group cursor-pointer flex flex-col">
+                <div className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#262626] to-[#121215] group cursor-pointer flex flex-col">
                   {/* Decorative background glow */}
                   <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
                   

@@ -119,7 +119,7 @@ export default function DashboardPage() {
 
       {/* 2. Impact Activity (Last 7 Days) */}
       <section className="mb-8">
-        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded p-6">
+        <div className="bg-[#262626]/50 border border-[#262626] rounded p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-white mb-1">Impact Activity</h3>
             <p className="text-sm text-white/50">Trend of changes affecting your assigned features</p>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           {ATTENTION_ITEMS.map((item, idx) => (
             <div
               key={idx}
-              className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded p-6 flex flex-col"
+              className="bg-[#262626]/50 border border-[#262626] rounded p-6 flex flex-col"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <h4 className="text-base font-bold text-white">{item.module}</h4>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
       {/* 4. Recent Changes Relevant to You */}
       <section>
         <h3 className="text-lg font-semibold text-white mb-4">Recent Changes Relevant to You</h3>
-        <div className="bg-[#171717]/50 backdrop-blur-sm border border-[#262626] rounded overflow-hidden">
+        <div className="bg-[#262626]/50 border border-[#262626] rounded overflow-hidden">
           <div className="divide-y divide-[#262626]">
             {RECENT_CHANGES.map((row, idx) => (
               <div
