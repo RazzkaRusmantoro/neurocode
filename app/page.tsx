@@ -791,6 +791,21 @@ export default function Home() {
         {/* CTA: Ready to get started? */}
         <CTAStillMore />
 
+        {/* Back to top */}
+        <div className="flex justify-center bg-[#171717] py-6">
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-orange-500/40 hover:bg-white/10 hover:text-white"
+            aria-label="Back to top"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            Back to top
+          </button>
+        </div>
+
         {/* Footer */}
         <footer className="relative border-t border-[#262626] bg-[#171717] overflow-hidden">
           <div className="container mx-auto px-4 py-16">
