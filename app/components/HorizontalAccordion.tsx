@@ -295,7 +295,7 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
   // Set initial Live Docs gradient position on expand
   useEffect(() => {
     const isLiveDocsExpanded =
-      hoveredIndex !== null && items[hoveredIndex]?.id === "live-docs";
+      hoveredIndex !== null && items[hoveredIndex]?.id === "code-chat";
     if (!isLiveDocsExpanded) return;
     const raf = requestAnimationFrame(() => {
       const el = liveDocsContentRef.current;
@@ -312,7 +312,7 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
   // Smooth lerp loop for Live Docs (updates ref only — no setState)
   const liveDocsExpandedRef = useRef(false);
   liveDocsExpandedRef.current =
-    hoveredIndex !== null && items[hoveredIndex]?.id === "live-docs";
+    hoveredIndex !== null && items[hoveredIndex]?.id === "code-chat";
 
   useEffect(() => {
     let rafId: number;
@@ -350,7 +350,7 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
   // Set initial UML gradient position on expand
   useEffect(() => {
     const isUmlExpanded =
-      hoveredIndex !== null && items[hoveredIndex]?.id === "uml-diagrams";
+      hoveredIndex !== null && items[hoveredIndex]?.id === "rag-pipeline";
     if (!isUmlExpanded) return;
     const raf = requestAnimationFrame(() => {
       const el = umlContentRef.current;
@@ -414,11 +414,11 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
                 onMouseEnter={() => handleMouseEnter(index)}
                 onMouseLeave={handleMouseLeave}
                 onMouseMove={
-                  item.id === "live-docs" && isExpanded
+                  item.id === "code-chat" && isExpanded
                     ? handleLiveDocsMouseMove
                     : item.id === "glossary-refs" && isExpanded
                       ? handleGlossaryRefsMouseMove
-                      : item.id === "uml-diagrams" && isExpanded
+                      : item.id === "rag-pipeline" && isExpanded
                         ? handleUmlMouseMove
                         : undefined
                 }
@@ -523,11 +523,11 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
 
                     <motion.div
                       ref={
-                        item.id === "live-docs"
+                        item.id === "code-chat"
                           ? liveDocsRefCb
                           : item.id === "glossary-refs"
                             ? glossaryRefsRefCb
-                            : item.id === "uml-diagrams"
+                            : item.id === "rag-pipeline"
                               ? umlRefCb
                               : undefined
                       }
@@ -545,21 +545,21 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
                         fontFamily: "var(--font-red-hat-display)",
                       }}
                       onMouseMove={
-                        item.id === "live-docs" && isExpanded
+                        item.id === "code-chat" && isExpanded
                           ? handleLiveDocsMouseMove
                           : item.id === "glossary-refs" && isExpanded
                             ? handleGlossaryRefsMouseMoveFromContent
-                            : item.id === "uml-diagrams" && isExpanded
+                            : item.id === "rag-pipeline" && isExpanded
                               ? handleUmlMouseMoveFromContent
                               : undefined
                       }
                     >
-                      {item.id === "live-docs" && isExpanded && (
+                      {item.id === "code-chat" && isExpanded && (
                         <OrangeCursorGlowPattern
                           positionRef={liveDocsMouseDisplayRef}
                         />
                       )}
-                      {item.id === "uml-diagrams" && isExpanded && (
+                      {item.id === "rag-pipeline" && isExpanded && (
                         <OrangeCursorGlowPattern
                           positionRef={umlMouseRef}
                         />
@@ -569,8 +569,8 @@ export function HorizontalAccordion({ items }: { items: AccordionItem[] }) {
                           positionRef={glossaryRefsMouseRef}
                         />
                       )}
-                      {item.id === "rag-pipeline" && isExpanded && <DottedSurface />}
-                      {item.id === "onboarding-paths" && isExpanded && <AbstractShader />}
+                      {item.id === "onboarding-paths" && isExpanded && <DottedSurface />}
+                      {item.id === "pr-analysis" && isExpanded && <AbstractShader />}
                       <div
                         className="pointer-events-none absolute inset-y-0 left-0 z-10 w-28 shrink-0"
                         style={FADE_GRADIENT_STYLE}
