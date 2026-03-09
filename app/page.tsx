@@ -66,10 +66,16 @@ import { CtaButton } from "./components/CtaButton";
 
 const accordionFeatures = [
   {
-    id: "live-docs",
-    title: "Live Documentation",
+    id: "code-chat",
+    title: "Code-Aware Chat",
     description:
-      "AI-generated docs that stay in sync with your codebase. Connect your repo and get architecture overviews, API references, and guides that update automatically.",
+      "Ask questions and get grounded answers constrained by retrieved context from your organization's vector collections.",
+  },
+  {
+    id: "pr-analysis",
+    title: "Pull Request Analysis",
+    description:
+      "Automatically analyzes changed code context and returns AI-assisted insights for faster, safer code reviews.",
   },
   {
     id: "onboarding-paths",
@@ -82,12 +88,6 @@ const accordionFeatures = [
     title: "RAG Pipeline",
     description:
       "Your code flows through ingest, chunk, embed, index, and generate. One pipeline turns repositories into searchable, queryable context for AI and humans.",
-  },
-  {
-    id: "uml-diagrams",
-    title: "UML & Diagrams",
-    description:
-      "Sequence, class, use-case, and state diagrams generated from your code. Navigate and share architecture visually without maintaining diagrams by hand.",
   },
   {
     id: "glossary-refs",
@@ -767,8 +767,8 @@ export default function Home() {
 
         <FeaturesTimeline />
 
-        <section className="relative overflow-x-hidden bg-[#0a0a0b]">
-          <div className="container mx-auto w-full max-w-6xl overflow-x-hidden px-4 pt-0 pb-32 md:pb-44">
+        <section className="relative bg-[#0a0a0b]">
+          <div className="container mx-auto w-full max-w-7xl px-4 pt-0 pb-32 md:pb-44">
             <HorizontalAccordion items={accordionFeatures} />
           </div>
         </section>

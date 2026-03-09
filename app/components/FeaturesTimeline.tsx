@@ -2,15 +2,15 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { Compass, Network, Flame, MessageSquare, GitMerge } from 'lucide-react';
+import { Compass, Network, Flame, FileText, Share2 } from 'lucide-react';
 import CountUp from 'react-countup';
 
 const features = [
   {
-    id: 'task-compass',
-    title: 'Task Compass',
-    icon: Compass,
-    description: 'Context helper for your tasks. Produces summary, caution areas, relevant files, entry points, and ownership to orient you before implementation.',
+    id: 'live-docs',
+    title: 'Live Documentation',
+    icon: FileText,
+    description: 'AI-generated docs that stay in sync with your codebase. Connect your repo and get architecture overviews, API references, and guides that update automatically.',
   },
   {
     id: 'visual-tree',
@@ -19,22 +19,22 @@ const features = [
     description: 'Generate a structure-oriented understanding of your repository with navigable architecture views augmented by AI.',
   },
   {
+    id: 'uml-diagrams',
+    title: 'UML & Diagrams',
+    icon: Share2,
+    description: 'Sequence, class, use-case, and state diagrams generated from your code. Navigate and share architecture visually without maintaining diagrams by hand.',
+  },
+  {
+    id: 'task-compass',
+    title: 'Task Compass',
+    icon: Compass,
+    description: 'Context helper for your tasks. Produces summary, caution areas, relevant files, entry points, and ownership to orient you before implementation.',
+  },
+  {
     id: 'hot-zones',
     title: 'Hot Zones & Risk Patterns',
     icon: Flame,
     description: 'Surface activity and risk patterns. Recommends relevant code areas by semantic similarity to focus your impact where it matters most.',
-  },
-  {
-    id: 'code-chat',
-    title: 'Code-Aware Chat',
-    icon: MessageSquare,
-    description: 'Ask questions and get grounded answers constrained by retrieved context from your organization\'s vector collections.',
-  },
-  {
-    id: 'pr-analysis',
-    title: 'Pull Request Analysis',
-    icon: GitMerge,
-    description: 'Automatically analyzes changed code context and returns AI-assisted insights for faster, safer code reviews.',
   }
 ];
 
