@@ -39,6 +39,9 @@ body {
   color: #fff;
 }
 
+button {
+  cursor: pointer;
+}
 
 .timeline-number-outline {
   font-family: var(--font-red-hat-mono), ui-monospace, monospace;

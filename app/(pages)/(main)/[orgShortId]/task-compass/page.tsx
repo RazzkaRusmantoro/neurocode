@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import { setTaskCompassResult, getTaskCompassResultForTask } from '@/lib/task_compass_storage';
 import { 
   ListTodo, 
   LayoutGrid, 
@@ -64,7 +66,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'high',
     status: 'backlog',
     points: 5,
-    assignee: 'SD',
     repositories: ['neurocode'],
     description:
       'Add drag-and-drop for moving issues between columns on the Task Compass board. Board state lives in task-compass/page.tsx; consider @dnd-kit or similar. Backlog/To Do/In Progress/To Test/Completed columns are already defined.',
@@ -75,7 +76,6 @@ const MOCK_TASKS: Task[] = [
     type: 'bug',
     priority: 'high',
     status: 'backlog',
-    assignee: 'JD',
     repositories: ['neurocode'],
     description:
       'Active state on the sidebar (app/components/Sidebar.tsx) is wrong for nested routes like repo/[repoName]/documentation and repo/[repoName]/visual-tree. usePathname() may need to be compared with startsWith or a route matcher.',
@@ -98,7 +98,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'high',
     status: 'todo',
     points: 8,
-    assignee: 'AC',
     repositories: ['neurocode', 'neurocode-python'],
     description:
       'Add FastAPI routes in neurocode-python for syncing tasks with Jira (e.g. fetch issues, map to internal schema). Follow patterns in neurocode/routes/internal.py for auth. Neurocode frontend will call these from Task Compass later.',
@@ -110,7 +109,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'medium',
     status: 'todo',
     points: 3,
-    assignee: 'MK',
     repositories: ['neurocode'],
     description:
       'Improve empty states in app/(pages)/(main)/[orgShortId]/task-compass/page.tsx: MainView (select task), BoardView (no tasks in column), and the Timeline tab. Keep styling consistent with globals.css tokens.',
@@ -122,7 +120,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'medium',
     status: 'in-progress',
     points: 5,
-    assignee: 'SD',
     repositories: ['neurocode-python'],
     description:
       'Update neurocode/services/storage/s3_service.py (and any callers) to write avatar objects to the new CDN bucket and use the new base URL from config. Preserve the storage.py abstraction so neurocode frontend does not need changes.',
@@ -133,7 +130,6 @@ const MOCK_TASKS: Task[] = [
     type: 'bug',
     priority: 'high',
     status: 'to-test',
-    assignee: 'JD',
     repositories: ['neurocode', 'neurocode-python'],
     description:
       'HotZonesDashboard.tsx (neurocode) holds heavy state and may leak on unmount; neurocode-python routes/hot_zones.py returns large payloads. Fix useEffect cleanup and/or subscription cleanup in the dashboard; verify with DevTools Memory.',
@@ -145,7 +141,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'low',
     status: 'to-test',
     points: 2,
-    assignee: 'AC',
     repositories: ['neurocode-python'],
     description:
       'Update neurocode-python/README.md and the docs produced by neurocode/routes/documentation.py to reflect API v2 (e.g. new routes, request/response shapes). Align with neurocode/services/config/documentation_schema.json if used.',
@@ -157,7 +152,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'high',
     status: 'completed',
     points: 13,
-    assignee: 'MK',
     repositories: ['neurocode'],
     description:
       'Completed: app router, (pages), (main), [orgShortId] routing structure and app/(pages)/(main)/layout.tsx. Sidebar and main content area are used by task-compass, hot-zones, repo documentation, and visual-tree.',
@@ -169,7 +163,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'high',
     status: 'backlog',
     points: 8,
-    assignee: 'AC',
     repositories: ['neurocode', 'neurocode-python'],
     description:
       'Replace MOCK_TASKS in task-compass/page.tsx with data from neurocode-python (e.g. a new internal route or task-sync endpoint). Frontend: fetch on load, handle loading/error. Backend: return task list in a shape compatible with existing Task type and board columns.',
@@ -181,7 +174,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'medium',
     status: 'backlog',
     points: 5,
-    assignee: 'SD',
     repositories: ['neurocode', 'neurocode-python'],
     description:
       'Visual tree page (neurocode repo/[repoName]/visual-tree) calls neurocode-python routes/visual_tree.py. Tree can be slow for large repos. Consider pagination, lazy loading, or caching in neurocode-python services/analysis/tree_builder.py.',
@@ -193,7 +185,6 @@ const MOCK_TASKS: Task[] = [
     priority: 'medium',
     status: 'todo',
     points: 3,
-    assignee: 'JD',
     repositories: ['neurocode', 'neurocode-python'],
     description:
       'Documentation chat in neurocode (DocumentationChatPanel) calls neurocode-python (e.g. routes/chat.py). Switch to streaming so the UI shows tokens as they arrive. Backend uses neurocode/services/external/llm_service.py.',
@@ -214,264 +205,6 @@ interface CompassContext {
   entryPoints: { target: string; reason: string }[];
   ownership: { name: string; role: string; type: 'owner' | 'contributor' | 'reviewer' }[];
 }
-
-const COMPASS_DATA: Record<string, CompassContext> = {
-  'NC-104': {
-    area: 'Task Compass',
-    riskLevel: 'medium',
-    cautionAreas: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'Single file holds BoardView and column state; changes can break all columns', label: 'caution' },
-      { file: 'neurocode/app/globals.css', reason: 'custom-scrollbar and layout tokens used by board columns', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'BoardView, BoardCard, COLUMNS, MOCK_TASKS — add DnD here', badge: 'UI' },
-      { file: 'neurocode/app/globals.css', reason: 'Scrollbar and spacing used in column scroll areas', badge: 'config' },
-      { file: 'neurocode/package.json', reason: 'Add DnD dependency (e.g. @dnd-kit/core)' , badge: 'config' },
-    ],
-    entryPoints: [
-      { target: 'BoardView() in task-compass/page.tsx', reason: 'Renders columns; wrap column content in DnD context' },
-      { target: 'BoardCard component', reason: 'Make each card a draggable item; status update on drop' },
-    ],
-    ownership: [
-      { name: 'Sam Dawson', role: 'Task Compass frontend lead', type: 'owner' },
-      { name: 'Maya Kim', role: 'App router and layout contributor', type: 'contributor' },
-      { name: 'Alex Chen', role: 'Reviews UI/API integration PRs', type: 'reviewer' },
-    ],
-  },
-  'NC-105': {
-    area: 'Navigation',
-    riskLevel: 'low',
-    cautionAreas: [
-      { file: 'neurocode/app/components/Sidebar.tsx', reason: 'Shared across all main pages; wrong active state affects task-compass, hot-zones, repo routes', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/components/Sidebar.tsx', reason: 'Nav items and active state logic; fix path matching for nested routes', badge: 'UI' },
-      { file: 'neurocode/app/(pages)/(main)/layout.tsx', reason: 'Renders Sidebar; passes route context', badge: 'core' },
-    ],
-    entryPoints: [
-      { target: 'Sidebar.tsx link href vs pathname', reason: 'Compare usePathname() with link href — use startsWith or route segment match for nested paths' },
-    ],
-    ownership: [
-      { name: 'Jordan Diaz', role: 'Fixing navigation bug', type: 'owner' },
-      { name: 'Maya Kim', role: 'Built original sidebar layout', type: 'contributor' },
-    ],
-  },
-  'NC-106': {
-    area: 'Theme / Settings',
-    riskLevel: 'low',
-    cautionAreas: [
-      { file: 'neurocode/app/globals.css', reason: 'CSS variables drive theme; changes affect task-compass, hot-zones, repo pages', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/globals.css', reason: '--color-primary and theme tokens', badge: 'config' },
-      { file: 'neurocode/app/(pages)/settings/page.tsx', reason: 'Place for theme toggle UI', badge: 'UI' },
-      { file: 'neurocode/tailwind.config.ts', reason: 'Dark mode strategy (class vs media)', badge: 'config' },
-    ],
-    entryPoints: [
-      { target: 'globals.css :root', reason: 'Current theme variable definitions' },
-      { target: 'settings/page.tsx', reason: 'Add toggle; persist preference (e.g. localStorage + data-theme)' },
-    ],
-    ownership: [
-      { name: 'Maya Kim', role: 'Owns design system and theme variables', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Frequent UI implementation contributor', type: 'contributor' },
-    ],
-  },
-  'NC-101': {
-    area: 'Integrations',
-    riskLevel: 'high',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/routes/internal.py', reason: 'Auth and internal API pattern; new Jira routes must match', label: 'manual approval' },
-      { file: '.env (both repos)', reason: 'Jira API keys must not be committed', label: 'manual approval' },
-      { file: 'neurocode-python/neurocode/config.py', reason: 'New env vars for Jira; wrong defaults break sync', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode-python/neurocode/main.py', reason: 'Mount new Jira router', badge: 'core' },
-      { file: 'neurocode-python/neurocode/routes/internal.py', reason: 'Pattern for authenticated routes', badge: 'route' },
-      { file: 'neurocode-python/neurocode/config.py', reason: 'Jira base URL, API key env vars', badge: 'config' },
-      { file: 'neurocode-python/neurocode/models/schemas.py', reason: 'Pydantic models for Jira payloads', badge: 'schema' },
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'Future consumer of Jira-backed task list', badge: 'UI' },
-    ],
-    entryPoints: [
-      { target: 'neurocode-python/neurocode/main.py', reason: 'How routers are included' },
-      { target: 'neurocode-python/neurocode/routes/internal.py', reason: 'Reuse auth pattern for Jira proxy' },
-    ],
-    ownership: [
-      { name: 'Alex Chen', role: 'Leads Jira integration on the backend', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Task Compass frontend contributor', type: 'contributor' },
-      { name: 'Jordan Diaz', role: 'Reviews security for external API integrations', type: 'reviewer' },
-    ],
-  },
-  'NC-102': {
-    area: 'Task Compass',
-    riskLevel: 'low',
-    cautionAreas: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'Large page; keep MainView/BoardView/Timeline empty states contained', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'MainView, BoardView, Timeline tab; add/improve empty states', badge: 'UI' },
-      { file: 'neurocode/app/globals.css', reason: 'Tokens for borders and empty-state styling', badge: 'config' },
-    ],
-    entryPoints: [
-      { target: 'MainView()', reason: 'Select-task empty state' },
-      { target: 'BoardView() column empty', reason: '"No tasks" per column' },
-      { target: 'Timeline tab', reason: 'Currently placeholder; add empty state' },
-    ],
-    ownership: [
-      { name: 'Maya Kim', role: 'Designed empty state patterns across the app', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Implemented Task Compass empty states', type: 'contributor' },
-    ],
-  },
-  'NC-99': {
-    area: 'Storage / CDN',
-    riskLevel: 'medium',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/services/storage/s3_service.py', reason: 'S3 credentials and bucket; mistakes can cause data loss or wrong bucket', label: 'manual approval' },
-      { file: 'neurocode-python/neurocode/services/storage/storage.py', reason: 'Abstract interface; changing it affects all storage callers', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode-python/neurocode/services/storage/s3_service.py', reason: 'Upload/download; switch URLs to new CDN', badge: 'service' },
-      { file: 'neurocode-python/neurocode/services/storage/storage.py', reason: 'Storage interface', badge: 'core' },
-      { file: 'neurocode-python/neurocode/config.py', reason: 'CDN base URL, bucket name', badge: 'config' },
-    ],
-    entryPoints: [
-      { target: 'neurocode-python/neurocode/services/storage/storage.py', reason: 'Interface contract' },
-      { target: 'neurocode-python/neurocode/services/storage/s3_service.py', reason: 'Implementation to update' },
-    ],
-    ownership: [
-      { name: 'Sam Dawson', role: 'Owns CDN migration and storage services', type: 'owner' },
-      { name: 'Alex Chen', role: 'Reviews infrastructure and config changes', type: 'reviewer' },
-    ],
-  },
-  'NC-95': {
-    area: 'Hot Zones',
-    riskLevel: 'high',
-    cautionAreas: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/hot-zones/components/HotZonesDashboard.tsx', reason: 'Large component; leak likely in useEffect or subscriptions', label: 'caution' },
-      { file: 'neurocode-python/neurocode/routes/hot_zones.py', reason: 'Large responses can amplify frontend memory use', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/hot-zones/components/HotZonesDashboard.tsx', reason: 'Main dashboard; fix cleanup on unmount', badge: 'UI' },
-      { file: 'neurocode-python/neurocode/routes/hot_zones.py', reason: 'Hot zone data API', badge: 'route' },
-      { file: 'neurocode-python/neurocode/services/analysis/code_analyzer.py', reason: 'Backend analysis for hot zones', badge: 'service' },
-    ],
-    entryPoints: [
-      { target: 'HotZonesDashboard.tsx useEffect / subscriptions', reason: 'Add cleanup; check event listeners and timers' },
-      { target: 'DevTools Memory', reason: 'Snapshot before/after leaving hot-zones' },
-    ],
-    ownership: [
-      { name: 'Jordan Diaz', role: 'Debugging memory leak in hot zones', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Built original Hot Zones dashboard', type: 'contributor' },
-      { name: 'Maya Kim', role: 'QA and regression testing', type: 'reviewer' },
-    ],
-  },
-  'NC-92': {
-    area: 'Documentation',
-    riskLevel: 'low',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/routes/documentation.py', reason: 'Docstrings may be used for API docs; keep in sync', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode-python/README.md', reason: 'Top-level setup and API overview', badge: 'config' },
-      { file: 'neurocode-python/neurocode/routes/documentation.py', reason: 'Doc generation endpoint', badge: 'route' },
-      { file: 'neurocode-python/neurocode/services/config/documentation_schema.json', reason: 'Schema for generated docs', badge: 'schema' },
-      { file: 'neurocode-python/DOCUMENTATION_JSON_EXAMPLE.json', reason: 'Example output shape', badge: 'schema' },
-    ],
-    entryPoints: [
-      { target: 'neurocode-python/README.md', reason: 'Current docs' },
-      { target: 'neurocode-python/neurocode/routes/documentation.py', reason: 'What the API returns' },
-    ],
-    ownership: [
-      { name: 'Alex Chen', role: 'Maintains API documentation', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Authored the v2 API endpoints', type: 'contributor' },
-    ],
-  },
-  'NC-88': {
-    area: 'Platform / Layout',
-    riskLevel: 'low',
-    cautionAreas: [],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/layout.tsx', reason: 'Main layout with sidebar and content', badge: 'core' },
-      { file: 'neurocode/app/components/Sidebar.tsx', reason: 'Org-scoped navigation', badge: 'UI' },
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'Example page under [orgShortId]', badge: 'UI' },
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/hot-zones/page.tsx', reason: 'Hot zones under same layout', badge: 'UI' },
-    ],
-    entryPoints: [
-      { target: 'neurocode/app/(pages)/(main)/layout.tsx', reason: 'Root of main app layout' },
-    ],
-    ownership: [
-      { name: 'Maya Kim', role: 'Owns app router and layout structure', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Builds feature pages using the layout', type: 'contributor' },
-    ],
-  },
-  'NC-110': {
-    area: 'Task Compass + API',
-    riskLevel: 'high',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/routes/internal.py', reason: 'New task endpoint must follow auth pattern', label: 'manual approval' },
-      { file: 'neurocode-python/neurocode/services/storage/mongodb_service.py', reason: 'If tasks are stored in MongoDB, schema changes need care', label: 'manual approval' },
-      { file: 'neurocode/.env', reason: 'NEXT_PUBLIC_ or env for neurocode-python API URL', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode-python/neurocode/main.py', reason: 'Mount task/tasks route', badge: 'core' },
-      { file: 'neurocode-python/neurocode/routes/internal.py', reason: 'Auth pattern for new task endpoint', badge: 'route' },
-      { file: 'neurocode-python/neurocode/models/schemas.py', reason: 'Task list response model', badge: 'schema' },
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'Replace MOCK_TASKS with fetch; loading/error states', badge: 'UI' },
-      { file: 'neurocode-python/neurocode/config.py', reason: 'CORS and service URL if needed', badge: 'config' },
-    ],
-    entryPoints: [
-      { target: 'neurocode/app/(pages)/(main)/[orgShortId]/task-compass/page.tsx', reason: 'MOCK_TASKS and Task type — match API response to this shape' },
-      { target: 'neurocode-python/neurocode/main.py', reason: 'Add route that returns task list' },
-    ],
-    ownership: [
-      { name: 'Alex Chen', role: 'Owns end-to-end Task Compass API', type: 'owner' },
-      { name: 'Sam Dawson', role: 'Frontend data fetching and state', type: 'contributor' },
-      { name: 'Jordan Diaz', role: 'Reviews API security and data flow', type: 'reviewer' },
-    ],
-  },
-  'NC-111': {
-    area: 'Visual Tree',
-    riskLevel: 'medium',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/services/analysis/tree_builder.py', reason: 'Tree construction for large repos; changes affect payload size and correctness', label: 'caution' },
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/repo/[repoName]/visual-tree/page.tsx', reason: 'Renders tree; may need virtualization for large data', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/repo/[repoName]/visual-tree/page.tsx', reason: 'Frontend visual tree page', badge: 'UI' },
-      { file: 'neurocode-python/neurocode/routes/visual_tree.py', reason: 'API that returns tree data', badge: 'route' },
-      { file: 'neurocode-python/neurocode/services/analysis/tree_builder.py', reason: 'Builds tree structure; candidate for pagination or lazy nodes', badge: 'service' },
-      { file: 'neurocode-python/neurocode/services/analysis/code_analyzer.py', reason: 'Feeds into tree building', badge: 'service' },
-    ],
-    entryPoints: [
-      { target: 'neurocode-python/neurocode/routes/visual_tree.py', reason: 'Current response shape and size' },
-      { target: 'neurocode-python/neurocode/services/analysis/tree_builder.py', reason: 'Where to add pagination or chunking' },
-    ],
-    ownership: [
-      { name: 'Sam Dawson', role: 'Leads performance optimization work', type: 'owner' },
-      { name: 'Alex Chen', role: 'Maintains the backend analysis pipeline', type: 'contributor' },
-    ],
-  },
-  'NC-112': {
-    area: 'Documentation / Chat',
-    riskLevel: 'medium',
-    cautionAreas: [
-      { file: 'neurocode-python/neurocode/services/external/llm_service.py', reason: 'LLM calls; streaming changes response handling', label: 'caution' },
-      { file: 'neurocode-python/neurocode/routes/chat.py', reason: 'Chat endpoint; must support streaming response', label: 'caution' },
-    ],
-    relevantFiles: [
-      { file: 'neurocode/app/(pages)/(main)/[orgShortId]/repo/[repoName]/documentation/components/DocumentationChatPanel.tsx', reason: 'Chat UI; switch to streaming display', badge: 'UI' },
-      { file: 'neurocode-python/neurocode/routes/chat.py', reason: 'Chat API; add streaming (e.g. SSE or chunked)', badge: 'route' },
-      { file: 'neurocode-python/neurocode/services/external/llm_service.py', reason: 'LLM integration; may need stream-capable client', badge: 'service' },
-    ],
-    entryPoints: [
-      { target: 'neurocode-python/neurocode/routes/chat.py', reason: 'Current response format; add streaming' },
-      { target: 'neurocode/app/.../DocumentationChatPanel.tsx', reason: 'Consume stream (fetch + ReadableStream or SSE)' },
-    ],
-    ownership: [
-      { name: 'Jordan Diaz', role: 'Owns streaming implementation end-to-end', type: 'owner' },
-      { name: 'Alex Chen', role: 'Maintains backend LLM service', type: 'contributor' },
-    ],
-  },
-};
 
 function getTypeIcon(type: TaskType) {
   switch (type) {
@@ -546,12 +279,12 @@ function TaskDetailsModal({ task, onClose }: { task: Task; onClose: () => void }
                 title={`Assignee: ${task.assignee}`}
               >
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)]/20">
-                  {task.assignee}
+                  {getAssigneeInitials(task.assignee)}
                 </span>
-                <span>Demo user</span>
+                <span>{task.assignee}</span>
               </div>
             ) : (
-              <span className="text-white/40">Unassigned (demo)</span>
+              <span className="text-white/40">Unassigned</span>
             )}
           </div>
         </div>
@@ -658,7 +391,7 @@ function BoardCard({ task, onClick }: { task: Task; onClick: () => void }) {
         
         {task.assignee ? (
           <div className="w-5 h-5 rounded-full bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 flex items-center justify-center text-[10px] font-bold text-[var(--color-primary)]" title={`Assignee: ${task.assignee}`}>
-            {task.assignee}
+            {getAssigneeInitials(task.assignee)}
           </div>
         ) : (
           <div className="w-5 h-5 rounded-full bg-[#1a1a1a] border border-[#333] border-dashed flex items-center justify-center text-white/30" title="Unassigned">
@@ -671,16 +404,18 @@ function BoardCard({ task, onClick }: { task: Task; onClick: () => void }) {
 }
 
 function TaskPickerModal({
+  tasks,
   onSelect,
   onClose,
 }: {
+  tasks: Task[];
   onSelect: (task: Task) => void;
   onClose: () => void;
 }) {
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const activeTasks = MOCK_TASKS.filter((t) => t.status !== 'completed');
+  const activeTasks = tasks.filter((t) => t.status !== 'completed');
 
   const filtered = activeTasks.filter((t) => {
     if (!search.trim()) return true;
@@ -768,7 +503,7 @@ function TaskPickerModal({
                     className="mt-1 shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 text-[10px] font-bold text-[var(--color-primary)]"
                     title={task.assignee}
                   >
-                    {task.assignee}
+                    {getAssigneeInitials(task.assignee)}
                   </div>
                 )}
               </button>
@@ -827,10 +562,29 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   );
 }
 
+function formatAnalyzedAt(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffM = Math.floor(diffMs / 60000);
+    const diffH = Math.floor(diffMs / 3600000);
+    const diffD = Math.floor(diffMs / 86400000);
+    if (diffM < 1) return 'Just now';
+    if (diffM < 60) return `${diffM}m ago`;
+    if (diffH < 24) return `${diffH}h ago`;
+    if (diffD < 7) return `${diffD}d ago`;
+    return d.toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
 function TaskCompassView({ task, onBack, orgShortId }: { task: Task; onBack: () => void; orgShortId: string }) {
   const [ctx, setCtx] = useState<CompassContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastAnalyzedAt, setLastAnalyzedAt] = useState<string | null>(null);
 
   const fetchCompass = useCallback(async () => {
     setLoading(true);
@@ -853,24 +607,48 @@ function TaskCompassView({ task, onBack, orgShortId }: { task: Task; onBack: () 
       }
       const data: CompassContext = await res.json();
       setCtx(data);
+      const analyzedAt = new Date().toISOString();
+      setLastAnalyzedAt(analyzedAt);
+      setTaskCompassResult(orgShortId, {
+        taskId: task.id,
+        taskTitle: task.title,
+        area: data.area,
+        riskLevel: data.riskLevel,
+        cautionAreas: data.cautionAreas,
+        relevantFiles: data.relevantFiles,
+        entryPoints: data.entryPoints,
+        analyzedAt,
+      });
     } catch (e) {
       console.error('[task-compass] fetch error:', e);
       setError(String(e instanceof Error ? e.message : e));
-      const fallback = COMPASS_DATA[task.id];
-      if (fallback) setCtx(fallback);
     } finally {
       setLoading(false);
     }
   }, [orgShortId, task]);
 
   useEffect(() => {
+    const cached = getTaskCompassResultForTask(orgShortId, task.id);
+    if (cached?.area != null) {
+      setCtx({
+        area: cached.area,
+        riskLevel: cached.riskLevel as RiskLevel,
+        cautionAreas: cached.cautionAreas ?? [],
+        relevantFiles: cached.relevantFiles ?? [],
+        entryPoints: cached.entryPoints ?? [],
+        ownership: [],
+      });
+      setLastAnalyzedAt(cached.analyzedAt ?? null);
+      setLoading(false);
+      return;
+    }
     fetchCompass();
-  }, [fetchCompass]);
+  }, [orgShortId, task.id, fetchCompass]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-220px)]">
       {/* Header bar */}
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <button
           onClick={onBack}
           className="flex items-center gap-1.5 rounded-md border border-[#333] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white/60 hover:border-[var(--color-primary)]/40 hover:text-white/90 transition-colors"
@@ -882,14 +660,19 @@ function TaskCompassView({ task, onBack, orgShortId }: { task: Task; onBack: () 
           <span className="text-white/40 font-medium shrink-0">{task.id}</span>
           <span className="text-white/70 truncate">{task.title}</span>
         </div>
+        {lastAnalyzedAt && !loading && (
+          <span className="text-xs text-white/45 shrink-0">
+            Last analysed: {formatAnalyzedAt(lastAnalyzedAt)}
+          </span>
+        )}
         {!loading && (
           <button
             onClick={fetchCompass}
-            title="Re-analyze"
+            title="Regenerate analysis"
             className="flex items-center gap-1.5 rounded-md border border-[#333] bg-[#1a1a1a] px-2.5 py-1.5 text-xs text-white/40 hover:border-[var(--color-primary)]/40 hover:text-white/70 transition-colors shrink-0"
           >
             <RefreshCw className="w-3 h-3" />
-            Re-analyze
+            Regenerate
           </button>
         )}
       </div>
@@ -1079,7 +862,7 @@ function TaskCompassView({ task, onBack, orgShortId }: { task: Task; onBack: () 
   );
 }
 
-function MainView({ orgShortId }: { orgShortId: string }) {
+function MainView({ orgShortId, tasks }: { orgShortId: string; tasks: Task[] }) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -1111,6 +894,7 @@ function MainView({ orgShortId }: { orgShortId: string }) {
 
       {pickerOpen && (
         <TaskPickerModal
+          tasks={tasks}
           onSelect={(task) => {
             setSelectedTask(task);
             setPickerOpen(false);
@@ -1122,13 +906,13 @@ function MainView({ orgShortId }: { orgShortId: string }) {
   );
 }
 
-function BoardView() {
+function BoardView({ tasks }: { tasks: Task[] }) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   return (
     <div className="flex h-[calc(100vh-220px)] gap-4 overflow-x-auto pb-4 pt-2 -mx-4 px-4 custom-scrollbar">
       {COLUMNS.map((col) => {
-        const columnTasks = MOCK_TASKS.filter((t) => t.status === col.id);
+        const columnTasks = tasks.filter((t) => t.status === col.id);
 
         return (
           <div key={col.id} className="flex flex-col w-[300px] flex-shrink-0 bg-[#171717] rounded-lg border border-[#262626]">
@@ -1184,9 +968,34 @@ function BoardView() {
   );
 }
 
+function getAssigneeLabel(session: { user?: { name?: string | null; email?: string | null } } | null): string {
+  if (!session?.user) return 'Me';
+  const name = session.user.name?.trim();
+  if (name) return name;
+  const email = session.user.email?.trim();
+  if (email) return email;
+  return 'Me';
+}
+
+function getAssigneeInitials(assignee: string): string {
+  const s = assignee.trim();
+  if (!s) return 'Me';
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  if (s.includes('@')) return s.slice(0, 2).toUpperCase();
+  return s.slice(0, 2).toUpperCase();
+}
+
 export default function TaskCompassPage({ params }: PageProps) {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabId>('board');
   const [orgShortId, setOrgShortId] = useState('');
+
+  const assigneeLabel = getAssigneeLabel(session);
+  const tasks = useMemo(
+    () => MOCK_TASKS.map((t) => ({ ...t, assignee: assigneeLabel })),
+    [assigneeLabel]
+  );
 
   useEffect(() => {
     Promise.resolve(params).then((p) => {
@@ -1223,8 +1032,8 @@ export default function TaskCompassPage({ params }: PageProps) {
       </div>
 
       <div className="mt-0 pt-4">
-        {activeTab === 'main' && <MainView orgShortId={orgShortId} />}
-        {activeTab === 'board' && <BoardView />}
+        {activeTab === 'main' && <MainView orgShortId={orgShortId} tasks={tasks} />}
+        {activeTab === 'board' && <BoardView tasks={tasks} />}
         {activeTab === 'timeline' && <div className="text-white/60 text-sm">Timeline content</div>}
       </div>
     </div>
