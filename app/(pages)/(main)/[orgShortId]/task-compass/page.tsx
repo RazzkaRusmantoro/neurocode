@@ -633,8 +633,8 @@ function TaskCompassView({ task, onBack, orgShortId }: { task: Task; onBack: () 
       setCtx({
         area: cached.area,
         riskLevel: cached.riskLevel as RiskLevel,
-        cautionAreas: cached.cautionAreas ?? [],
-        relevantFiles: cached.relevantFiles ?? [],
+        cautionAreas: (cached.cautionAreas ?? []) as CompassContext['cautionAreas'],
+        relevantFiles: (cached.relevantFiles ?? []) as CompassContext['relevantFiles'],
         entryPoints: cached.entryPoints ?? [],
         ownership: [],
       });
