@@ -64,6 +64,9 @@ export default function RepoSidebar({
     if (pathname?.includes('/documentation/uml')) {
       return 'UML Diagrams';
     }
+    if (pathname?.includes('/knowledge-graph')) {
+      return 'Knowledge Graph';
+    }
     if (pathname?.includes('/documentation')) {
       return 'Documentation';
     }
@@ -103,6 +106,13 @@ export default function RepoSidebar({
     if (orgShortId && repoName) {
       startLoading();
       router.push(`/${orgShortId}/repo/${repoName}/documentation/uml`);
+    }
+  }, [router, orgShortId, repoName, startLoading]);
+
+  const handleKnowledgeGraphClick = useCallback(() => {
+    if (orgShortId && repoName) {
+      startLoading();
+      router.push(`/${orgShortId}/repo/${repoName}/knowledge-graph`);
     }
   }, [router, orgShortId, repoName, startLoading]);
 
@@ -234,6 +244,15 @@ export default function RepoSidebar({
                 >
                   <Icon iconPath="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                   <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>UML Diagrams</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={handleKnowledgeGraphClick}
+                  className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Knowledge Graph' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}
+                >
+                  <Icon iconPath="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Knowledge Graph</span>
                 </button>
               </li>
               <li>
