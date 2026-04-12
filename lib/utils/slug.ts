@@ -1,77 +1,35 @@
-/**
- * Convert a human-readable title into a URL-safe slug.
- * Keeps output stable across client/server.
- */
 export function slugify(input: string): string {
-  return input
-    .normalize('NFKD')
-    // Remove diacritics
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    // Remove quotes
-    .replace(/['"]/g, '')
-    // Replace any non-alphanumeric run with a dash
-    .replace(/[^a-z0-9]+/g, '-')
-    // Collapse multiple dashes
-    .replace(/-+/g, '-')
-    // Trim leading/trailing dashes
-    .replace(/^-|-$/g, '');
+    return input
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/['"]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
 }
-
-/**
- * Converts a string to a URL-friendly slug
- * Examples:
- * - "Citera's And World" -> "citeras-and-world"
- * - "My Repo!" -> "my-repo"
- * - "Test___Repo" -> "test-repo"
- */
 export function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    // Replace apostrophes and quotes with nothing
-    .replace(/['"]/g, '')
-    // Replace spaces and underscores with hyphens
-    .replace(/[\s_]+/g, '-')
-    // Remove all non-alphanumeric characters except hyphens
-    .replace(/[^a-z0-9-]/g, '')
-    // Replace multiple consecutive hyphens with a single hyphen
-    .replace(/-+/g, '-')
-    // Remove leading and trailing hyphens
-    .replace(/^-+|-+$/g, '')
-    // Ensure it's not empty (fallback to 'repo' if empty)
-    || 'repo';
+    return name
+        .toLowerCase()
+        .trim()
+        .replace(/['"]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        || 'repo';
 }
-
-/**
- * Generates a unique URL name by checking for duplicates and appending numbers
- * @param baseName The base name to convert to a slug
- * @param organizationId The organization ID (kept for consistency, not currently used)
- * @param existingUrlNames Array of existing URL names in the organization
- * @returns A unique URL name
- */
-export function generateUniqueUrlName(
-  baseName: string,
-  organizationId: string,
-  existingUrlNames: string[]
-): string {
-  const baseSlug = generateSlug(baseName);
-  
-  // Check if base slug is already taken
-  if (!existingUrlNames.includes(baseSlug)) {
-    return baseSlug;
-  }
-  
-  // Find the highest number suffix
-  let counter = 1;
-  let candidate = `${baseSlug}-${counter}`;
-  
-  while (existingUrlNames.includes(candidate)) {
-    counter++;
-    candidate = `${baseSlug}-${counter}`;
-  }
-  
-  return candidate;
+export function generateUniqueUrlName(baseName: string, organizationId: string, existingUrlNames: string[]): string {
+    const baseSlug = generateSlug(baseName);
+    if (!existingUrlNames.includes(baseSlug)) {
+        return baseSlug;
+    }
+    let counter = 1;
+    let candidate = `${baseSlug}-${counter}`;
+    while (existingUrlNames.includes(candidate)) {
+        counter++;
+        candidate = `${baseSlug}-${counter}`;
+    }
+    return candidate;
 }
-

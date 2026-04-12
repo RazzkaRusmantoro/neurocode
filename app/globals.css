@@ -17,14 +17,12 @@ body {
   --background: #ffffff;
   --foreground: #171717;
 
-  /* Primary Color Palette (orange theme) */
   --color-primary: #d56707;
   --color-primary-hover: #ed8a2e;
   --color-primary-light: #f59f43;
   --color-accent: #ea680c;
   --color-accent-hover: #EA580C;
 
-  /* RGB values for rgba() usage */
   --color-primary-rgb: 255, 141, 40;
   --color-accent-rgb: 249, 115, 22;
 }
@@ -83,15 +81,14 @@ button {
 
 body {
   background: #121215;
-  /* background-image: radial-gradient(ellipse at bottom, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 55%); */
+  
   background-attachment: fixed;
   color: var(--foreground);
-  /* Use Red Hat Text (wired through --font-geist-sans) as the global font */
+  
   font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
 }
 
-/* Custom Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
@@ -112,13 +109,11 @@ body {
   background-color: #3a3c40;
 }
 
-/* Firefox scrollbar styling */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #3a3c40 transparent;
 }
 
-/* Sidebar Scrollbar Styling - Hidden */
 .sidebar-scrollbar::-webkit-scrollbar {
   display: none;
   width: 0;
@@ -126,12 +121,11 @@ body {
 
 .sidebar-scrollbar {
   -ms-overflow-style: none;
-  /* IE and Edge */
+  
   scrollbar-width: none;
-  /* Firefox */
+  
 }
 
-/* Hide scrollbar but keep scrolling */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
   width: 0;
@@ -139,12 +133,11 @@ body {
 
 .hide-scrollbar {
   -ms-overflow-style: none;
-  /* IE and Edge */
+  
   scrollbar-width: none;
-  /* Firefox */
+  
 }
 
-/* Typing indicator (chatbot "..." bounce) */
 @keyframes typing-bounce {
 
   0%,
@@ -160,7 +153,6 @@ body {
   }
 }
 
-/* Modal Animation Keyframes */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -207,7 +199,6 @@ body {
   }
 }
 
-/* Grid Flow Animation */
 @keyframes grid-flow {
   0% {
     transform: translate(0, 0);
@@ -222,7 +213,6 @@ body {
   animation: grid-flow 20s linear infinite;
 }
 
-/* Workflow section animations */
 @keyframes workflow-progress {
   from {
     width: 0%;
@@ -247,7 +237,6 @@ body {
   }
 }
 
-/* Dotted line: dashes march along the path (infinite flow); 6+10=16 so one full cycle loops seamlessly */
 @keyframes workflow-connector-flow {
   0% {
     stroke-dashoffset: 0;
@@ -272,7 +261,6 @@ body {
   }
 }
 
-/* Floating background elements behind workflow */
 @keyframes workflow-float-1 {
 
   0%,
@@ -354,12 +342,10 @@ body {
   }
 }
 
-/* Simple glow for active workflow cards (no left border) */
 .workflow-card-glow {
   box-shadow: 0 0 24px rgba(var(--color-primary-rgb), 0.25);
 }
 
-/* Circulating line around workflow card borders */
 @keyframes workflow-border-spin {
   to {
     transform: rotate(360deg);
@@ -387,13 +373,11 @@ body {
   z-index: 1;
 }
 
-/* Three-column workflow panels (soft glow, no border) */
 .workflow-panel {
   background: #171717;
   box-shadow: 0 0 40px rgba(var(--color-primary-rgb), 0.12);
 }
 
-/* Workflow stage titles – pill with icon */
 .workflow-stage-title {
   display: flex;
   align-items: center;
@@ -431,7 +415,6 @@ body {
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
 }
 
-/* Codebase reveal animation */
 .workflow-codebase-reveal {
   animation: workflow-reveal 0.5s ease-out forwards;
 }
@@ -448,7 +431,6 @@ body {
   }
 }
 
-/* Connect button: subtle idle pulse while waiting */
 .workflow-connect-btn {
   animation: workflow-connect-pulse 2.5s ease-in-out infinite;
 }
@@ -467,7 +449,6 @@ body {
   }
 }
 
-/* Codebase directory: hide native scrollbar; custom scrollbar is animated in JS */
 .workflow-codebase-dir {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -477,9 +458,8 @@ body {
   display: none;
 }
 
-/* Custom scrollbar track (next to directory) */
 .workflow-codebase-scrollbar-track {
-  /* track styling is in Tailwind (bg-white/[0.06]) */
+  
 }
 
 .workflow-codebase-scrollbar-thumb {
@@ -492,7 +472,6 @@ body {
   background: rgba(255, 255, 255, 0.4);
 }
 
-/* RAG pipeline: node and label appear */
 .workflow-pipeline-node {
   opacity: 0.4;
   transform: scale(0.9);
@@ -519,7 +498,6 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* RAG row: icon, fixed-width label so all loading bars are same width, bar fills rest */
 .workflow-rag-row {
   display: grid;
   grid-template-columns: 32px 72px 1fr;
@@ -573,7 +551,6 @@ body {
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent);
 }
 
-/* Doc generation: generating state */
 .workflow-doc-generating {
   animation: workflow-doc-fade-in 0.3s ease-out;
 }
@@ -612,7 +589,6 @@ body {
   }
 }
 
-/* Doc ready: subtle looping animation */
 .workflow-doc-loop .workflow-doc-line-highlight {
   animation: workflow-doc-line-pulse 2.5s ease-in-out infinite;
 }
@@ -669,7 +645,6 @@ body {
   }
 }
 
-/* Doc “Also available” cycle – subtle loop */
 .workflow-doc-cycle-item {
   animation: workflow-doc-cycle-in 3s ease-in-out infinite;
 }
@@ -716,7 +691,6 @@ body {
   }
 }
 
-/* Curved workflow connector lines – subtle flow animation */
 .workflow-curve {
   animation: workflow-curve-dash 3s ease-in-out infinite;
   animation-delay: var(--curve-delay, 0ms);
@@ -763,7 +737,6 @@ body {
   }
 }
 
-/* RAG pipeline pills – soft colored glow */
 .workflow-pill-orange {
   background: #262626;
   box-shadow: 0 0 16px rgba(var(--color-primary-rgb), 0.35);
@@ -794,7 +767,6 @@ body {
   box-shadow: 0 0 16px rgba(20, 184, 166, 0.35);
 }
 
-/* RAG pipeline step nodes (icon circles with glow) */
 .workflow-pipeline-node {
   display: flex;
   align-items: center;
@@ -885,7 +857,6 @@ body {
 
 }
 
-/* Diff line background extension */
 .diff-line-bg {
   position: relative;
   display: block;
@@ -913,7 +884,6 @@ body {
   background-color: rgba(239, 68, 68, 0.2);
 }
 
-/* Doc chat suggestion bubbles – staggered entrance */
 .doc-chat-bubble-enter {
   animation: slideUpFade 0.4s ease-out both;
 }
