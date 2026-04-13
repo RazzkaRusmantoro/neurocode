@@ -19,6 +19,11 @@ export interface StoredCompassResult {
         target: string;
         reason: string;
     }[];
+    ownership?: {
+        name: string;
+        role: string;
+        type: string;
+    }[];
     analyzedAt: string;
 }
 interface StoredMap {
@@ -84,6 +89,22 @@ export function setTaskCompassResult(orgShortId: string, result: Omit<StoredComp
             ? { ...existing.results, [taskId]: stored }
             : { [taskId]: stored };
         localStorage.setItem(`${STORAGE_PREFIX}${orgShortId}`, JSON.stringify({ version: STORAGE_VERSION, results }));
+    }
+    catch {
+    }
+}
+export function deleteTaskCompassResult(orgShortId: string, taskId: string): void {
+    if (typeof window === 'undefined' || !taskId)
+        return;
+    try {
+        const existing = getStoredMap(orgShortId);
+        if (!existing?.results || !(taskId in existing.results))
+            return;
+        const { [taskId]: _removed, ...rest } = existing.results;
+        localStorage.setItem(`${STORAGE_PREFIX}${orgShortId}`, JSON.stringify({
+            version: STORAGE_VERSION,
+            results: rest,
+        }));
     }
     catch {
     }

@@ -61,5 +61,5 @@ export default async function ManagementPage({ params }: PageProps) {
         });
     }
     members.sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
-    return (<ManagementClient members={members} orgShortId={shortId}/>);
+    return (<ManagementClient members={members} orgShortId={shortId} orgId={organization._id!.toString()} orgName={organization.name} currentUserId={user._id!.toString()} currentUserRole={userOrg.role}/>);
 }

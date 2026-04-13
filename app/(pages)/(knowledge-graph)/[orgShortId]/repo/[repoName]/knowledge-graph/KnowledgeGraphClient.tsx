@@ -6,9 +6,10 @@ import { createKnowledgeGraph } from '../../../../_lib/graph';
 import { GraphNode, GraphRelationship } from '../../../../_lib/types';
 import { LoadingOverlay } from './_components/LoadingOverlay';
 const ExplorerUI = dynamic(() => import('./_components/ExplorerUI'), { ssr: false });
-function KGPipeline({ mongoRepoId, repoFullName, }: {
+function KGPipeline({ mongoRepoId, repoFullName, orgShortId, }: {
     mongoRepoId: string;
     repoFullName: string;
+    orgShortId: string;
 }) {
     const { setGraph, setProgress, progress } = useKGState();
     const cancelledRef = useRef(false);
@@ -143,17 +144,18 @@ function KGPipeline({ mongoRepoId, repoFullName, }: {
             stopPoll();
         };
     }, [mongoRepoId, repoFullName]);
-    return (<div className="relative w-full h-full">
-      <ExplorerUI />
+    return (<div className="relative h-full w-full min-h-0">
+      <ExplorerUI orgShortId={orgShortId} repoFullName={repoFullName} mongoRepoId={mongoRepoId}/>
       {progress.phase !== 'complete' && <LoadingOverlay progress={progress} onRetry={() => setProgress({ phase: 'idle', percent: 0, message: 'Initializing...' })}/>}
     </div>);
 }
-export default function KnowledgeGraphClient({ repositoryUrl, repoId, mongoRepoId, }: {
+export default function KnowledgeGraphClient({ repositoryUrl, repoId, mongoRepoId, orgShortId, }: {
     repositoryUrl: string;
     repoId: string;
     mongoRepoId: string;
+    orgShortId: string;
 }) {
     return (<KGStateProvider repoId={repoId}>
-      <KGPipeline mongoRepoId={mongoRepoId} repoFullName={repoId}/>
+      <KGPipeline mongoRepoId={mongoRepoId} repoFullName={repoId} orgShortId={orgShortId}/>
     </KGStateProvider>);
 }

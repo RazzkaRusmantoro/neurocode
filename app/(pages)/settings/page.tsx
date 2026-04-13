@@ -1,6 +1,7 @@
 import { getCachedUserById } from '@/lib/models/user';
 import { redirect } from 'next/navigation';
 import { getCachedSession } from '@/lib/session';
+import { getGitHubAvatarUrl } from '@/lib/utils/github-avatar';
 import OrganizationsNavbar from '@/app/components/OrganizationsNavbar';
 import SettingsClient from './components/SettingsClient';
 export default async function SettingsPage() {
@@ -18,8 +19,9 @@ export default async function SettingsPage() {
         email: user.email || '',
         github: user.github || null,
     };
+    const userImageUrl = getGitHubAvatarUrl(user);
     return (<>
-      <OrganizationsNavbar userEmail={session.user.email} userName={session.user.name}/>
+      <OrganizationsNavbar userEmail={session.user.email} userName={session.user.name} userImageUrl={userImageUrl}/>
       <SettingsClient userData={userData}/>
     </>);
 }

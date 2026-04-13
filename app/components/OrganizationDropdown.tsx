@@ -44,7 +44,8 @@ export default function OrganizationDropdown({ organizations, selectedOrganizati
     const handleViewAllOrganizations = () => {
         setIsOpen(false);
         setSearchQuery('');
-        console.log('View all organizations');
+        startLoading();
+        router.push('/organizations');
     };
     return (<div className="relative" ref={dropdownRef}>
       <button type="button" onClick={() => setIsOpen(!isOpen)} className="flex flex-col items-start cursor-pointer">
@@ -72,7 +73,7 @@ export default function OrganizationDropdown({ organizations, selectedOrganizati
         </div>
 
         
-        <div className="py-2 px-2 max-h-64 overflow-y-auto">
+        <div className="py-2 px-2 max-h-64 overflow-y-auto custom-scrollbar">
           {filteredOrganizations.length > 0 ? (filteredOrganizations.map((org) => (<button key={org.id} type="button" onClick={() => handleOrganizationChange(org)} className={`w-full px-4 py-2.5 text-left text-sm transition-colors cursor-pointer rounded ${selectedOrganization?.id === org.id
                 ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/30'
                 : 'text-white hover:bg-[#2a2a2a]'}`}>
@@ -85,8 +86,10 @@ export default function OrganizationDropdown({ organizations, selectedOrganizati
         
         <div className="py-2 px-2">
           <button type="button" onClick={() => {
-            console.log('Create new organization clicked');
             setIsOpen(false);
+            setSearchQuery('');
+            startLoading();
+            router.push('/organizations?create=true');
         }} className="w-full px-4 py-2.5 text-left text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 hover:bg-[var(--color-primary)]/10 transition-colors duration-200 cursor-pointer flex items-center gap-2 rounded">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>

@@ -3,17 +3,8 @@ import { getOrganizationByShortId } from '@/lib/models/organization';
 import { getUserOrganizations } from '@/actions/organization';
 import { getCachedSession } from '@/lib/session';
 import { getCachedUserById } from '@/lib/models/user';
+import { getGitHubAvatarUrl } from '@/lib/utils/github-avatar';
 import ConditionalLayoutWrapper from '../components/ConditionalLayoutWrapper';
-function getGitHubAvatarUrl(user: {
-    github?: {
-        status: string;
-        providerUserId?: string;
-    };
-} | null): string | null {
-    if (!user?.github?.providerUserId || user.github.status !== 'active')
-        return null;
-    return `https://avatars.githubusercontent.com/u/${user.github.providerUserId}`;
-}
 export default async function OrgLayout({ children, params }: {
     children: React.ReactNode;
     params: Promise<{

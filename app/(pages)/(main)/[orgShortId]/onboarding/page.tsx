@@ -847,21 +847,12 @@ export default function OnboardingPage() {
                 </div>
               </section>
             </>) : (<section className="mb-8">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Learning Paths</h2>
-                  <p className="text-sm text-white/50">Structured guides to bring your team up to speed.</p>
-                </div>
-                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer border border-[#262626] flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                  </svg>
-                  Blank Path
-                </button>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-white mb-2">Learning Paths</h2>
+                <p className="text-sm text-white/50">Structured guides to bring your team up to speed.</p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
+              <div className="max-w-2xl">
                 <div className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#262626] to-[#121215] group cursor-pointer flex flex-col" onClick={() => setShowPathsModal(true)}>
                   
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--color-primary)]/20 rounded-full blur-3xl group-hover:bg-[var(--color-primary)]/30 transition-all duration-500"></div>
@@ -880,32 +871,6 @@ export default function OnboardingPage() {
                     
                     <div className="inline-flex items-center text-sm font-semibold text-white/90 group-hover:text-[var(--color-primary)] transition-colors">
                       Start drafting
-                      <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                
-                <div className="relative overflow-hidden rounded-2xl border border-[#262626] bg-gradient-to-b from-[#262626] to-[#121215] group cursor-pointer flex flex-col">
-                  
-                  <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
-                  
-                  <div className="p-8 flex-1 flex flex-col relative z-10">
-                    <div className="w-12 h-12 rounded-xl bg-[#262626] border border-[#333] flex items-center justify-center text-white mb-6 group-hover:scale-105 transition-transform duration-300">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                      </svg>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-white mb-3 tracking-tight">Personalized Manual</h3>
-                    <p className="text-sm text-white/60 mb-8 leading-relaxed flex-1 pr-4">
-                      Just joined? Skip the generic guides. Generate a one-off onboarding document tailored specifically to your role, your exact tech stack familiarity, and your current focus.
-                    </p>
-                    
-                    <div className="inline-flex items-center text-sm font-semibold text-white/90 group-hover:text-white transition-colors">
-                      Create your manual
                       <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7"/>
                       </svg>

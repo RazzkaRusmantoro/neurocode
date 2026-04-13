@@ -1,59 +1,12 @@
 'use client';
 import { useEffect, useCallback, useMemo, useState, useRef, forwardRef, useImperativeHandle } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Focus, RotateCcw, Play, Pause, ShieldAlert, Sparkles } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Focus, RotateCcw, Sparkles } from 'lucide-react';
 import { useSigma } from '../../../../../_lib/useSigma';
 import { useKGState } from '../../../../../_lib/useKGState';
 import { knowledgeGraphToGraphology, filterGraphByDepth, applyRiskColors, applySemanticColors, captureNodePositions, animateNodesToPositions, buildUmapTargets, hexWithAlpha, SigmaNodeAttributes, SigmaEdgeAttributes, } from '../../../../../_lib/graph-adapter';
 import Graph from 'graphology';
 import { KnowledgeGraph } from '../../../../../_lib/types';
-import { RISK_LEVEL_META } from '../../../../../_lib/risk-scorer';
 import { getSemanticClusterColor } from '../../../../../_lib/constants';
-interface RiskPanelProps {
-    isEnabled: boolean;
-    onToggle: () => void;
-    graph: KnowledgeGraph | null;
-    onFocusNode: (id: string) => void;
-}
-function RiskPanel({ isEnabled, onToggle, graph, onFocusNode }: RiskPanelProps) {
-    const topNodes = useMemo(() => {
-        if (!graph)
-            return [];
-        return graph.nodes
-            .filter(n => typeof n.properties.riskScore === 'number')
-            .sort((a, b) => (b.properties.riskScore as number) - (a.properties.riskScore as number))
-            .slice(0, 7);
-    }, [graph]);
-    return (<div className="flex flex-col gap-1.5">
-      <button onClick={onToggle} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all self-start ${isEnabled
-            ? 'bg-[#1a1a1a] border-[#f97316]/50 text-[#f97316]'
-            : 'bg-[#1a1a1a] border-[#262626] text-white/40 hover:text-white/70'}`}>
-        <ShieldAlert className="w-3.5 h-3.5"/>
-        Risk View
-        <span className={`w-1.5 h-1.5 rounded-full transition-colors ${isEnabled ? 'bg-[#f97316]' : 'bg-[#3a3a3a]'}`}/>
-      </button>
-
-      {isEnabled && topNodes.length > 0 && (<div className="bg-[#121215]/95 border border-[#262626] rounded-lg backdrop-blur-sm overflow-hidden w-52">
-          <div className="px-3 py-2 border-b border-[#262626] flex items-center justify-between">
-            <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest">Top Risk</span>
-            <span className="text-[10px] text-white/25">size + fade = score</span>
-          </div>
-          <div className="flex flex-col divide-y divide-[#1e1e1e]">
-            {topNodes.map((node, i) => {
-                const score = node.properties.riskScore as number;
-                const level = node.properties.riskLevel as string;
-                const meta = RISK_LEVEL_META[level as keyof typeof RISK_LEVEL_META];
-                return (<button key={node.id} onClick={() => onFocusNode(node.id)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/[0.03] transition-colors text-left w-full">
-                  <span className="text-[10px] font-mono text-white/20 w-3 shrink-0">{i + 1}</span>
-                  <span className="flex-1 text-[11px] text-white/70 truncate font-mono">{node.properties.name}</span>
-                  <span className="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style={{ color: meta?.color, backgroundColor: meta?.bg }}>
-                    {Math.round(score * 100)}
-                  </span>
-                </button>);
-            })}
-          </div>
-        </div>)}
-    </div>);
-}
 interface SemanticPanelProps {
     isEnabled: boolean;
     isAnimating: boolean;
@@ -188,7 +141,7 @@ function drawClusterHull(ctx: CanvasRenderingContext2D, pts: {
     ctx.stroke();
 }
 export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
-    const { graph, setSelectedNode, selectedNode, visibleLabels, visibleEdgeTypes, openCodePanel, depthFilter, highlightedNodeIds, isRiskModeEnabled, setRiskModeEnabled, isSemanticModeEnabled, setSemanticModeEnabled, } = useKGState();
+    const { graph, setSelectedNode, selectedNode, visibleLabels, visibleEdgeTypes, openCodePanel, depthFilter, highlightedNodeIds, isSemanticModeEnabled, setSemanticModeEnabled, } = useKGState();
     const [hoveredNodeName, setHoveredNodeName] = useState<string | null>(null);
     const [isSemanticAnimating, setIsSemanticAnimating] = useState(false);
     const cancelSemanticAnim = useRef<(() => void) | null>(null);
@@ -218,7 +171,7 @@ export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
             setHoveredNodeName(node.properties.name);
     }, [graph]);
     const handleStageClick = useCallback(() => setSelectedNode(null), [setSelectedNode]);
-    const { containerRef, sigmaRef, setGraph: setSigmaGraph, zoomIn, zoomOut, resetZoom, focusNode, isLayoutRunning, startLayout, stopLayout, selectedNode: sigmaSelectedNode, setSelectedNode: setSigmaSelectedNode, } = useSigma({
+    const { containerRef, sigmaRef, setGraph: setSigmaGraph, zoomIn, zoomOut, resetZoom, focusNode, selectedNode: sigmaSelectedNode, setSelectedNode: setSigmaSelectedNode, forceAtlas2, setForceAtlas2, } = useSigma({
         onNodeClick: handleNodeClick,
         onNodeHover: handleNodeHover,
         onStageClick: handleStageClick,
@@ -279,9 +232,9 @@ export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
         const sigmaGraph = sigma.getGraph() as Graph<SigmaNodeAttributes, SigmaEdgeAttributes>;
         if (sigmaGraph.order === 0)
             return;
-        applyRiskColors(sigmaGraph, isRiskModeEnabled);
+        applyRiskColors(sigmaGraph, false);
         sigma.refresh();
-    }, [isRiskModeEnabled, sigmaRef, graph]);
+    }, [sigmaRef, graph]);
     useEffect(() => {
         const sigma = sigmaRef.current;
         if (!sigma)
@@ -385,19 +338,7 @@ export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
       <canvas ref={hullCanvasRef} className="hidden"/>
 
       
-      <div className="absolute top-3 left-3 z-20 flex flex-col gap-3">
-        <RiskPanel isEnabled={isRiskModeEnabled} onToggle={() => setRiskModeEnabled(!isRiskModeEnabled)} graph={graph} onFocusNode={(id) => {
-            focusNode(id);
-            if (graph) {
-                const n = graph.nodes.find(x => x.id === id);
-                if (n) {
-                    setSelectedNode(n);
-                    openCodePanel();
-                }
-            }
-        }}/>
-        
-      </div>
+      
 
       
       {hoveredNodeName && !sigmaSelectedNode && (<div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[#1a1a1a]/95 border border-[#262626] rounded-lg backdrop-blur-sm z-20 pointer-events-none">
@@ -426,6 +367,18 @@ export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
 
         <div className="h-px bg-[#262626] my-1"/>
 
+        <div className="w-[7.75rem] rounded-lg border border-[#262626] bg-[#1a1a1a] p-1.5 mb-0.5">
+          <div className="text-[8px] font-medium text-white/35 uppercase tracking-wide mb-1 leading-tight">ForceAtlas2</div>
+          <div className="flex rounded-md overflow-hidden border border-[#262626]" role="group" aria-label="ForceAtlas2 layout">
+            <button type="button" disabled={!graph} title="Off: standard FA2 pass (default load)" onClick={() => setForceAtlas2(false)} className={`flex-1 py-1 text-[10px] font-medium transition-colors ${!forceAtlas2 ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary-light)]' : 'bg-transparent text-white/40 hover:text-white/65'} disabled:opacity-40 disabled:cursor-not-allowed`}>
+              Off
+            </button>
+            <button type="button" disabled={!graph} title="On: extra FA2 iterations in one step (no motion)" onClick={() => setForceAtlas2(true)} className={`flex-1 py-1 text-[10px] font-medium transition-colors border-l border-[#262626] ${forceAtlas2 ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary-light)]' : 'bg-transparent text-white/40 hover:text-white/65'} disabled:opacity-40 disabled:cursor-not-allowed`}>
+              On
+            </button>
+          </div>
+        </div>
+
         {selectedNode && (<button onClick={handleFocusSelected} title="Focus Selected" className="w-9 h-9 flex items-center justify-center bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/40 rounded text-[var(--color-primary-light)] hover:bg-[var(--color-primary)]/25 transition-colors">
             <Focus className="w-4 h-4"/>
           </button>)}
@@ -433,22 +386,7 @@ export const GraphCanvas = forwardRef<GraphCanvasHandle>((_, ref) => {
             <RotateCcw className="w-4 h-4"/>
           </button>)}
 
-        <div className="h-px bg-[#262626] my-1"/>
-
-        <button onClick={isLayoutRunning ? stopLayout : startLayout} title={isLayoutRunning ? 'Stop Layout' : 'Run Layout Again'} className={`w-9 h-9 flex items-center justify-center border rounded transition-all ${isLayoutRunning
-            ? 'border-[var(--color-primary)]/50 text-[var(--color-primary-light)] animate-pulse'
-            : 'bg-[#1a1a1a] border-[#262626] text-white/35 hover:bg-[#262626] hover:text-white/80'}`} style={isLayoutRunning ? { backgroundColor: 'rgba(213,103,7,0.15)' } : undefined}>
-          {isLayoutRunning ? <Pause className="w-4 h-4"/> : <Play className="w-4 h-4"/>}
-        </button>
       </div>
-
-      
-      {isLayoutRunning && (<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] border border-[var(--color-primary)]/30 rounded-full z-10">
-          <div className="flex gap-0.5">
-            {[0, 1, 2].map(i => (<span key={i} className="w-1 h-1 rounded-full animate-bounce" style={{ backgroundColor: '#d56707', animationDelay: `${i * 150}ms` }}/>))}
-          </div>
-          <span className="text-xs text-[var(--color-primary-light)] font-medium">Layout optimizing…</span>
-        </div>)}
     </div>);
 });
 GraphCanvas.displayName = 'GraphCanvas';

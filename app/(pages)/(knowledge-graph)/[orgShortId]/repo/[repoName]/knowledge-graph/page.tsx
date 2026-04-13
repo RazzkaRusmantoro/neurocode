@@ -40,7 +40,7 @@ export default async function KnowledgeGraphPage({ params, }: {
     }
     const repoFullName = new URL(repository.url).pathname.slice(1);
     const mongoRepoId = repository._id!.toString();
-    return (<div className="h-screen w-screen overflow-hidden">
-      <KnowledgeGraphClient repositoryUrl={repository.url} repoId={repoFullName} mongoRepoId={mongoRepoId}/>
+    return (<div className="h-screen w-screen min-h-0 overflow-hidden bg-[#1e1e21]">
+      <KnowledgeGraphClient repositoryUrl={repository.url} repoId={repoFullName} mongoRepoId={mongoRepoId} orgShortId={shortId}/>
     </div>);
 }

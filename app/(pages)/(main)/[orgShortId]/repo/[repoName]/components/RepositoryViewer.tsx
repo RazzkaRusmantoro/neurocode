@@ -40,7 +40,6 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
     const cache = useRepoCache();
     const [selectedFile, setSelectedFile] = useState<FileTreeItem | null>(null);
     const [showFileTree, setShowFileTree] = useState(true);
-    const [activeTab, setActiveTab] = useState<'documentation' | 'ai-chat'>('documentation');
     const [breadcrumbPath, setBreadcrumbPath] = useState<string[]>([]);
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const [branchSearchQuery, setBranchSearchQuery] = useState('');
@@ -339,28 +338,5 @@ export default function RepositoryViewer({ repoFullName, orgShortId, repoUrlName
       </div>
 
       
-      <div className="w-96 bg-[#121215] border border-[#262626] rounded overflow-hidden flex flex-col min-h-0">
-        
-        <div className="flex border-b border-[#262626] flex-shrink-0 bg-[#121215]">
-          <button onClick={() => setActiveTab('documentation')} className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${activeTab === 'documentation'
-            ? 'text-white border-b-2 border-[var(--color-primary)]'
-            : 'text-white/60 hover:text-white/80'}`}>
-            Documentation
-          </button>
-          <button onClick={() => setActiveTab('ai-chat')} className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${activeTab === 'ai-chat'
-            ? 'text-white border-b-2 border-[var(--color-primary)]'
-            : 'text-white/60 hover:text-white/80'}`}>
-            AI Chat
-          </button>
-        </div>
-        
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0">
-          {activeTab === 'documentation' ? (<div className="h-full flex flex-col">
-            </div>) : (<div className="text-white/60 text-sm text-center py-8">
-              AI Chat will appear here
-            </div>)}
-        </div>
-      </div>
     </div>);
 }

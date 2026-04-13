@@ -64,9 +64,9 @@ const accordionFeatures = [
         description: "Ask questions and get grounded answers constrained by retrieved context from your organization's vector collections.",
     },
     {
-        id: "pr-analysis",
-        title: "Pull Request Analysis",
-        description: "Automatically analyzes changed code context and returns AI-assisted insights for faster, safer code reviews.",
+        id: "knowledge-graph",
+        title: "Knowledge Graph",
+        description: "Visualize your entire codebase as an interactive graph. Explore files, functions, and dependencies as interconnected nodes—understand how everything connects at a glance.",
     },
     {
         id: "onboarding-paths",
@@ -86,6 +86,92 @@ const accordionFeatures = [
 ];
 const CTA_TEXT = "Ready to get started?";
 const CTA_ORANGE_START = 12;
+const LANDING_TEAM_MEMBERS = [
+    { name: 'Abdur Rahman Abdul Cader', role: 'AI · Retrieval · Backend' },
+    { name: 'Razzka Rusmantoro', role: 'Backend · Database · Platform' },
+    { name: 'Jordan Bryan Gakam', role: 'UI Design · Visualizations · UX' },
+    { name: 'Mahwan Awwalulridjal', role: 'Full-stack Engineer' },
+    { name: 'Gleb Shipov', role: 'Full-stack Engineer' },
+] as const;
+type LandingTeamMember = (typeof LANDING_TEAM_MEMBERS)[number];
+const teamMotionEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+function TeamMemberCard({ member }: {
+    member: LandingTeamMember;
+}) {
+    return (<motion.article className="group/card relative flex h-full min-h-0 w-full flex-col rounded-2xl border border-[#2a2a2e] bg-[#131316] p-5 shadow-lg shadow-black/20" initial={false} whileHover={{
+            y: -6,
+            borderColor: 'rgba(var(--color-primary-rgb), 0.5)',
+            boxShadow: '0 20px 40px -14px rgba(0,0,0,0.4), 0 0 0 1px rgba(var(--color-primary-rgb), 0.12)',
+            transition: { duration: 0.22, ease: teamMotionEase },
+        }} whileTap={{ scale: 0.995 }} transition={{ type: 'spring', stiffness: 420, damping: 30 }}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-primary)]/50 to-transparent opacity-60"/>
+        <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" style={{
+                background: 'radial-gradient(640px circle at 50% -20%, rgba(var(--color-primary-rgb), 0.14), transparent 55%)',
+            }}/>
+        <span className="absolute left-0 top-0 h-full w-[3px] scale-y-0 origin-top rounded-l-2xl bg-gradient-to-b from-[var(--color-primary)] via-[var(--color-primary)]/60 to-transparent transition-transform duration-300 ease-out group-hover/card:scale-y-100"/>
+      </div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col text-left">
+        <div className="flex h-[8rem] w-full shrink-0 flex-col justify-start overflow-hidden sm:h-[8.25rem] md:h-[9rem] lg:h-[9.5rem]">
+          <h3 className="text-lg font-bold leading-tight tracking-tight text-white break-words [overflow-wrap:anywhere] sm:text-xl md:text-xl lg:text-2xl lg:leading-snug">
+            {member.name}
+          </h3>
+        </div>
+        <p className="mt-1 shrink-0 text-sm font-semibold leading-snug text-[var(--color-primary)] md:text-[15px]">
+          {member.role}
+        </p>
+      </div>
+    </motion.article>);
+}
+function TeamSection() {
+    const ref = useRef<HTMLElement | null>(null);
+    const inView = useInView(ref, { once: true, amount: 0.12, margin: '-32px 0px 0px 0px' });
+    return (<section id="team" ref={ref} className="scroll-mt-28 relative overflow-hidden border-t border-white/[0.08] bg-[#0a0a0b] py-24 md:py-32 lg:py-40" aria-labelledby="team-heading">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-primary)]/[0.04] via-transparent to-transparent"/>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px] opacity-50"/>
+        <motion.div className="absolute -left-24 top-1/4 h-[22rem] w-[22rem] rounded-full bg-[var(--color-primary)]/[0.1] blur-[120px]" animate={inView ? { opacity: [0.5, 0.85, 0.5], scale: [1, 1.05, 1] } : { opacity: 0.4 }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}/>
+        <motion.div className="absolute -right-20 bottom-1/4 h-[24rem] w-[24rem] rounded-full bg-orange-500/[0.09] blur-[130px]" animate={inView ? { opacity: [0.45, 0.8, 0.45], scale: [1, 1.06, 1] } : { opacity: 0.35 }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}/>
+      </div>
+
+      <div className="container relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-3xl text-center">
+          <motion.div initial={{ opacity: 0, y: 22 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }} transition={{ duration: 0.48, ease: teamMotionEase }}>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/35 bg-[var(--color-primary)]/12 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+              Meet the team
+            </span>
+          </motion.div>
+          <motion.h2 id="team-heading" className="mt-6 text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-[3.25rem] lg:leading-tight" initial={{ opacity: 0, y: 26 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 26 }} transition={{ duration: 0.52, delay: 0.06, ease: teamMotionEase }}>
+            Team
+          </motion.h2>
+          <motion.p className="mt-5 text-base leading-relaxed text-white/50 md:text-lg md:leading-relaxed" initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }} transition={{ duration: 0.48, delay: 0.12, ease: teamMotionEase }}>
+            People building NeuroCode — documentation, retrieval, and codebase intelligence for real teams.
+          </motion.p>
+        </div>
+
+        <div className="mt-12 md:mt-14 mx-auto max-w-6xl">
+          <ul className="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 md:gap-5 auto-rows-fr">
+            {LANDING_TEAM_MEMBERS.slice(0, 3).map((member, index) => (<motion.li key={member.name} className="min-h-0 h-full" initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }} transition={{
+                        duration: 0.55,
+                        delay: 0.16 + index * 0.085,
+                        ease: teamMotionEase,
+                    }}>
+                <TeamMemberCard member={member}/>
+              </motion.li>))}
+          </ul>
+          <ul className="mt-5 md:mt-6 flex list-none flex-wrap justify-center gap-4 p-0 md:gap-5">
+            {LANDING_TEAM_MEMBERS.slice(3).map((member, index) => (<motion.li key={member.name} className="w-full min-h-0 sm:max-w-md lg:w-[calc((100%-2rem)/3)] lg:max-w-[calc((100%-2rem)/3)] lg:shrink-0" initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }} transition={{
+                        duration: 0.55,
+                        delay: 0.16 + (3 + index) * 0.085,
+                        ease: teamMotionEase,
+                    }}>
+                <TeamMemberCard member={member}/>
+              </motion.li>))}
+          </ul>
+        </div>
+      </div>
+    </section>);
+}
 function CTAStillMore() {
     const ref = useRef<HTMLDivElement>(null);
     const inView = useInView(ref, { once: false, amount: 0.3 });
@@ -97,7 +183,7 @@ function CTAStillMore() {
             setScrollKey((k) => k + 1);
         prevInView.current = inView;
     }, [inView]);
-    return (<section ref={ref} className="relative bg-[#0a0a0b] overflow-hidden">
+    return (<section ref={ref} id="cta" className="scroll-mt-28 relative bg-[#0a0a0b] overflow-hidden">
       <div className="container relative mx-auto max-w-6xl px-4 py-40 md:py-56 lg:py-64 flex flex-col items-center justify-center text-center">
         
         <motion.div key={`glow-${scrollKey}`} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,600px)] h-[min(80vw,600px)] rounded-full bg-orange-500/[0.02] blur-[80px]" initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }} transition={{ duration: inView ? 0.35 : 0.1, ease: [0.22, 1, 0.36, 1] }} aria-hidden/>
@@ -221,6 +307,25 @@ export default function Home() {
         return () => clearTimeout(t);
     }, [ragActiveStage]);
     useEffect(() => {
+        const scrollToHash = () => {
+            const raw = window.location.hash.replace(/^#/, "");
+            if (!raw) {
+                return;
+            }
+            const id = raw === "roadmap" ? "features" : raw;
+            if (id === "hero") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                return;
+            }
+            requestAnimationFrame(() => {
+                document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        };
+        scrollToHash();
+        window.addEventListener("hashchange", scrollToHash);
+        return () => window.removeEventListener("hashchange", scrollToHash);
+    }, []);
+    useEffect(() => {
         setIsVisible((prev) => ({ ...prev, hero: true }));
         const observers: IntersectionObserver[] = [];
         const createObserver = (ref: React.RefObject<HTMLElement | null>, key: keyof typeof isVisible) => {
@@ -250,7 +355,7 @@ export default function Home() {
       <Navbar />
       <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#0f0f11]">
         
-        <section ref={heroRef} className={`relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-40 md:pt-56 pb-12 transition-all duration-1000 ${isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <section id="hero" ref={heroRef} className={`scroll-mt-28 relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-40 md:pt-56 pb-12 transition-all duration-1000 ${isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           
           <div className="absolute inset-0 z-0 hidden md:block bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:24px_24px] animate-grid-flow motion-reduce:animate-none">
             
@@ -300,7 +405,7 @@ export default function Home() {
         </section>
 
         
-        <section ref={featuresRef} className={`py-24 relative overflow-hidden bg-[#0f0f11] transition-all duration-700 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+        <section id="product" ref={featuresRef} className={`scroll-mt-28 py-24 relative overflow-hidden bg-[#0f0f11] transition-all duration-700 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden">
             <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[var(--color-primary)]/5 rounded-full blur-[128px]"></div>
@@ -437,7 +542,7 @@ export default function Home() {
         </section>
 
         
-        <section ref={workflowRef} className={`py-24 relative overflow-hidden bg-[#0a0a0b] transition-all duration-700 ${isVisible.workflow ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+        <section id="workflow" ref={workflowRef} className={`scroll-mt-28 py-24 relative overflow-hidden bg-[#0a0a0b] transition-all duration-700 ${isVisible.workflow ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:24px_24px] opacity-60 pointer-events-none"/>
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[var(--color-primary)] blur-[100px] opacity-20"/>
@@ -641,6 +746,8 @@ export default function Home() {
           </div>
         </section>
 
+        <TeamSection />
+
         
         <CTAStillMore />
 
@@ -655,85 +762,41 @@ export default function Home() {
         </div>
 
         
-        <footer className="relative border-t border-[#262626] bg-[#171717] overflow-hidden">
-          <div className="container mx-auto px-4 py-16">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 lg:gap-12">
-                
-                <div className="col-span-2 md:col-span-4 lg:col-span-1 lg:pr-8">
-                  <a href="/" className="inline-block">
-                    <img src="/Full-logo.png" alt="NeuroCode" className="h-8 w-auto"/>
-                  </a>
-                  <p className="mt-4 text-sm text-white/50 leading-relaxed max-w-xs">
-                    AI-driven documentation and codebase intelligence for modern teams.
-                  </p>
-                  <div className="mt-6 flex items-center gap-4">
-                    <a href="#" className="text-white/40 hover:text-[var(--color-primary)] transition-colors" aria-label="GitHub">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/></svg>
-                    </a>
-                    <a href="#" className="text-white/40 hover:text-[var(--color-primary)] transition-colors" aria-label="Twitter">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                    </a>
-                    <a href="#" className="text-white/40 hover:text-[var(--color-primary)] transition-colors" aria-label="LinkedIn">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                    </a>
-                  </div>
-                </div>
-
-                
+        <footer className="relative border-t border-[#262626] bg-[#171717]">
+          <div className="container mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
+            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
+              <div className="max-w-md">
+                <a href="/" className="inline-block">
+                  <img src="/Full-logo.png" alt="NeuroCode" className="h-8 w-auto"/>
+                </a>
+                <p className="mt-4 text-sm leading-relaxed text-white/50">
+                  Connect GitHub, explore repositories with documentation and knowledge views, and use AI grounded in your org’s code. Sign in to open the app workspace.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-12 lg:flex lg:shrink-0 lg:gap-16">
                 <div>
-                  <h4 className="text-xs font-semibold text-white/90 uppercase tracking-wider mb-4">Product</h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Features</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Documentation</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Pricing</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Changelog</a></li>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-white/70">Account</h4>
+                  <ul className="mt-4 space-y-2.5">
+                    <li><a href="/login" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Sign in</a></li>
+                    <li><a href="/register" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Create account</a></li>
                   </ul>
                 </div>
-
-                
                 <div>
-                  <h4 className="text-xs font-semibold text-white/90 uppercase tracking-wider mb-4">Company</h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">About</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Blog</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Careers</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Contact</a></li>
-                  </ul>
-                </div>
-
-                
-                <div>
-                  <h4 className="text-xs font-semibold text-white/90 uppercase tracking-wider mb-4">Resources</h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Help Center</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Community</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Status</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Partners</a></li>
-                  </ul>
-                </div>
-
-                
-                <div>
-                  <h4 className="text-xs font-semibold text-white/90 uppercase tracking-wider mb-4">Legal</h4>
-                  <ul className="space-y-3">
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Privacy</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Terms</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Security</a></li>
-                    <li><a href="#" className="text-sm text-white/50 hover:text-[var(--color-primary)] transition-colors">Cookies</a></li>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-white/70">On this page</h4>
+                  <ul className="mt-4 space-y-2.5">
+                    <li><a href="#product" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Product</a></li>
+                    <li><a href="#workflow" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Workflow</a></li>
+                    <li><a href="#features" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Features</a></li>
+                    <li><a href="#team" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Team</a></li>
+                    <li><a href="#cta" className="text-sm text-white/45 transition-colors hover:text-[var(--color-primary)]">Get started</a></li>
                   </ul>
                 </div>
               </div>
-
-              
-              <div className="mt-16 pt-8 border-t border-[#262626] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="text-sm text-white/40">
-                  © {new Date().getFullYear()} NeuroCode. All rights reserved.
-                </p>
-                <p className="text-sm text-white/40">
-                  Built for developers who ship.
-                </p>
-              </div>
+            </div>
+            <div className="mt-12 border-t border-[#262626] pt-8">
+              <p className="text-center text-sm text-white/35 sm:text-left">
+                © {new Date().getFullYear()} NeuroCode. Web app built with Next.js; sign in to use organization and repository features in the product.
+              </p>
             </div>
           </div>
         </footer>

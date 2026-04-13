@@ -2,12 +2,11 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Sigma from 'sigma';
 import Graph from 'graphology';
-import FA2Layout from 'graphology-layout-forceatlas2/worker';
-import forceAtlas2 from 'graphology-layout-forceatlas2';
+import fa2Layout from 'graphology-layout-forceatlas2';
 import noverlap from 'graphology-layout-noverlap';
 import EdgeCurveProgram from '@sigma/edge-curve';
 import { createNodeBorderProgram } from '@sigma/node-border';
-import { SigmaNodeAttributes, SigmaEdgeAttributes } from './graph-adapter';
+import { SigmaNodeAttributes, SigmaEdgeAttributes, captureNodePositions } from './graph-adapter';
 import type { EdgeType } from './constants';
 const NodeBorderProgram = createNodeBorderProgram({
     borders: [
@@ -48,11 +47,10 @@ export interface UseSigmaReturn {
     zoomOut: () => void;
     resetZoom: () => void;
     focusNode: (nodeId: string) => void;
-    isLayoutRunning: boolean;
-    startLayout: () => void;
-    stopLayout: () => void;
     selectedNode: string | null;
     setSelectedNode: (nodeId: string | null) => void;
+    forceAtlas2: boolean;
+    setForceAtlas2: (enabled: boolean) => void;
 }
 const NOVERLAP_SETTINGS = { maxIterations: 20, ratio: 1.1, margin: 10, expansion: 1.05 };
 const getFA2Settings = (nodeCount: number) => {
@@ -72,29 +70,33 @@ const getFA2Settings = (nodeCount: number) => {
         edgeWeightInfluence: 1,
     };
 };
-const getLayoutDuration = (nodeCount: number): number => {
+const getInstantLayoutIterations = (nodeCount: number): number => {
     if (nodeCount > 10000)
-        return 40000;
+        return 40;
     if (nodeCount > 5000)
-        return 30000;
+        return 55;
     if (nodeCount > 2000)
-        return 22000;
+        return 80;
     if (nodeCount > 500)
-        return 15000;
+        return 120;
     if (nodeCount > 100)
-        return 10000;
-    return 6000;
+        return 180;
+    return 260;
 };
+const getBoostedLayoutIterations = (nodeCount: number): number => Math.min(480, Math.round(getInstantLayoutIterations(nodeCount) * 2.25));
 export const useSigma = (options: UseSigmaOptions = {}): UseSigmaReturn => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sigmaRef = useRef<Sigma | null>(null);
     const graphRef = useRef<Graph<SigmaNodeAttributes, SigmaEdgeAttributes> | null>(null);
-    const layoutRef = useRef<FA2Layout | null>(null);
     const selectedNodeRef = useRef<string | null>(null);
     const highlightedRef = useRef<Set<string>>(new Set());
     const visibleEdgeTypesRef = useRef<EdgeType[] | null>(null);
-    const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [isLayoutRunning, setIsLayoutRunning] = useState(false);
+    const forceAtlas2Ref = useRef(false);
+    const forceAtlas2SnapshotRef = useRef<Map<string, {
+        x: number;
+        y: number;
+    }> | null>(null);
+    const [forceAtlas2, setForceAtlas2State] = useState(false);
     const [selectedNode, setSelectedNodeState] = useState<string | null>(null);
     useEffect(() => {
         highlightedRef.current = options.highlightedNodeIds || new Set();
@@ -291,58 +293,65 @@ export const useSigma = (options: UseSigmaOptions = {}): UseSigmaReturn => {
                 containerRef.current.style.cursor = 'grab';
         });
         return () => {
-            if (layoutTimeoutRef.current)
-                clearTimeout(layoutTimeoutRef.current);
-            layoutRef.current?.kill();
             sigma.kill();
             sigmaRef.current = null;
             graphRef.current = null;
         };
     }, []);
-    const runLayout = useCallback((graph: Graph<SigmaNodeAttributes, SigmaEdgeAttributes>) => {
+    const applyLayout = useCallback((graph: Graph<SigmaNodeAttributes, SigmaEdgeAttributes>, boosted: boolean) => {
         if (graph.order === 0)
             return;
-        if (layoutRef.current) {
-            layoutRef.current.kill();
-            layoutRef.current = null;
-        }
-        if (layoutTimeoutRef.current) {
-            clearTimeout(layoutTimeoutRef.current);
-            layoutTimeoutRef.current = null;
-        }
-        const inferredSettings = forceAtlas2.inferSettings(graph);
-        const layout = new FA2Layout(graph, { settings: { ...inferredSettings, ...getFA2Settings(graph.order) } });
-        layoutRef.current = layout;
-        layout.start();
-        setIsLayoutRunning(true);
-        layoutTimeoutRef.current = setTimeout(() => {
-            if (layoutRef.current) {
-                layoutRef.current.stop();
-                layoutRef.current = null;
-                noverlap.assign(graph, NOVERLAP_SETTINGS);
-                sigmaRef.current?.refresh();
-                setIsLayoutRunning(false);
-            }
-        }, getLayoutDuration(graph.order));
+        const inferredSettings = fa2Layout.inferSettings(graph);
+        const iterations = boosted ? getBoostedLayoutIterations(graph.order) : getInstantLayoutIterations(graph.order);
+        fa2Layout.assign(graph, {
+            iterations,
+            settings: { ...inferredSettings, ...getFA2Settings(graph.order) },
+        });
+        noverlap.assign(graph, NOVERLAP_SETTINGS);
+        sigmaRef.current?.refresh();
     }, []);
     const setGraph = useCallback((newGraph: Graph<SigmaNodeAttributes, SigmaEdgeAttributes>) => {
         const sigma = sigmaRef.current;
         if (!sigma)
             return;
-        if (layoutRef.current) {
-            layoutRef.current.kill();
-            layoutRef.current = null;
-        }
-        if (layoutTimeoutRef.current) {
-            clearTimeout(layoutTimeoutRef.current);
-            layoutTimeoutRef.current = null;
-        }
+        forceAtlas2SnapshotRef.current = null;
         graphRef.current = newGraph;
         sigma.setGraph(newGraph);
         setSelectedNode(null);
-        runLayout(newGraph);
-        sigma.getCamera().animatedReset({ duration: 500 });
-    }, [runLayout, setSelectedNode]);
+        applyLayout(newGraph, forceAtlas2Ref.current);
+        sigma.getCamera().animatedReset({ duration: 0 });
+    }, [applyLayout, setSelectedNode]);
+    const setForceAtlas2 = useCallback((enabled: boolean) => {
+        if (enabled === forceAtlas2Ref.current)
+            return;
+        forceAtlas2Ref.current = enabled;
+        setForceAtlas2State(enabled);
+        const graph = graphRef.current;
+        const sigma = sigmaRef.current;
+        if (!graph || graph.order === 0 || !sigma)
+            return;
+        if (enabled) {
+            forceAtlas2SnapshotRef.current = captureNodePositions(graph);
+            applyLayout(graph, true);
+        }
+        else {
+            const snap = forceAtlas2SnapshotRef.current;
+            forceAtlas2SnapshotRef.current = null;
+            if (snap && snap.size > 0) {
+                snap.forEach((p, id) => {
+                    if (graph.hasNode(id)) {
+                        graph.setNodeAttribute(id, 'x', p.x);
+                        graph.setNodeAttribute(id, 'y', p.y);
+                    }
+                });
+            }
+            else {
+                applyLayout(graph, false);
+            }
+            sigma.refresh();
+        }
+        sigma.getCamera().animatedReset({ duration: 0 });
+    }, [applyLayout]);
     const focusNode = useCallback((nodeId: string) => {
         const sigma = sigmaRef.current;
         const graph = graphRef.current;
@@ -360,27 +369,5 @@ export const useSigma = (options: UseSigmaOptions = {}): UseSigmaReturn => {
     const zoomIn = useCallback(() => sigmaRef.current?.getCamera().animatedZoom({ duration: 200 }), []);
     const zoomOut = useCallback(() => sigmaRef.current?.getCamera().animatedUnzoom({ duration: 200 }), []);
     const resetZoom = useCallback(() => { sigmaRef.current?.getCamera().animatedReset({ duration: 300 }); setSelectedNode(null); }, [setSelectedNode]);
-    const startLayout = useCallback(() => {
-        const graph = graphRef.current;
-        if (!graph || graph.order === 0)
-            return;
-        runLayout(graph);
-    }, [runLayout]);
-    const stopLayout = useCallback(() => {
-        if (layoutTimeoutRef.current) {
-            clearTimeout(layoutTimeoutRef.current);
-            layoutTimeoutRef.current = null;
-        }
-        if (layoutRef.current) {
-            layoutRef.current.stop();
-            layoutRef.current = null;
-            const graph = graphRef.current;
-            if (graph) {
-                noverlap.assign(graph, NOVERLAP_SETTINGS);
-                sigmaRef.current?.refresh();
-            }
-            setIsLayoutRunning(false);
-        }
-    }, []);
-    return { containerRef, sigmaRef, setGraph, zoomIn, zoomOut, resetZoom, focusNode, isLayoutRunning, startLayout, stopLayout, selectedNode, setSelectedNode };
+    return { containerRef, sigmaRef, setGraph, zoomIn, zoomOut, resetZoom, focusNode, selectedNode, setSelectedNode, forceAtlas2, setForceAtlas2 };
 };

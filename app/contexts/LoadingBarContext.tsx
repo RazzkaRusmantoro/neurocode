@@ -100,9 +100,11 @@ export function LoadingBarProvider({ children }: {
             if (href.startsWith('mailto:') || href.startsWith('tel:')) {
                 return;
             }
-            const normalizedHref = href.replace(window.location.origin, '').split('?')[0].split('#')[0];
+            const withoutOrigin = href.replace(window.location.origin, '').split('?')[0];
+            const pathOnly = withoutOrigin.split('#')[0];
             const currentPath = pathname.split('?')[0].split('#')[0];
-            if (normalizedHref === currentPath && !href.includes('#')) {
+            const destinationPath = pathOnly === '' ? currentPath : pathOnly;
+            if (destinationPath === currentPath) {
                 return;
             }
             startLoading();

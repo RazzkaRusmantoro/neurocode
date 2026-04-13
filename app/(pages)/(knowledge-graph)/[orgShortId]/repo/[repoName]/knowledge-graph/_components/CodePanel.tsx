@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { X, FileCode, ShieldAlert } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useKGState } from '../../../../../_lib/useKGState';
 import { NODE_COLORS } from '../../../../../_lib/constants';
 import { GraphNode } from '../../../../../_lib/types';
@@ -24,41 +26,64 @@ const decodeBase64 = (b64: string): string => {
         return b64;
     }
 };
+const PRISM_LANG_MAP: Record<string, string> = {
+    '.ts': 'typescript', '.tsx': 'tsx', '.js': 'javascript', '.jsx': 'jsx',
+    '.py': 'python', '.go': 'go', '.rs': 'rust', '.java': 'java',
+    '.cs': 'csharp', '.cpp': 'cpp', '.c': 'c', '.rb': 'ruby',
+    '.php': 'php', '.swift': 'swift', '.kt': 'kotlin',
+    '.vue': 'markup', '.svelte': 'markup',
+    '.json': 'json', '.yaml': 'yaml', '.yml': 'yaml',
+    '.html': 'html', '.css': 'css', '.scss': 'scss', '.md': 'markdown',
+    '.sh': 'bash', '.bash': 'bash', '.sql': 'sql',
+};
+function extToLang(filePath: string): string {
+    const ext = filePath.slice(filePath.lastIndexOf('.')).toLowerCase();
+    return PRISM_LANG_MAP[ext] || 'text';
+}
 interface CodeViewerProps {
     content: string;
+    filePath?: string;
+    language?: string;
     startLine?: number;
     endLine?: number;
 }
-function CodeViewer({ content, startLine, endLine }: CodeViewerProps) {
-    const lines = content.split('\n');
-    const highlightRef = useRef<HTMLTableRowElement>(null);
+function CodeViewer({ content, filePath, language, startLine, endLine }: CodeViewerProps) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const lang = language ? language.toLowerCase() : (filePath ? extToLang(filePath) : 'text');
+    const highlightLines = startLine && endLine
+        ? Array.from({ length: endLine - startLine + 1 }, (_, i) => startLine + i)
+        : startLine ? [startLine] : [];
     useEffect(() => {
-        if (highlightRef.current) {
-            highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (!scrollRef.current || !startLine)
+            return;
+        const lineHeight = 21;
+        scrollRef.current.scrollTop = Math.max(0, (startLine - 4) * lineHeight);
     }, [startLine, endLine, content]);
-    return (<div className="overflow-auto flex-1 text-xs font-mono bg-[#0e0e11] custom-scrollbar">
-      <table className="w-full border-collapse">
-        <tbody>
-          {lines.map((line, idx) => {
-            const lineNum = idx + 1;
-            const isHighlighted = startLine !== undefined &&
-                endLine !== undefined &&
-                lineNum >= startLine &&
-                lineNum <= endLine;
-            return (<tr key={lineNum} ref={isHighlighted && lineNum === startLine ? highlightRef : undefined} className={isHighlighted ? 'bg-[#d56707]/10' : 'hover:bg-white/[0.02]'}>
-                <td className="select-none text-right pr-4 pl-3 py-0.5 text-white/20 border-r border-[#262626]/60 w-10 shrink-0" style={{ minWidth: '2.5rem' }}>
-                  {lineNum}
-                </td>
-                <td className="pl-4 pr-6 py-0.5 whitespace-pre text-white/75">
-                  {isHighlighted && lineNum === startLine && (<span className="inline-block w-0.5 h-full bg-[#d56707] mr-2 rounded-sm"/>)}
-                  {line || ' '}
-                </td>
-              </tr>);
-        })}
-        </tbody>
-      </table>
-    </div>);
+    return (<div ref={scrollRef} className="overflow-auto flex-1 custom-scrollbar" style={{ background: '#0e0e11' }}>
+            <style>{`
+                .kg-code-highlight .token { }
+                .kg-code-hl-line { background: rgba(213,103,7,0.12) !important; display: block; border-left: 2px solid #d56707; }
+            `}</style>
+            <SyntaxHighlighter language={lang} style={vscDarkPlus} showLineNumbers wrapLines lineProps={(lineNumber: number) => ({
+            className: highlightLines.includes(lineNumber) ? 'kg-code-hl-line' : '',
+        })} customStyle={{
+            margin: 0,
+            padding: '12px 0',
+            background: '#0e0e11',
+            fontSize: '12px',
+            lineHeight: '1.75',
+            minHeight: '100%',
+        }} lineNumberStyle={{
+            minWidth: '2.5rem',
+            paddingRight: '1rem',
+            color: 'rgba(255,255,255,0.18)',
+            userSelect: 'none',
+            borderRight: '1px solid rgba(255,255,255,0.06)',
+            marginRight: '1rem',
+        }} codeTagProps={{ className: 'kg-code-highlight' }}>
+                {content}
+            </SyntaxHighlighter>
+        </div>);
 }
 function Chip({ label, value, color }: {
     label: string;
@@ -128,8 +153,34 @@ function RiskBreakdown({ score, level, factors }: {
         </div>)}
     </div>);
 }
-export function CodePanel() {
+export function CodePanel({ explorerSidebarCollapsed = false, }: {
+    explorerSidebarCollapsed?: boolean;
+} = {}) {
     const { selectedNode, isCodePanelOpen, closeCodePanel, repoId } = useKGState();
+    const [panelWidth, setPanelWidth] = useState(420);
+    const isResizing = useRef(false);
+    const startX = useRef(0);
+    const startWidth = useRef(0);
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizing.current = true;
+        startX.current = e.clientX;
+        startWidth.current = panelWidth;
+        const onMove = (ev: MouseEvent) => {
+            if (!isResizing.current)
+                return;
+            const delta = ev.clientX - startX.current;
+            const next = Math.max(280, Math.min(720, startWidth.current + delta));
+            setPanelWidth(next);
+        };
+        const onUp = () => {
+            isResizing.current = false;
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    }, [panelWidth]);
     const [content, setContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -183,7 +234,13 @@ export function CodePanel() {
     const nodeColor = NODE_COLORS[label] || '#6366f1';
     const displayLang = language || (filePath ? getLanguageFromPath(filePath) : '');
     const fileName = filePath ? filePath.split('/').pop() : '';
-    return (<div className="h-full w-[38%] min-w-[320px] max-w-[600px] flex flex-col border-r border-[#262626] bg-[#121215] animate-in slide-in-from-left duration-200">
+    const leftAfterExplorer = explorerSidebarCollapsed
+        ? 'left-[calc(1rem+3rem+0.75rem)]'
+        : 'left-[calc(1rem+16rem+0.75rem)]';
+    return (<div className={`absolute top-14 bottom-4 z-[15] flex flex-col bg-[#121215] border border-[#262626] rounded-xl shadow-2xl shadow-black/50 overflow-hidden animate-in slide-in-from-left duration-200 ${leftAfterExplorer}`} style={{ width: panelWidth }}>
+      <div onMouseDown={handleResizeStart} className="absolute top-0 right-0 bottom-0 w-1.5 z-10 cursor-ew-resize group" title="Drag to resize">
+        <div className="absolute inset-y-0 right-0 w-px bg-[#262626] group-hover:w-1 group-hover:bg-[var(--color-primary)]/40 transition-all duration-150"/>
+      </div>
       
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#262626] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -234,7 +291,7 @@ export function CodePanel() {
             </div>
           </div>)}
 
-        {!loading && !error && content !== null && (<CodeViewer content={content} startLine={startLine} endLine={endLine}/>)}
+        {!loading && !error && content !== null && (<CodeViewer content={content} filePath={filePath} language={displayLang} startLine={startLine} endLine={endLine}/>)}
 
       </div>
     </div>);

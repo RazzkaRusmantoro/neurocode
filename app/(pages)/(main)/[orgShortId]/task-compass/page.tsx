@@ -1,8 +1,10 @@
 'use client';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
-import { setTaskCompassResult, getTaskCompassResultForTask } from '@/lib/task_compass_storage';
-import { ListTodo, LayoutGrid, GanttChart, MoreHorizontal, Plus, Bug, Bookmark, CheckSquare, ArrowUp, ArrowRight, ArrowDown, ArrowLeft, Search, GitBranch, AlertTriangle, FileCode, Play, Users, Shield, Loader2, RefreshCw, } from 'lucide-react';
+import { setTaskCompassResult, getTaskCompassResultForTask, deleteTaskCompassResult } from '@/lib/task_compass_storage';
+import type { OrgMemberSummary } from '@/lib/models/organization_members';
+import Dropdown from '@/app/components/Dropdown';
+import { MoreHorizontal, Plus, Bug, Bookmark, CheckSquare, ArrowUp, ArrowRight, ArrowDown, Search, GitBranch, AlertTriangle, FileCode, Play, Users, Shield, Loader2, } from 'lucide-react';
 type PageProps = {
     params: Promise<{
         orgShortId: string;
@@ -10,21 +12,9 @@ type PageProps = {
         orgShortId: string;
     };
 };
-type TabId = 'main' | 'board' | 'timeline';
 type Priority = 'high' | 'medium' | 'low';
 type TaskType = 'bug' | 'story' | 'task';
 type Status = 'backlog' | 'todo' | 'in-progress' | 'to-test' | 'completed';
-interface Task {
-    id: string;
-    title: string;
-    type: TaskType;
-    priority: Priority;
-    status: Status;
-    assignee?: string;
-    points?: number;
-    description?: string;
-    repositories?: string[];
-}
 const COLUMNS: {
     id: Status;
     title: string;
@@ -35,126 +25,43 @@ const COLUMNS: {
     { id: 'to-test', title: 'To Test' },
     { id: 'completed', title: 'Completed' },
 ];
-const MOCK_TASKS: Task[] = [
-    {
-        id: 'NC-104',
-        title: 'Task Compass: Kanban board drag and drop',
-        type: 'story',
-        priority: 'high',
-        status: 'backlog',
-        points: 5,
-        repositories: ['neurocode'],
-        description: 'Add drag-and-drop for moving issues between columns on the Task Compass board. Board state lives in task-compass/page.tsx; consider @dnd-kit or similar. Backlog/To Do/In Progress/To Test/Completed columns are already defined.',
-    },
-    {
-        id: 'NC-105',
-        title: 'Sidebar: fix active nav state for nested routes',
-        type: 'bug',
-        priority: 'high',
-        status: 'backlog',
-        repositories: ['neurocode'],
-        description: 'Active state on the sidebar (app/components/Sidebar.tsx) is wrong for nested routes like repo/[repoName]/documentation and repo/[repoName]/visual-tree. usePathname() may need to be compared with startsWith or a route matcher.',
-    },
-    {
-        id: 'NC-106',
-        title: 'Neurocode app: add dark/light theme toggle',
-        type: 'task',
-        priority: 'medium',
-        status: 'backlog',
-        points: 2,
-        repositories: ['neurocode'],
-        description: 'Add a theme toggle (e.g. on settings page or navbar). Theme is driven by CSS variables in app/globals.css and possibly tailwind.config. Ensure all pages (task-compass, hot-zones, repo documentation) respect the toggle.',
-    },
-    {
-        id: 'NC-101',
-        title: 'neurocode-python: Jira integration API endpoints',
-        type: 'story',
-        priority: 'high',
-        status: 'todo',
-        points: 8,
-        repositories: ['neurocode', 'neurocode-python'],
-        description: 'Add FastAPI routes in neurocode-python for syncing tasks with Jira (e.g. fetch issues, map to internal schema). Follow patterns in neurocode/routes/internal.py for auth. Neurocode frontend will call these from Task Compass later.',
-    },
-    {
-        id: 'NC-102',
-        title: 'Task Compass: empty states for Main, Board, Timeline',
-        type: 'task',
-        priority: 'medium',
-        status: 'todo',
-        points: 3,
-        repositories: ['neurocode'],
-        description: 'Improve empty states in app/(pages)/(main)/[orgShortId]/task-compass/page.tsx: MainView (select task), BoardView (no tasks in column), and the Timeline tab. Keep styling consistent with globals.css tokens.',
-    },
-    {
-        id: 'NC-99',
-        title: 'neurocode-python: migrate avatar uploads to new CDN',
-        type: 'story',
-        priority: 'medium',
-        status: 'in-progress',
-        points: 5,
-        repositories: ['neurocode-python'],
-        description: 'Update neurocode/services/storage/s3_service.py (and any callers) to write avatar objects to the new CDN bucket and use the new base URL from config. Preserve the storage.py abstraction so neurocode frontend does not need changes.',
-    },
-    {
-        id: 'NC-95',
-        title: 'Hot Zones: fix memory leak in dashboard',
-        type: 'bug',
-        priority: 'high',
-        status: 'to-test',
-        repositories: ['neurocode', 'neurocode-python'],
-        description: 'HotZonesDashboard.tsx (neurocode) holds heavy state and may leak on unmount; neurocode-python routes/hot_zones.py returns large payloads. Fix useEffect cleanup and/or subscription cleanup in the dashboard; verify with DevTools Memory.',
-    },
-    {
-        id: 'NC-92',
-        title: 'neurocode-python: update README and API docs for v2',
-        type: 'task',
-        priority: 'low',
-        status: 'to-test',
-        points: 2,
-        repositories: ['neurocode-python'],
-        description: 'Update neurocode-python/README.md and the docs produced by neurocode/routes/documentation.py to reflect API v2 (e.g. new routes, request/response shapes). Align with neurocode/services/config/documentation_schema.json if used.',
-    },
-    {
-        id: 'NC-88',
-        title: 'Neurocode: Next.js app router and main layout',
-        type: 'story',
-        priority: 'high',
-        status: 'completed',
-        points: 13,
-        repositories: ['neurocode'],
-        description: 'Completed: app router, (pages), (main), [orgShortId] routing structure and app/(pages)/(main)/layout.tsx. Sidebar and main content area are used by task-compass, hot-zones, repo documentation, and visual-tree.',
-    },
-    {
-        id: 'NC-110',
-        title: 'Task Compass: fetch tasks from neurocode-python API',
-        type: 'story',
-        priority: 'high',
-        status: 'backlog',
-        points: 8,
-        repositories: ['neurocode', 'neurocode-python'],
-        description: 'Replace MOCK_TASKS in task-compass/page.tsx with data from neurocode-python (e.g. a new internal route or task-sync endpoint). Frontend: fetch on load, handle loading/error. Backend: return task list in a shape compatible with existing Task type and board columns.',
-    },
-    {
-        id: 'NC-111',
-        title: 'Visual tree: improve load time for large repos',
-        type: 'story',
-        priority: 'medium',
-        status: 'backlog',
-        points: 5,
-        repositories: ['neurocode', 'neurocode-python'],
-        description: 'Visual tree page (neurocode repo/[repoName]/visual-tree) calls neurocode-python routes/visual_tree.py. Tree can be slow for large repos. Consider pagination, lazy loading, or caching in neurocode-python services/analysis/tree_builder.py.',
-    },
-    {
-        id: 'NC-112',
-        title: 'Documentation chat: stream LLM responses',
-        type: 'task',
-        priority: 'medium',
-        status: 'todo',
-        points: 3,
-        repositories: ['neurocode', 'neurocode-python'],
-        description: 'Documentation chat in neurocode (DocumentationChatPanel) calls neurocode-python (e.g. routes/chat.py). Switch to streaming so the UI shows tokens as they arrive. Backend uses neurocode/services/external/llm_service.py.',
-    },
-];
+const TASK_COMPASS_TYPE_OPTIONS = [
+    { value: 'task', label: 'Task' },
+    { value: 'story', label: 'Story' },
+    { value: 'bug', label: 'Bug' },
+] as const;
+const TASK_COMPASS_PRIORITY_OPTIONS = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+] as const;
+const TASK_COMPASS_STATUS_OPTIONS = COLUMNS.map((c) => ({
+    value: c.id,
+    label: c.title,
+}));
+interface Task {
+    id: string;
+    title: string;
+    type: TaskType;
+    priority: Priority;
+    status: Status;
+    assigneeUserId: string;
+    assignee: string;
+    points?: number;
+    description?: string;
+    repositories?: string[];
+}
+type TaskSavePayload = {
+    id?: string;
+    title: string;
+    description?: string;
+    type: TaskType;
+    priority: Priority;
+    status: Status;
+    points?: number;
+    repositories?: string[];
+    assigneeUserId: string;
+};
 type RiskLevel = 'low' | 'medium' | 'high';
 type CautionLabel = 'caution' | 'manual approval';
 type FileBadge = 'core' | 'helper' | 'config' | 'UI' | 'route' | 'service' | 'schema' | 'test';
@@ -181,6 +88,84 @@ interface CompassContext {
         type: 'owner' | 'contributor' | 'reviewer';
     }[];
 }
+function orgApiBase(orgShortId: string) {
+    return `/api/organizations/org-${encodeURIComponent(orgShortId)}`;
+}
+function normalizeOwnershipRow(raw: unknown): CompassContext['ownership'][number] {
+    if (!raw || typeof raw !== 'object') {
+        return { name: 'Unknown', role: '', type: 'contributor' };
+    }
+    const o = raw as Record<string, unknown>;
+    const name = typeof o.name === 'string' ? o.name : 'Unknown';
+    const role = typeof o.role === 'string' ? o.role : '';
+    const t = typeof o.type === 'string' ? o.type : 'contributor';
+    const type = t === 'owner' || t === 'reviewer' || t === 'contributor' ? t : 'contributor';
+    return { name, role, type };
+}
+function analysisRecordToCompass(analysis: {
+    area?: string;
+    riskLevel?: string;
+    cautionAreas?: unknown;
+    relevantFiles?: unknown;
+    entryPoints?: unknown;
+    ownership?: unknown;
+}): CompassContext {
+    const riskLevel = (['low', 'medium', 'high'] as const).includes(analysis.riskLevel as RiskLevel)
+        ? (analysis.riskLevel as RiskLevel)
+        : 'medium';
+    const cautionAreas = Array.isArray(analysis.cautionAreas)
+        ? analysis.cautionAreas.map((row): CompassContext['cautionAreas'][number] => {
+            if (!row || typeof row !== 'object') {
+                return { file: '', reason: '', label: 'caution' };
+            }
+            const r = row as Record<string, unknown>;
+            const label = r.label === 'manual approval' ? 'manual approval' : 'caution';
+            return {
+                file: typeof r.file === 'string' ? r.file : '',
+                reason: typeof r.reason === 'string' ? r.reason : '',
+                label,
+            };
+        })
+        : [];
+    const badges: FileBadge[] = ['core', 'helper', 'config', 'UI', 'route', 'service', 'schema', 'test'];
+    const relevantFiles = Array.isArray(analysis.relevantFiles)
+        ? analysis.relevantFiles.map((row): CompassContext['relevantFiles'][number] => {
+            if (!row || typeof row !== 'object') {
+                return { file: '', reason: '', badge: 'helper' };
+            }
+            const r = row as Record<string, unknown>;
+            const b = typeof r.badge === 'string' && badges.includes(r.badge as FileBadge) ? (r.badge as FileBadge) : 'helper';
+            return {
+                file: typeof r.file === 'string' ? r.file : '',
+                reason: typeof r.reason === 'string' ? r.reason : '',
+                badge: b,
+            };
+        })
+        : [];
+    const entryPoints = Array.isArray(analysis.entryPoints)
+        ? analysis.entryPoints.map((row): CompassContext['entryPoints'][number] => {
+            if (!row || typeof row !== 'object') {
+                return { target: '', reason: '' };
+            }
+            const r = row as Record<string, unknown>;
+            return {
+                target: typeof r.target === 'string' ? r.target : '',
+                reason: typeof r.reason === 'string' ? r.reason : '',
+            };
+        })
+        : [];
+    const ownership = Array.isArray(analysis.ownership)
+        ? analysis.ownership.map(normalizeOwnershipRow)
+        : [];
+    return {
+        area: typeof analysis.area === 'string' ? analysis.area : 'Unknown',
+        riskLevel,
+        cautionAreas,
+        relevantFiles,
+        entryPoints,
+        ownership,
+    };
+}
 function getTypeIcon(type: TaskType) {
     switch (type) {
         case 'bug': return <Bug className="w-3.5 h-3.5 text-red-400"/>;
@@ -195,110 +180,436 @@ function getPriorityIcon(priority: Priority) {
         case 'low': return <ArrowDown className="w-3.5 h-3.5 text-blue-400"/>;
     }
 }
-function TaskDetailsModal({ task, onClose }: {
-    task: Task;
+function parseRepoInput(s: string): string[] {
+    return s.split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
+}
+function TaskFormModal({ open, onClose, initialStatus, editingTask, orgMembers, currentUserId, membersLoading, onSave, }: {
+    open: boolean;
     onClose: () => void;
+    initialStatus: Status;
+    editingTask: Task | null;
+    orgMembers: OrgMemberSummary[];
+    currentUserId: string;
+    membersLoading: boolean;
+    onSave: (payload: TaskSavePayload) => Promise<void>;
 }) {
-    return (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose} aria-modal="true" role="dialog">
-      <div className="relative w-full max-w-2xl rounded-lg border border-[#333] bg-[#141414] p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-4 flex items-start justify-between gap-4">
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [type, setType] = useState<TaskType>('task');
+    const [priority, setPriority] = useState<Priority>('medium');
+    const [status, setStatus] = useState<Status>('backlog');
+    const [points, setPoints] = useState('');
+    const [reposInput, setReposInput] = useState('');
+    const [assigneeUserId, setAssigneeUserId] = useState('');
+    const [formError, setFormError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const assigneeOptions = useMemo(() => orgMembers.map((m) => ({
+        value: m.id,
+        label: `${m.displayName} (${m.email})`,
+    })), [orgMembers]);
+    useEffect(() => {
+        if (!open)
+            return;
+        if (editingTask) {
+            setTitle(editingTask.title);
+            setDescription(editingTask.description || '');
+            setType(editingTask.type);
+            setPriority(editingTask.priority);
+            setStatus(editingTask.status);
+            setPoints(editingTask.points != null ? String(editingTask.points) : '');
+            setReposInput((editingTask.repositories || []).join(', '));
+            setAssigneeUserId(editingTask.assigneeUserId);
+        }
+        else {
+            setTitle('');
+            setDescription('');
+            setType('task');
+            setPriority('medium');
+            setStatus(initialStatus);
+            setPoints('');
+            setReposInput('');
+            setAssigneeUserId(currentUserId || '');
+        }
+        setFormError('');
+        setSubmitting(false);
+    }, [open, editingTask, initialStatus, currentUserId]);
+    useEffect(() => {
+        if (!open || editingTask || orgMembers.length === 0)
+            return;
+        const ids = new Set(orgMembers.map((m) => m.id));
+        setAssigneeUserId((prev) => {
+            if (prev && ids.has(prev))
+                return prev;
+            if (currentUserId && ids.has(currentUserId))
+                return currentUserId;
+            return orgMembers[0].id;
+        });
+    }, [open, editingTask, orgMembers, currentUserId]);
+    if (!open)
+        return null;
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        const t = title.trim();
+        if (!t) {
+            setFormError('Title is required.');
+            return;
+        }
+        if (!assigneeUserId) {
+            setFormError('Choose an assignee.');
+            return;
+        }
+        let pts: number | undefined;
+        if (points.trim()) {
+            const n = Number(points);
+            if (!Number.isFinite(n) || n < 0) {
+                setFormError('Story points must be a valid non-negative number.');
+                return;
+            }
+            pts = n;
+        }
+        const repositories = parseRepoInput(reposInput);
+        const payload: TaskSavePayload = {
+            id: editingTask?.id,
+            title: t,
+            description: description.trim() || undefined,
+            type,
+            priority,
+            status,
+            points: pts,
+            repositories: repositories.length > 0 ? repositories : undefined,
+            assigneeUserId,
+        };
+        setSubmitting(true);
+        setFormError('');
+        try {
+            await onSave(payload);
+        }
+        catch (err) {
+            setFormError(err instanceof Error ? err.message : 'Something went wrong');
+        }
+        finally {
+            setSubmitting(false);
+        }
+    };
+    return (<div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-12" onClick={onClose} aria-modal="true" role="dialog">
+      <div className="relative my-auto w-full max-w-lg overflow-visible rounded-lg border border-[#333] bg-[#141414] shadow-xl" onClick={(ev) => ev.stopPropagation()}>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-lg font-semibold text-white">{editingTask ? 'Edit task' : 'New task'}</h2>
+            <button type="button" onClick={onClose} className="rounded-md border border-transparent px-2 py-1 text-xs text-white/50 hover:border-[#333] hover:bg-[#1f1f1f] hover:text-white/80 shrink-0">
+              Cancel
+            </button>
+          </div>
+
+          {formError && (<p className="text-xs text-red-400/90">{formError}</p>)}
+
           <div>
-            <div className="mb-1 text-xs font-medium text-white/40">{task.id}</div>
-            <h2 className="text-lg font-semibold text-white">{task.title}</h2>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Title</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded-md border border-[#262626] bg-[#121215] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent" placeholder="Short summary"/>
           </div>
-          <button onClick={onClose} className="rounded-md border border-transparent px-2 py-1 text-xs text-white/50 hover:border-[#333] hover:bg-[#1f1f1f] hover:text-white/80">
-            Close
-          </button>
-        </div>
 
-        <div className="mb-4 flex flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
-            <span className="text-white/40">Type</span>
-            <span className="font-medium capitalize">{task.type}</span>
-          </div>
-          <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
-            <span className="text-white/40">Priority</span>
-            <span className="flex items-center gap-1 font-medium capitalize">
-              {getPriorityIcon(task.priority)}
-              <span>{task.priority}</span>
-            </span>
-          </div>
-          {typeof task.points === 'number' && (<div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
-              <span className="text-white/40">Story points</span>
-              <span className="font-medium">{task.points}</span>
-            </div>)}
-          <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
-            <span className="text-white/40">Status</span>
-            <span className="font-medium capitalize">{task.status.replace('-', ' ')}</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
-            <span className="text-white/40">Assignee</span>
-            {task.assignee ? (<div className="flex items-center gap-1 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary)]" title={`Assignee: ${task.assignee}`}>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)]/20">
-                  {getAssigneeInitials(task.assignee)}
-                </span>
-                <span>{task.assignee}</span>
-              </div>) : (<span className="text-white/40">Unassigned</span>)}
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-6 md:grid-cols-[2fr,1fr]">
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">Description</h3>
-            <div className="rounded-md border border-[#262626] bg-[#151515] p-3 text-sm text-white/70">
-              {task.description || (<span className="text-white/40">
-                  This is a placeholder description for a demo issue on the Task Compass board. You can later replace
-                  this with real Jira data.
-                </span>)}
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="w-full rounded-md border border-[#262626] bg-[#121215] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-y min-h-[96px]" placeholder="Context for Task Compass analysis (optional)"/>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Type</label>
+              <Dropdown options={[...TASK_COMPASS_TYPE_OPTIONS]} value={type} onChange={(v) => setType(v as TaskType)} placeholder="Select type" menuZClass="z-[200]"/>
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Priority</label>
+              <Dropdown options={[...TASK_COMPASS_PRIORITY_OPTIONS]} value={priority} onChange={(v) => setPriority(v as Priority)} placeholder="Select priority" menuZClass="z-[200]"/>
             </div>
           </div>
 
-          <div className="space-y-3 text-xs text-white/60">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">People</div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span>Reporter</span>
-                  <span className="rounded-full bg-[#1a1a1a] px-2 py-0.5 text-[11px] text-white/70">
-                    Demo Reporter
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Assignee</span>
-                  <span className="rounded-full bg-[#1a1a1a] px-2 py-0.5 text-[11px] text-white/70">
-                    {task.assignee || 'Unassigned'}
-                  </span>
-                </div>
-              </div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Status</label>
+              <Dropdown options={TASK_COMPASS_STATUS_OPTIONS} value={status} onChange={(v) => setStatus(v as Status)} placeholder="Select status" menuZClass="z-[200]"/>
             </div>
-
             <div>
-              <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">Meta</div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span>Key</span>
-                  <span className="text-white/80">{task.id}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Type</span>
-                  <span className="capitalize">{task.type}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Priority</span>
-                  <span className="capitalize">{task.priority}</span>
-                </div>
-              </div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Story points</label>
+              <input value={points} onChange={(e) => setPoints(e.target.value)} inputMode="decimal" className="w-full rounded-md border border-[#262626] bg-[#121215] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent" placeholder="Optional"/>
             </div>
+          </div>
 
-            {task.repositories && task.repositories.length > 0 && (<div>
-                <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">Repositories</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {task.repositories.map((repo) => (<span key={repo} className="inline-flex items-center gap-1 rounded bg-[#1a1a1a] border border-[#262626] px-1.5 py-0.5 text-[11px] text-white/60">
-                      <GitBranch className="w-2.5 h-2.5"/>
-                      {repo}
-                    </span>))}
-                </div>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Repositories</label>
+            <input value={reposInput} onChange={(e) => setReposInput(e.target.value)} className="w-full rounded-md border border-[#262626] bg-[#121215] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent" placeholder="e.g. neurocode, neurocode-python (optional)"/>
+            <p className="mt-1 text-[11px] text-white/35">Comma-separated. Should match repository url names in your org to scope analysis.</p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1.5">Assignee</label>
+            <Dropdown options={assigneeOptions} value={assigneeUserId} onChange={setAssigneeUserId} placeholder={membersLoading ? 'Loading members…' : orgMembers.length === 0 ? 'No members found' : 'Select assignee'} disabled={membersLoading || orgMembers.length === 0} menuZClass="z-[200]"/>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} disabled={submitting} className="rounded-md border border-[#333] bg-[#1a1a1a] px-4 py-2 text-sm text-white/70 hover:text-white transition-colors disabled:opacity-50">
+              Cancel
+            </button>
+            <button type="submit" disabled={submitting || membersLoading || orgMembers.length === 0} className="rounded-md border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/15 px-4 py-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/25 transition-colors disabled:opacity-50">
+              {submitting ? 'Saving…' : editingTask ? 'Save' : 'Add task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>);
+}
+function TaskDetailsModal({ task, orgShortId, onClose, onEdit, onDelete, }: {
+    task: Task;
+    orgShortId: string;
+    onClose: () => void;
+    onEdit?: (task: Task) => void;
+    onDelete?: (task: Task) => void;
+}) {
+    const [compassCtx, setCompassCtx] = useState<CompassContext | null>(null);
+    const [savedAnalysisLoading, setSavedAnalysisLoading] = useState(true);
+    const [compassLoading, setCompassLoading] = useState(false);
+    const [compassError, setCompassError] = useState<string | null>(null);
+    const [lastAnalyzedAt, setLastAnalyzedAt] = useState<string | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        setSavedAnalysisLoading(true);
+        setCompassError(null);
+        (async () => {
+            try {
+                if (orgShortId) {
+                    const r = await fetch(`${orgApiBase(orgShortId)}/task-compass/tasks/${encodeURIComponent(task.id)}/analysis`, { credentials: 'include' });
+                    const j = await r.json().catch(() => ({}));
+                    if (!cancelled && r.ok && j?.analysis) {
+                        setCompassCtx(analysisRecordToCompass(j.analysis));
+                        setLastAnalyzedAt(typeof j.analysis.analyzedAt === 'string' ? j.analysis.analyzedAt : null);
+                        return;
+                    }
+                }
+            }
+            catch {
+            }
+            if (cancelled)
+                return;
+            const cached = getTaskCompassResultForTask(orgShortId, task.id);
+            if (cached?.area != null) {
+                setCompassCtx(analysisRecordToCompass({
+                    area: cached.area,
+                    riskLevel: cached.riskLevel,
+                    cautionAreas: cached.cautionAreas,
+                    relevantFiles: cached.relevantFiles,
+                    entryPoints: cached.entryPoints,
+                    ownership: cached.ownership,
+                }));
+                setLastAnalyzedAt(cached.analyzedAt ?? null);
+            }
+            else {
+                setCompassCtx(null);
+                setLastAnalyzedAt(null);
+            }
+        })().finally(() => {
+            if (!cancelled)
+                setSavedAnalysisLoading(false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [orgShortId, task.id]);
+    const runQdrantSummarize = useCallback(async () => {
+        setCompassLoading(true);
+        setCompassError(null);
+        try {
+            const res = await fetch('/api/task-compass/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    orgShortId,
+                    taskId: task.id,
+                    taskTitle: task.title,
+                    taskDescription: task.description || null,
+                    taskType: task.type,
+                    repositories: task.repositories || null,
+                }),
+            });
+            if (!res.ok) {
+                throw new Error(`Analysis failed (${res.status})`);
+            }
+            const raw: unknown = await res.json();
+            const ctx = analysisRecordToCompass(raw as Record<string, unknown>);
+            setCompassCtx(ctx);
+            const analyzedAt = new Date().toISOString();
+            setLastAnalyzedAt(analyzedAt);
+            setTaskCompassResult(orgShortId, {
+                taskId: task.id,
+                taskTitle: task.title,
+                area: ctx.area,
+                riskLevel: ctx.riskLevel,
+                cautionAreas: ctx.cautionAreas,
+                relevantFiles: ctx.relevantFiles,
+                entryPoints: ctx.entryPoints,
+                ownership: ctx.ownership,
+                analyzedAt,
+            });
+        }
+        catch (e) {
+            console.error('[task-details] analyze:', e);
+            setCompassError(e instanceof Error ? e.message : String(e));
+        }
+        finally {
+            setCompassLoading(false);
+        }
+    }, [orgShortId, task]);
+    const panelBusy = savedAnalysisLoading || compassLoading;
+    return (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-6 sm:px-4 sm:py-10" onClick={onClose} aria-modal="true" role="dialog">
+      <div className="relative my-auto flex w-full max-w-5xl max-h-[min(92vh,calc(100vh-3rem))] flex-col overflow-hidden rounded-lg border border-[#333] bg-[#141414] shadow-xl md:flex-row md:items-stretch" onClick={(e) => e.stopPropagation()}>
+        <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto border-[#262626] p-5 md:max-w-[min(100%,26rem)] md:border-r md:p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="mb-1 text-xs font-medium text-white/40">{task.id}</div>
+              <h2 className="text-lg font-semibold text-white">{task.title}</h2>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {onEdit && (<button type="button" onClick={() => onEdit(task)} className="rounded-md border border-[#333] bg-[#1a1a1a] px-2.5 py-1 text-xs text-white/70 hover:text-white hover:border-[var(--color-primary)]/40 transition-colors">
+                  Edit
+                </button>)}
+              {onDelete && (<button type="button" onClick={() => onDelete(task)} className="rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-300 hover:bg-red-500/15 transition-colors">
+                  Delete
+                </button>)}
+              <button type="button" onClick={onClose} className="rounded-md border border-transparent px-2 py-1 text-xs text-white/50 hover:border-[#333] hover:bg-[#1f1f1f] hover:text-white/80">
+                Close
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
+              <span className="text-white/40">Type</span>
+              <span className="font-medium capitalize">{task.type}</span>
+            </div>
+            <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
+              <span className="text-white/40">Priority</span>
+              <span className="flex items-center gap-1 font-medium capitalize">
+                {getPriorityIcon(task.priority)}
+                <span>{task.priority}</span>
+              </span>
+            </div>
+            {typeof task.points === 'number' && (<div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
+                <span className="text-white/40">Story points</span>
+                <span className="font-medium">{task.points}</span>
               </div>)}
+            <div className="flex items-center gap-1 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
+              <span className="text-white/40">Status</span>
+              <span className="font-medium capitalize">{task.status.replace('-', ' ')}</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-[#1a1a1a] px-2 py-1 text-white/60">
+              <span className="text-white/40">Assignee</span>
+              {task.assignee ? (<div className="flex items-center gap-1 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary)]" title={`Assignee: ${task.assignee}`}>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)]/20">
+                    {getAssigneeInitials(task.assignee)}
+                  </span>
+                  <span>{task.assignee}</span>
+                </div>) : (<span className="text-white/40">Unassigned</span>)}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-6 md:grid-cols-1">
+            <div>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">Description</h3>
+              <div className="rounded-md border border-[#262626] bg-[#151515] p-3 text-sm text-white/70">
+                {task.description || (<span className="text-white/40">No description.</span>)}
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs text-white/60">
+              <div>
+                <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">People</div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span>Reporter</span>
+                    <span className="rounded-full bg-[#1a1a1a] px-2 py-0.5 text-[11px] text-white/70">
+                      —
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Assignee</span>
+                    <span className="rounded-full bg-[#1a1a1a] px-2 py-0.5 text-[11px] text-white/70">
+                      {task.assignee || 'Unassigned'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">Meta</div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span>Key</span>
+                    <span className="text-white/80">{task.id}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Type</span>
+                    <span className="capitalize">{task.type}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Priority</span>
+                    <span className="capitalize">{task.priority}</span>
+                  </div>
+                </div>
+              </div>
+
+              {task.repositories && task.repositories.length > 0 && (<div>
+                  <div className="mb-1 font-semibold uppercase tracking-wide text-white/40">Repositories</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {task.repositories.map((repo) => (<span key={repo} className="inline-flex items-center gap-1 rounded bg-[#1a1a1a] border border-[#262626] px-1.5 py-0.5 text-[11px] text-white/60">
+                        <GitBranch className="w-2.5 h-2.5"/>
+                        {repo}
+                      </span>))}
+                  </div>
+                </div>)}
+            </div>
+          </div>
+        </div>
+
+        <div className="custom-scrollbar flex min-h-[220px] min-w-0 flex-1 flex-col border-t border-[#262626] bg-[#121212] p-5 md:max-h-none md:border-t-0 md:p-6">
+          <div className="flex shrink-0 flex-col gap-3 border-b border-[#262626] pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-white/50">Saved code context</h3>
+              <p className="mt-1 text-[11px] text-white/35 leading-relaxed">
+                Written to your org after each run. Includes ownership, caution areas, files, and entry points.
+              </p>
+              {lastAnalyzedAt && !panelBusy && (<p className="mt-1 text-[11px] text-white/30">
+                  Last saved: {formatAnalyzedAt(lastAnalyzedAt)}
+                </p>)}
+            </div>
+            <button type="button" onClick={runQdrantSummarize} disabled={compassLoading || !orgShortId || savedAnalysisLoading} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/15 px-3 py-2 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              {compassLoading ? (<>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin"/>
+                  Working…
+                </>) : (<>
+                  <Search className="w-3.5 h-3.5"/>
+                  Summarize & find code
+                </>)}
+            </button>
+          </div>
+
+          {compassError && (<p className="mt-3 text-xs text-red-400/90">{compassError}</p>)}
+
+          <div className={`min-h-0 flex-1 overflow-y-auto pt-4 ${panelBusy ? 'opacity-60' : ''}`}>
+            {savedAnalysisLoading && !compassCtx && (<p className="text-sm text-white/35">Loading saved analysis…</p>)}
+
+            {!savedAnalysisLoading && compassCtx && (<div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-[#1a1a1a] border border-[#262626] px-2.5 py-0.5 text-[11px] text-white/50">
+                    {compassCtx.area}
+                  </span>
+                  <RiskBadge level={compassCtx.riskLevel}/>
+                </div>
+                <CompassInsightsBlocks ctx={compassCtx}/>
+              </div>)}
+
+            {!savedAnalysisLoading && !compassCtx && !compassLoading && !compassError && (<p className="text-sm text-white/35">
+                Run analysis to map this ticket to relevant files and entry points. Results are saved for this task.
+              </p>)}
           </div>
         </div>
       </div>
@@ -334,70 +645,6 @@ function BoardCard({ task, onClick }: {
           </div>)}
       </div>
     </button>);
-}
-function TaskPickerModal({ tasks, onSelect, onClose, }: {
-    tasks: Task[];
-    onSelect: (task: Task) => void;
-    onClose: () => void;
-}) {
-    const [search, setSearch] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-    const activeTasks = tasks.filter((t) => t.status !== 'completed');
-    const filtered = activeTasks.filter((t) => {
-        if (!search.trim())
-            return true;
-        const q = search.toLowerCase();
-        return (t.id.toLowerCase().includes(q) ||
-            t.title.toLowerCase().includes(q) ||
-            t.type.includes(q) ||
-            (t.repositories ?? []).some((r) => r.toLowerCase().includes(q)));
-    });
-    useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
-    return (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose} aria-modal="true" role="dialog">
-      <div className="relative w-full max-w-lg rounded-lg border border-[#333] bg-[#141414] shadow-xl flex flex-col max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-[#262626] px-4 py-3">
-          <Search className="w-4 h-4 text-white/30 shrink-0"/>
-          <input ref={inputRef} type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tasks by name, key, type, or repo..." className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"/>
-          <button onClick={onClose} className="rounded-md border border-transparent px-2 py-1 text-xs text-white/50 hover:border-[#333] hover:bg-[#1f1f1f] hover:text-white/80 shrink-0">
-            Close
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {filtered.length === 0 ? (<div className="px-4 py-10 text-center text-xs text-white/30">
-              {search.trim() ? 'No tasks match your search' : 'No active tasks'}
-            </div>) : (filtered.map((task) => (<button key={task.id} onClick={() => onSelect(task)} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-[#1a1a1a] transition-colors border-b border-[#1e1e1e] last:border-b-0">
-                <div className="pt-0.5 shrink-0">{getTypeIcon(task.type)}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[11px] font-medium text-white/40">{task.id}</span>
-                    <span className="flex items-center gap-0.5 text-[10px] text-white/30 capitalize">
-                      {getPriorityIcon(task.priority)}
-                      {task.priority}
-                    </span>
-                    <span className="text-[10px] text-white/25 capitalize">{task.status.replace('-', ' ')}</span>
-                  </div>
-                  <p className="text-sm text-white/80 truncate">{task.title}</p>
-                  {task.repositories && task.repositories.length > 0 && (<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                      {task.repositories.map((repo) => (<span key={repo} className="inline-flex items-center gap-1 rounded bg-[#1a1a1a] border border-[#262626] px-1.5 py-0.5 text-[10px] text-white/45">
-                          <GitBranch className="w-2.5 h-2.5"/>
-                          {repo}
-                        </span>))}
-                    </div>)}
-                </div>
-                {task.assignee && (<div className="mt-1 shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 text-[10px] font-bold text-[var(--color-primary)]" title={task.assignee}>
-                    {getAssigneeInitials(task.assignee)}
-                  </div>)}
-              </button>)))}
-        </div>
-
-        <div className="border-t border-[#262626] px-4 py-2 text-[11px] text-white/25">
-          {filtered.length} task{filtered.length !== 1 ? 's' : ''}
-        </div>
-      </div>
-    </div>);
 }
 function RiskBadge({ level }: {
     level: RiskLevel;
@@ -462,266 +709,101 @@ function formatAnalyzedAt(iso: string): string {
         return iso;
     }
 }
-function TaskCompassView({ task, onBack, orgShortId }: {
-    task: Task;
-    onBack: () => void;
-    orgShortId: string;
+function CompassInsightsBlocks({ ctx }: {
+    ctx: CompassContext;
 }) {
-    const [ctx, setCtx] = useState<CompassContext | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [lastAnalyzedAt, setLastAnalyzedAt] = useState<string | null>(null);
-    const fetchCompass = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch('/api/task-compass/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orgShortId,
-                    taskId: task.id,
-                    taskTitle: task.title,
-                    taskDescription: task.description || null,
-                    taskType: task.type,
-                    repositories: task.repositories || null,
-                }),
-            });
-            if (!res.ok) {
-                throw new Error(`Analysis failed (${res.status})`);
-            }
-            const data: CompassContext = await res.json();
-            setCtx(data);
-            const analyzedAt = new Date().toISOString();
-            setLastAnalyzedAt(analyzedAt);
-            setTaskCompassResult(orgShortId, {
-                taskId: task.id,
-                taskTitle: task.title,
-                area: data.area,
-                riskLevel: data.riskLevel,
-                cautionAreas: data.cautionAreas,
-                relevantFiles: data.relevantFiles,
-                entryPoints: data.entryPoints,
-                analyzedAt,
-            });
-        }
-        catch (e) {
-            console.error('[task-compass] fetch error:', e);
-            setError(String(e instanceof Error ? e.message : e));
-        }
-        finally {
-            setLoading(false);
-        }
-    }, [orgShortId, task]);
-    useEffect(() => {
-        const cached = getTaskCompassResultForTask(orgShortId, task.id);
-        if (cached?.area != null) {
-            setCtx({
-                area: cached.area,
-                riskLevel: cached.riskLevel as RiskLevel,
-                cautionAreas: (cached.cautionAreas ?? []) as CompassContext['cautionAreas'],
-                relevantFiles: (cached.relevantFiles ?? []) as CompassContext['relevantFiles'],
-                entryPoints: cached.entryPoints ?? [],
-                ownership: [],
-            });
-            setLastAnalyzedAt(cached.analyzedAt ?? null);
-            setLoading(false);
-            return;
-        }
-        fetchCompass();
-    }, [orgShortId, task.id, fetchCompass]);
-    return (<div className="flex flex-col h-[calc(100vh-220px)]">
-      
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <button onClick={onBack} className="flex items-center gap-1.5 rounded-md border border-[#333] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white/60 hover:border-[var(--color-primary)]/40 hover:text-white/90 transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5"/>
-          Back
-        </button>
-        <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
-          <span className="text-white/40 font-medium shrink-0">{task.id}</span>
-          <span className="text-white/70 truncate">{task.title}</span>
-        </div>
-        {lastAnalyzedAt && !loading && (<span className="text-xs text-white/45 shrink-0">
-            Last analysed: {formatAnalyzedAt(lastAnalyzedAt)}
-          </span>)}
-        {!loading && (<button onClick={fetchCompass} title="Regenerate analysis" className="flex items-center gap-1.5 rounded-md border border-[#333] bg-[#1a1a1a] px-2.5 py-1.5 text-xs text-white/40 hover:border-[var(--color-primary)]/40 hover:text-white/70 transition-colors shrink-0">
-            <RefreshCw className="w-3 h-3"/>
-            Regenerate
-          </button>)}
-      </div>
-
-      {loading && (<div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 text-[var(--color-primary)] animate-spin"/>
-          <p className="text-sm text-white/40">Analyzing task against codebase...</p>
-        </div>)}
-
-      {!loading && error && !ctx && (<div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <AlertTriangle className="w-6 h-6 text-amber-400/60"/>
-          <p className="text-sm text-white/40">Analysis failed: {error}</p>
-          <button onClick={fetchCompass} className="flex items-center gap-1.5 rounded-md border border-[#333] bg-[#1e1e1e] px-3 py-1.5 text-xs text-white/60 hover:text-white/80 transition-colors">
-            <RefreshCw className="w-3 h-3"/>
-            Retry
-          </button>
-        </div>)}
-
-      {!loading && <div className="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2 space-y-5">
-        
-        <div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
-          <SectionHeader icon={<ListTodo className="w-3.5 h-3.5"/>} title="Task Summary"/>
-          <div className="space-y-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                {getTypeIcon(task.type)}
-                <h2 className="text-base font-semibold text-white">{task.title}</h2>
-              </div>
-              <p className="text-sm text-white/55 leading-relaxed">
-                {task.description || 'No description provided.'}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {ctx && (<>
-                  <span className="inline-flex items-center rounded-full bg-[#1a1a1a] border border-[#262626] px-2.5 py-0.5 text-[11px] text-white/50">
-                    {ctx.area}
-                  </span>
-                  <RiskBadge level={ctx.riskLevel}/>
-                </>)}
-              {task.repositories?.map((repo) => (<span key={repo} className="inline-flex items-center gap-1 rounded-full bg-[#1a1a1a] border border-[#262626] px-2 py-0.5 text-[10px] text-white/45">
-                  <GitBranch className="w-2.5 h-2.5"/>
-                  {repo}
-                </span>))}
-            </div>
+    return (<>
+      {ctx.cautionAreas.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
+          <SectionHeader icon={<AlertTriangle className="w-3.5 h-3.5"/>} title="Areas to Proceed with Caution"/>
+          <div className="space-y-2">
+            {ctx.cautionAreas.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
+                <FileCode className="mt-0.5 w-3.5 h-3.5 shrink-0 text-amber-400/60"/>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <code className="text-xs text-white/70 font-mono">{item.file}</code>
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${item.label === 'manual approval'
+                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                      {item.label === 'manual approval' && <Shield className="mr-0.5 w-2.5 h-2.5"/>}
+                      {item.label}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
+                </div>
+              </div>))}
           </div>
-        </div>
-
-        {ctx ? (<>
-            
-            {ctx.cautionAreas.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
-                <SectionHeader icon={<AlertTriangle className="w-3.5 h-3.5"/>} title="Areas to Proceed with Caution"/>
-                <div className="space-y-2">
-                  {ctx.cautionAreas.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
-                      <FileCode className="mt-0.5 w-3.5 h-3.5 shrink-0 text-amber-400/60"/>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <code className="text-xs text-white/70 font-mono">{item.file}</code>
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${item.label === 'manual approval'
-                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                            {item.label === 'manual approval' && <Shield className="mr-0.5 w-2.5 h-2.5"/>}
-                            {item.label}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
-                      </div>
-                    </div>))}
-                </div>
-              </div>)}
-
-            
-            {ctx.relevantFiles.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
-                <SectionHeader icon={<FileCode className="w-3.5 h-3.5"/>} title="Relevant Files"/>
-                <div className="space-y-2">
-                  {ctx.relevantFiles.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
-                      <FileCode className="mt-0.5 w-3.5 h-3.5 shrink-0 text-white/25"/>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <code className="text-xs text-white/70 font-mono truncate">{item.file}</code>
-                          <FileBadgeTag badge={item.badge}/>
-                        </div>
-                        <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
-                      </div>
-                    </div>))}
-                </div>
-              </div>)}
-
-            
-            {ctx.entryPoints.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
-                <SectionHeader icon={<Play className="w-3.5 h-3.5"/>} title="Entry Points"/>
-                <div className="space-y-2">
-                  {ctx.entryPoints.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
-                      <Play className="mt-0.5 w-3 h-3 shrink-0 text-[var(--color-primary)]/60"/>
-                      <div className="min-w-0 flex-1">
-                        <code className="text-xs text-white/70 font-mono">{item.target}</code>
-                        <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
-                      </div>
-                    </div>))}
-                </div>
-              </div>)}
-
-            
-            {ctx.ownership.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
-                <SectionHeader icon={<Users className="w-3.5 h-3.5"/>} title="Ownership & Context"/>
-                <p className="text-[11px] text-white/30 mb-3 -mt-1">People to contact for questions about this area</p>
-                <div className="space-y-2">
-                  {ctx.ownership.map((person, i) => {
-                        const typeColors: Record<string, string> = {
-                            owner: 'bg-[var(--color-primary)]/15 text-[var(--color-primary)] border-[var(--color-primary)]/25',
-                            contributor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                            reviewer: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                        };
-                        const initials = person.name
-                            .split(/\s+/)
-                            .filter(Boolean)
-                            .map((w) => w[0])
-                            .slice(0, 2)
-                            .join('')
-                            .toUpperCase();
-                        return (<div key={i} className="flex items-center gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a1a1a] border border-[#333] text-[11px] font-bold text-white/50">
-                          {initials || '?'}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium text-white/80 leading-tight">{person.name}</p>
-                          <p className="text-[11px] text-white/35 leading-relaxed mt-0.5">{person.role}</p>
-                        </div>
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize shrink-0 ${typeColors[person.type]}`}>
-                          {person.type}
-                        </span>
-                      </div>);
-                    })}
-                </div>
-              </div>)}
-          </>) : (<div className="flex-1 rounded-lg border-2 border-dashed border-[#262626] bg-[#141414] flex items-center justify-center py-16">
-            <span className="text-sm text-white/30">No compass context available for this task yet.</span>
-          </div>)}
-      </div>}
-
-      {!loading && error && ctx && (<div className="mt-2 flex items-center gap-2 px-1">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400/50 shrink-0"/>
-          <p className="text-xs text-amber-400/40">
-            Live analysis failed — showing cached data. {error}
-          </p>
         </div>)}
-    </div>);
+
+      {ctx.relevantFiles.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
+          <SectionHeader icon={<FileCode className="w-3.5 h-3.5"/>} title="Relevant Files"/>
+          <div className="space-y-2">
+            {ctx.relevantFiles.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
+                <FileCode className="mt-0.5 w-3.5 h-3.5 shrink-0 text-white/25"/>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <code className="text-xs text-white/70 font-mono truncate">{item.file}</code>
+                    <FileBadgeTag badge={item.badge}/>
+                  </div>
+                  <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
+                </div>
+              </div>))}
+          </div>
+        </div>)}
+
+      {ctx.entryPoints.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
+          <SectionHeader icon={<Play className="w-3.5 h-3.5"/>} title="Entry Points"/>
+          <div className="space-y-2">
+            {ctx.entryPoints.map((item, i) => (<div key={i} className="flex items-start gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
+                <Play className="mt-0.5 w-3 h-3 shrink-0 text-[var(--color-primary)]/60"/>
+                <div className="min-w-0 flex-1">
+                  <code className="text-xs text-white/70 font-mono">{item.target}</code>
+                  <p className="mt-1 text-xs text-white/40 leading-relaxed">{item.reason}</p>
+                </div>
+              </div>))}
+          </div>
+        </div>)}
+
+      {ctx.ownership.length > 0 && (<div className="rounded-lg border border-[#262626] bg-[#141414] p-5">
+          <SectionHeader icon={<Users className="w-3.5 h-3.5"/>} title="Ownership & Context"/>
+          <p className="text-[11px] text-white/30 mb-3 -mt-1">People to contact for questions about this area</p>
+          <div className="space-y-2">
+            {ctx.ownership.map((person, i) => {
+                const typeColors: Record<string, string> = {
+                    owner: 'bg-[var(--color-primary)]/15 text-[var(--color-primary)] border-[var(--color-primary)]/25',
+                    contributor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                    reviewer: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                };
+                const typeClass = typeColors[person.type] ?? 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+                const initials = person.name
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase();
+                return (<div key={i} className="flex items-center gap-3 rounded-md border border-[#1e1e1e] bg-[#171717] px-3 py-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a1a1a] border border-[#333] text-[11px] font-bold text-white/50">
+                      {initials || '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-white/80 leading-tight">{person.name}</p>
+                      <p className="text-[11px] text-white/35 leading-relaxed mt-0.5">{person.role}</p>
+                    </div>
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize shrink-0 ${typeClass}`}>
+                      {person.type}
+                    </span>
+                  </div>);
+            })}
+          </div>
+        </div>)}
+    </>);
 }
-function MainView({ orgShortId, tasks }: {
+function BoardView({ tasks, orgShortId, onCreateInColumn, onEditTask, onDeleteTask, }: {
+    tasks: Task[];
     orgShortId: string;
-    tasks: Task[];
-}) {
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [pickerOpen, setPickerOpen] = useState(false);
-    if (selectedTask) {
-        return (<TaskCompassView task={selectedTask} onBack={() => setSelectedTask(null)} orgShortId={orgShortId}/>);
-    }
-    return (<div className="flex h-[calc(100vh-220px)] rounded-lg border-2 border-dashed border-[#262626] bg-[#141414] items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1a1a1a] border border-[#262626]">
-          <ListTodo className="w-6 h-6 text-white/30"/>
-        </div>
-        <p className="text-sm text-white/40">Select a task to get started</p>
-
-        <button onClick={() => setPickerOpen(true)} className="flex items-center gap-2 rounded-md border border-[#333] bg-[#1e1e1e] px-4 py-2 text-sm font-medium text-white/70 hover:border-[var(--color-primary)]/50 hover:text-white transition-colors">
-          Select Task
-        </button>
-      </div>
-
-      {pickerOpen && (<TaskPickerModal tasks={tasks} onSelect={(task) => {
-                setSelectedTask(task);
-                setPickerOpen(false);
-            }} onClose={() => setPickerOpen(false)}/>)}
-    </div>);
-}
-function BoardView({ tasks }: {
-    tasks: Task[];
+    onCreateInColumn: (status: Status) => void;
+    onEditTask: (task: Task) => void;
+    onDeleteTask: (task: Task) => void;
 }) {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     return (<div className="flex h-[calc(100vh-220px)] gap-4 overflow-x-auto pb-4 pt-2 -mx-4 px-4 custom-scrollbar">
@@ -737,10 +819,10 @@ function BoardView({ tasks }: {
                 </span>
               </div>
               <div className="flex gap-1">
-                <button className="p-1 text-white/40 hover:text-white/80 hover:bg-[#262626] rounded transition-colors">
+                <button type="button" title="Add task to this column" onClick={() => onCreateInColumn(col.id)} className="p-1 text-white/40 hover:text-white/80 hover:bg-[#262626] rounded transition-colors cursor-pointer">
                   <Plus className="w-4 h-4"/>
                 </button>
-                <button className="p-1 text-white/40 hover:text-white/80 hover:bg-[#262626] rounded transition-colors">
+                <button type="button" className="p-1 text-white/40 hover:text-white/80 hover:bg-[#262626] rounded transition-colors cursor-pointer" aria-hidden>
                   <MoreHorizontal className="w-4 h-4"/>
                 </button>
               </div>
@@ -757,32 +839,22 @@ function BoardView({ tasks }: {
 
             
             <div className="p-2 pt-0 mt-auto">
-              <button className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-white/50 hover:text-white/90 hover:bg-[#262626] rounded transition-colors group">
+              <button type="button" onClick={() => onCreateInColumn(col.id)} className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-white/50 hover:text-white/90 hover:bg-[#262626] rounded transition-colors group cursor-pointer">
                 <Plus className="w-3.5 h-3.5 text-white/40 group-hover:text-white/80"/>
-                Create issue
+                Add task
               </button>
             </div>
           </div>);
         })}
 
-      {selectedTask && (<TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)}/>)}
+      {selectedTask && (<TaskDetailsModal task={selectedTask} orgShortId={orgShortId} onClose={() => setSelectedTask(null)} onEdit={(t) => {
+                setSelectedTask(null);
+                onEditTask(t);
+            }} onDelete={(t) => {
+                onDeleteTask(t);
+                setSelectedTask(null);
+            }}/>)}
     </div>);
-}
-function getAssigneeLabel(session: {
-    user?: {
-        name?: string | null;
-        email?: string | null;
-    };
-} | null): string {
-    if (!session?.user)
-        return 'Me';
-    const name = session.user.name?.trim();
-    if (name)
-        return name;
-    const email = session.user.email?.trim();
-    if (email)
-        return email;
-    return 'Me';
 }
 function getAssigneeInitials(assignee: string): string {
     const s = assignee.trim();
@@ -797,41 +869,155 @@ function getAssigneeInitials(assignee: string): string {
 }
 export default function TaskCompassPage({ params }: PageProps) {
     const { data: session } = useSession();
-    const [activeTab, setActiveTab] = useState<TabId>('board');
     const [orgShortId, setOrgShortId] = useState('');
-    const assigneeLabel = getAssigneeLabel(session);
-    const tasks = useMemo(() => MOCK_TASKS.map((t) => ({ ...t, assignee: assigneeLabel })), [assigneeLabel]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [tasksLoading, setTasksLoading] = useState(false);
+    const [tasksError, setTasksError] = useState<string | null>(null);
+    const [orgMembers, setOrgMembers] = useState<OrgMemberSummary[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+    const [taskFormOpen, setTaskFormOpen] = useState(false);
+    const [formInitialStatus, setFormInitialStatus] = useState<Status>('backlog');
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const currentUserId = session?.user?.id ?? '';
+    const loadTasks = useCallback(async () => {
+        if (!orgShortId)
+            return;
+        setTasksLoading(true);
+        setTasksError(null);
+        try {
+            const r = await fetch(`${orgApiBase(orgShortId)}/task-compass/tasks`, { credentials: 'include' });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(data?.error || 'Failed to load tasks');
+            }
+            setTasks(Array.isArray(data.tasks) ? data.tasks : []);
+        }
+        catch (e) {
+            setTasksError(e instanceof Error ? e.message : 'Failed to load tasks');
+            setTasks([]);
+        }
+        finally {
+            setTasksLoading(false);
+        }
+    }, [orgShortId]);
+    const loadMembers = useCallback(async () => {
+        if (!orgShortId)
+            return;
+        setMembersLoading(true);
+        try {
+            const r = await fetch(`${orgApiBase(orgShortId)}/members`, { credentials: 'include' });
+            const data = await r.json().catch(() => ({}));
+            if (r.ok && Array.isArray(data.members)) {
+                setOrgMembers(data.members);
+            }
+            else {
+                setOrgMembers([]);
+            }
+        }
+        finally {
+            setMembersLoading(false);
+        }
+    }, [orgShortId]);
     useEffect(() => {
         Promise.resolve(params).then((p) => {
             const raw = p.orgShortId || '';
             setOrgShortId(raw.startsWith('org-') ? raw.replace('org-', '') : raw);
         });
     }, [params]);
-    const tabs: {
-        id: TabId;
-        label: string;
-        icon: React.ReactNode;
-    }[] = [
-        { id: 'main', label: 'Main', icon: <ListTodo className="w-4 h-4"/> },
-        { id: 'board', label: 'Board', icon: <LayoutGrid className="w-4 h-4"/> },
-        { id: 'timeline', label: 'Timeline', icon: <GanttChart className="w-4 h-4"/> },
-    ];
+    useEffect(() => {
+        if (!orgShortId) {
+            setTasks([]);
+            setOrgMembers([]);
+            return;
+        }
+        void loadTasks();
+        void loadMembers();
+    }, [orgShortId, loadTasks, loadMembers]);
+    const openCreateTask = useCallback((status: Status = 'backlog') => {
+        setEditingTask(null);
+        setFormInitialStatus(status);
+        setTaskFormOpen(true);
+    }, []);
+    const openEditTask = useCallback((task: Task) => {
+        setEditingTask(task);
+        setFormInitialStatus(task.status);
+        setTaskFormOpen(true);
+    }, []);
+    const closeTaskForm = useCallback(() => {
+        setTaskFormOpen(false);
+        setEditingTask(null);
+    }, []);
+    const handleSaveTaskPayload = useCallback(async (payload: TaskSavePayload) => {
+        if (!orgShortId)
+            throw new Error('No organization');
+        const base = orgApiBase(orgShortId);
+        const body = {
+            title: payload.title,
+            description: payload.description,
+            type: payload.type,
+            priority: payload.priority,
+            status: payload.status,
+            points: payload.points,
+            repositories: payload.repositories,
+            assigneeUserId: payload.assigneeUserId,
+        };
+        if (payload.id) {
+            const r = await fetch(`${base}/task-compass/tasks/${encodeURIComponent(payload.id)}`, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(data?.error || data?.message || 'Failed to update task');
+            }
+        }
+        else {
+            const r = await fetch(`${base}/task-compass/tasks`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(data?.error || data?.message || 'Failed to create task');
+            }
+        }
+        await loadTasks();
+        closeTaskForm();
+    }, [orgShortId, loadTasks, closeTaskForm]);
+    const handleDeleteTask = useCallback(async (task: Task) => {
+        if (!orgShortId)
+            return;
+        const r = await fetch(`${orgApiBase(orgShortId)}/task-compass/tasks/${encodeURIComponent(task.id)}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+        if (r.ok) {
+            deleteTaskCompassResult(orgShortId, task.id);
+            await loadTasks();
+        }
+    }, [orgShortId, loadTasks]);
     return (<div className="mx-auto max-w-screen-2xl">
-      <h1 className="text-3xl font-bold text-white mb-1">Task Compass</h1>
-
-      <div className="flex gap-8 mt-6 border-b border-[#262626]">
-        {tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-0 py-1 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${activeTab === tab.id
-                ? 'text-[var(--color-primary)] border-[var(--color-primary)]'
-                : 'text-white hover:text-white/90 border-transparent'}`}>
-            {tab.icon}
-            {tab.label}
-          </button>))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-1">
+        <h1 className="text-3xl font-bold text-white">Task Compass</h1>
+        <button type="button" onClick={() => openCreateTask('backlog')} className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/15 px-4 py-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/25 transition-colors shrink-0 self-start sm:self-auto">
+          <Plus className="w-4 h-4"/>
+          Add task
+        </button>
       </div>
 
-      <div className="mt-0 pt-4">
-        {activeTab === 'main' && <MainView orgShortId={orgShortId} tasks={tasks}/>}
-        {activeTab === 'board' && <BoardView tasks={tasks}/>}
-        {activeTab === 'timeline' && <div className="text-white/60 text-sm">Timeline content</div>}
+      {tasksError && (<div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          {tasksError}
+        </div>)}
+
+      <TaskFormModal open={taskFormOpen} onClose={closeTaskForm} initialStatus={formInitialStatus} editingTask={editingTask} orgMembers={orgMembers} currentUserId={currentUserId} membersLoading={membersLoading} onSave={handleSaveTaskPayload}/>
+
+      <div className="mt-6 pt-2">
+        {tasksLoading && (<p className="text-sm text-white/40 mb-4">Loading tasks…</p>)}
+        <BoardView tasks={tasks} orgShortId={orgShortId} onCreateInColumn={openCreateTask} onEditTask={openEditTask} onDeleteTask={handleDeleteTask}/>
       </div>
     </div>);
 }

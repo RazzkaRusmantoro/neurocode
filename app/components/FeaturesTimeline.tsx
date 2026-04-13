@@ -91,7 +91,7 @@ export default function FeaturesTimeline() {
     const headingInView = useInView(headingRef, { once: true, margin: "-5%" });
     const scrambledText = useTextScramble('in seconds.', headingInView, 1000);
     const scrollCtaInView = useInView(scrollCtaRef, { once: false, amount: 0.5 });
-    return (<section className="py-24 md:py-32 relative bg-[#0a0a0b] overflow-hidden">
+    return (<section id="features" className="scroll-mt-28 py-24 md:py-32 relative bg-[#0a0a0b] overflow-hidden">
       
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-500/5 blur-[200px] rounded-full pointer-events-none"/>
 

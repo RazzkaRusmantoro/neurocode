@@ -10,7 +10,7 @@ interface RepoSidebarProps {
     userEmail?: string | null;
     userImageUrl?: string | null;
 }
-const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer';
+const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-3 text-sm rounded transition-colors duration-200 flex items-center gap-3.5 cursor-pointer';
 const BUTTON_ACTIVE_CLASSES = 'text-white bg-[#2a2a2a]/50 font-bold';
 const BUTTON_INACTIVE_CLASSES = 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50';
 function Icon({ iconPath, className = 'w-5 h-5' }: {
@@ -49,9 +49,6 @@ export default function RepoSidebar({ isExpanded, onToggle, userName: propUserNa
         }
         if (pathname?.includes('/documentation')) {
             return 'Documentation';
-        }
-        if (pathname?.includes('/pull-requests')) {
-            return 'Pull Requests';
         }
         return 'Code Viewer';
     }, [pathname]);
@@ -101,12 +98,6 @@ export default function RepoSidebar({ isExpanded, onToggle, userName: propUserNa
             router.push(`/${orgShortId}/repo/${repoName}/code-reference`);
         }
     }, [router, orgShortId, repoName, startLoading]);
-    const handlePullRequestsClick = useCallback(() => {
-        if (orgShortId && repoName) {
-            startLoading();
-            router.push(`/${orgShortId}/repo/${repoName}/pull-requests`);
-        }
-    }, [router, orgShortId, repoName, startLoading]);
     const userInitials = useMemo(() => {
         if (!userName)
             return 'U';
@@ -132,7 +123,7 @@ export default function RepoSidebar({ isExpanded, onToggle, userName: propUserNa
         <div className="border-t border-[#262626]"></div>
 
         
-        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-5`}>
           {isMinimized ? (<button type="button" className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer" aria-label="Search">
               <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -146,19 +137,19 @@ export default function RepoSidebar({ isExpanded, onToggle, userName: propUserNa
         </div>
 
         
-        {orgShortId && (<div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4 pb-3`}>
-            <button onClick={handleBackToRepositories} className="w-full text-left pl-4 py-2.5 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50">
+        {orgShortId && (<div className={`${isMinimized ? 'px-2' : 'px-4'} pt-5 pb-2`}>
+            <button onClick={handleBackToRepositories} className="w-full text-left pl-4 py-3 text-sm rounded transition-colors duration-200 flex items-center gap-3.5 cursor-pointer text-white/60 hover:text-white hover:bg-[#2a2a2a]/50">
               <Icon iconPath="M10 19l-7-7m0 0l7-7m-7 7h18"/>
               <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Back to Repositories</span>
             </button>
           </div>)}
 
         
-        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
+        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'} pt-5 py-2`}>
           
-          <div className="pb-3">
-            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-2">REPOSITORY</h3>}
-            <ul className="space-y-1">
+          <div className="pb-5">
+            {!isMinimized && <h3 className="text-xs text-white/60 pl-4 mb-3 tracking-wide">REPOSITORY</h3>}
+            <ul className="space-y-2.5">
               <li>
                 <button onClick={handleCodeViewerClick} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Code Viewer' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
                   <Icon iconPath="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
@@ -195,19 +186,13 @@ export default function RepoSidebar({ isExpanded, onToggle, userName: propUserNa
                   <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Code Reference</span>
                 </button>
               </li>
-              <li>
-                <button onClick={handlePullRequestsClick} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Pull Requests' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
-                  <Icon iconPath="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Pull Requests</span>
-                </button>
-              </li>
             </ul>
           </div>
         </nav>
 
         
-        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-3`}>
-          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-2.5'} p-2.5`}>
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-4`}>
+          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-3'} p-3`}>
             
             <div className="flex-shrink-0">
               {userImageUrl ? (<img src={userImageUrl} alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm"/>) : (<img src="/Pfp-placeholder.png" alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm"/>)}

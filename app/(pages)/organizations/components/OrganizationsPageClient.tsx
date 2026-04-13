@@ -1,35 +1,36 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import OrganizationSearch from '../../../components/OrganizationSearch';
 import type { OrganizationWithId } from '@/actions/organization';
+import CreateOrganizationModal from './CreateOrganizationModal';
 interface OrganizationsPageClientProps {
     organizations: OrganizationWithId[];
 }
 export default function OrganizationsPageClient({ organizations: initialOrganizations }: OrganizationsPageClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
-    const filteredOrganizations = useMemo(() => {
-        const tempOrg: OrganizationWithId = {
-            id: 'temp-1',
-            shortId: 'temp',
-            name: 'Test Organization',
-            role: 'member',
-            ownerId: 'temp-owner'
-        };
-        const organizationsWithTemp = [...initialOrganizations, tempOrg];
-        if (!searchQuery.trim()) {
-            return organizationsWithTemp;
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    useEffect(() => {
+        if (searchParams.get('create') === 'true') {
+            setShowCreateModal(true);
+            router.replace('/organizations');
         }
-        return organizationsWithTemp.filter(org => org.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchParams, router]);
+    const filteredOrganizations = useMemo(() => {
+        if (!searchQuery.trim())
+            return initialOrganizations;
+        return initialOrganizations.filter(org => org.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [initialOrganizations, searchQuery]);
     const handleAddOrganization = () => {
-        console.log('Create new organization');
+        setShowCreateModal(true);
     };
     const handleOrganizationClick = (org: OrganizationWithId) => {
         router.push(`/org-${org.shortId}/dashboard`);
     };
     return (<div className="mx-auto max-w-screen-2xl px-40">
+      {showCreateModal && <CreateOrganizationModal onClose={() => setShowCreateModal(false)}/>}
       <h1 className="text-3xl font-bold text-white mb-10">Organizations</h1>
       
       <OrganizationSearch searchQuery={searchQuery} onSearchChange={setSearchQuery} onAddOrganization={handleAddOrganization}/>

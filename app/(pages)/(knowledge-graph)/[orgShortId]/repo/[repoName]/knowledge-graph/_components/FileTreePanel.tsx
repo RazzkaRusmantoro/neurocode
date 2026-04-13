@@ -1,6 +1,6 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileCode, Search, Filter, PanelLeftClose, PanelLeft, Box, Braces, Variable, Hash, Target, GitBranch, } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileCode, Search, Filter, PanelLeftClose, PanelLeft, Layers, GitMerge, Cpu, Zap, RotateCcw } from 'lucide-react';
 import { useKGState } from '../../../../../_lib/useKGState';
 import { FILTERABLE_LABELS, NODE_COLORS, ALL_EDGE_TYPES, EDGE_INFO, type EdgeType } from '../../../../../_lib/constants';
 import { GraphNode, NodeLabel } from '../../../../../_lib/types';
@@ -43,37 +43,18 @@ const buildFileTree = (nodes: GraphNode[]): TreeNode[] => {
     });
     return root;
 };
-const getNodeTypeIcon = (label: NodeLabel) => {
-    switch (label) {
-        case 'Folder': return Folder;
-        case 'File': return FileCode;
-        case 'Class': return Box;
-        case 'Function':
-        case 'Method': return Braces;
-        case 'Interface': return Hash;
-        default: return Variable;
-    }
-};
 interface TreeItemProps {
     node: TreeNode;
     depth: number;
-    searchQuery: string;
     onNodeClick: (node: TreeNode) => void;
     expandedPaths: Set<string>;
     toggleExpanded: (path: string) => void;
     selectedPath: string | null;
 }
-const TreeItem = ({ node, depth, searchQuery, onNodeClick, expandedPaths, toggleExpanded, selectedPath }: TreeItemProps) => {
+const TreeItem = ({ node, depth, onNodeClick, expandedPaths, toggleExpanded, selectedPath }: TreeItemProps) => {
     const isExpanded = expandedPaths.has(node.path);
     const isSelected = selectedPath === node.path;
     const hasChildren = node.children.length > 0;
-    const matchesSearch = !!searchQuery && node.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const filteredChildren = useMemo(() => {
-        if (!searchQuery)
-            return node.children;
-        return node.children.filter(child => child.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            child.children.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())));
-    }, [node.children, searchQuery]);
     const handleClick = () => {
         if (hasChildren)
             toggleExpanded(node.path);
@@ -82,7 +63,7 @@ const TreeItem = ({ node, depth, searchQuery, onNodeClick, expandedPaths, toggle
     return (<div>
       <button onClick={handleClick} className={`w-full flex items-center gap-1.5 px-2 py-[3px] text-left text-xs hover:bg-white/[0.04] transition-colors relative border-l-2 ${isSelected
             ? 'bg-[var(--color-primary)]/10 text-white border-[var(--color-primary)]'
-            : 'text-white/50 hover:text-white/80 border-transparent'} ${matchesSearch ? 'bg-[var(--color-primary)]/5' : ''}`} style={{ paddingLeft: `${depth * 12 + 8}px` }}>
+            : 'text-white/50 hover:text-white/80 border-transparent'}`} style={{ paddingLeft: `${depth * 12 + 8}px` }}>
         {hasChildren ? (isExpanded
             ? <ChevronDown className="w-3 h-3 shrink-0 text-white/30"/>
             : <ChevronRight className="w-3 h-3 shrink-0 text-white/30"/>) : (<span className="w-3"/>)}
@@ -92,17 +73,216 @@ const TreeItem = ({ node, depth, searchQuery, onNodeClick, expandedPaths, toggle
         <span className="truncate font-mono">{node.name}</span>
       </button>
 
-      {isExpanded && filteredChildren.length > 0 && (<div>
-          {filteredChildren.map(child => (<TreeItem key={child.id} node={child} depth={depth + 1} searchQuery={searchQuery} onNodeClick={onNodeClick} expandedPaths={expandedPaths} toggleExpanded={toggleExpanded} selectedPath={selectedPath}/>))}
+      {isExpanded && node.children.length > 0 && (<div>
+          {node.children.map(child => (<TreeItem key={child.id} node={child} depth={depth + 1} onNodeClick={onNodeClick} expandedPaths={expandedPaths} toggleExpanded={toggleExpanded} selectedPath={selectedPath}/>))}
         </div>)}
     </div>);
 };
+interface FlatSearchResultProps {
+    node: GraphNode;
+    isSelected: boolean;
+    query: string;
+    onClick: () => void;
+}
+const FlatSearchResult = ({ node, isSelected, query, onClick }: FlatSearchResultProps) => {
+    const fp = node.properties.filePath || '';
+    const name = node.properties.name || fp.split('/').pop() || '';
+    const dir = fp.includes('/') ? fp.substring(0, fp.lastIndexOf('/')) : '';
+    const isFolder = node.label === 'Folder';
+    const highlight = (text: string) => {
+        const idx = text.toLowerCase().indexOf(query.toLowerCase());
+        if (idx === -1)
+            return <span>{text}</span>;
+        return (<span>
+            {text.slice(0, idx)}
+            <span className="text-[var(--color-primary-light)] font-semibold">{text.slice(idx, idx + query.length)}</span>
+            {text.slice(idx + query.length)}
+        </span>);
+    };
+    return (<button onClick={onClick} className={`w-full flex items-start gap-2 px-3 py-2 text-left text-xs hover:bg-white/[0.04] transition-colors border-l-2 ${isSelected ? 'bg-[var(--color-primary)]/10 text-white border-[var(--color-primary)]' : 'text-white/60 hover:text-white/90 border-transparent'}`}>
+            {isFolder
+            ? <Folder className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: NODE_COLORS.Folder }}/>
+            : <FileCode className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: NODE_COLORS.File }}/>}
+            <div className="min-w-0">
+                <div className="font-mono truncate">{highlight(name)}</div>
+                {dir && <div className="text-[10px] text-white/25 font-mono truncate mt-0.5">{dir}</div>}
+            </div>
+        </button>);
+};
+const LANG_COLORS: Record<string, string> = {
+    python: '#3572A5',
+    typescript: '#2b7489',
+    javascript: '#f1e05a',
+    java: '#b07219',
+    go: '#00ADD8',
+    rust: '#dea584',
+    cpp: '#f34b7d',
+    c: '#555555',
+    ruby: '#CC342D',
+    php: '#4F5D95',
+    swift: '#F05138',
+    kotlin: '#A97BFF',
+};
+const langColor = (lang: string) => LANG_COLORS[lang.toLowerCase()] ?? '#6366f1';
+const PRESETS: {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    labels: string[];
+}[] = [
+    { id: 'all', label: 'Everything', icon: Layers, labels: ['Folder', 'File', 'Class', 'Function', 'Method', 'Interface'] },
+    { id: 'structure', label: 'Structure', icon: GitMerge, labels: ['Folder', 'File'] },
+    { id: 'logic', label: 'Logic', icon: Cpu, labels: ['Class', 'Function', 'Method', 'Interface'] },
+    { id: 'callgraph', label: 'Call graph', icon: Zap, labels: ['Function', 'Method'] },
+];
+interface FiltersPanelProps {
+    graph: {
+        nodes: GraphNode[];
+        relationships: {
+            type: string;
+        }[];
+    } | null;
+    visibleLabels: string[];
+    toggleLabelVisibility: (label: NodeLabel) => void;
+    visibleEdgeTypes: string[];
+    toggleEdgeVisibility: (edge: EdgeType) => void;
+}
+const FiltersPanel = ({ graph, visibleLabels, toggleLabelVisibility, visibleEdgeTypes, toggleEdgeVisibility }: FiltersPanelProps) => {
+    const [activePreset, setActivePreset] = useState<string | null>(null);
+    const nodeCounts = useMemo(() => {
+        const map: Record<string, number> = {};
+        graph?.nodes.forEach(n => { map[n.label] = (map[n.label] ?? 0) + 1; });
+        return map;
+    }, [graph]);
+    const edgeCounts = useMemo(() => {
+        const map: Record<string, number> = {};
+        graph?.relationships.forEach(r => { map[r.type] = (map[r.type] ?? 0) + 1; });
+        return map;
+    }, [graph]);
+    const languages = useMemo(() => {
+        const map: Record<string, number> = {};
+        graph?.nodes.forEach(n => {
+            const lang = n.properties.language as string | undefined;
+            if (lang)
+                map[lang] = (map[lang] ?? 0) + 1;
+        });
+        return Object.entries(map).sort((a, b) => b[1] - a[1]);
+    }, [graph]);
+    const applyPreset = (preset: typeof PRESETS[0]) => {
+        setActivePreset(preset.id);
+        FILTERABLE_LABELS.forEach(lbl => {
+            const shouldBeVisible = preset.labels.includes(lbl);
+            const isVisible = visibleLabels.includes(lbl);
+            if (shouldBeVisible !== isVisible)
+                toggleLabelVisibility(lbl);
+        });
+    };
+    const resetPreset = () => {
+        setActivePreset(null);
+        FILTERABLE_LABELS.forEach(lbl => {
+            if (!visibleLabels.includes(lbl))
+                toggleLabelVisibility(lbl);
+        });
+    };
+    return (<div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#1e1e1e]">
+
+            
+            <div className="px-3 pt-3 pb-3">
+                <div className="flex items-center justify-between mb-2.5">
+                    <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest">View Presets</p>
+                    {activePreset && (<button onClick={resetPreset} className="flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition-colors">
+                            <RotateCcw className="w-2.5 h-2.5"/> Reset
+                        </button>)}
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                    {PRESETS.map(p => {
+            const Icon = p.icon;
+            const isActive = activePreset === p.id;
+            return (<button key={p.id} onClick={() => applyPreset(p)} className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all ${isActive
+                    ? 'bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/30 text-[var(--color-primary-light)]'
+                    : 'bg-[#1a1a1a] border border-[#262626] text-white/50 hover:text-white/80 hover:border-white/10'}`}>
+                                <Icon className="w-3 h-3 shrink-0"/>
+                                <span className="text-[11px] font-medium">{p.label}</span>
+                            </button>);
+        })}
+                </div>
+            </div>
+
+            
+            <div className="px-3 pt-3 pb-3">
+                <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest mb-2.5">Node Types</p>
+                <div className="grid grid-cols-3 gap-1">
+                    {FILTERABLE_LABELS.map(label => {
+            const isVisible = visibleLabels.includes(label);
+            const count = nodeCounts[label] ?? 0;
+            const color = NODE_COLORS[label];
+            return (<button key={label} onClick={() => { setActivePreset(null); toggleLabelVisibility(label); }} className={`flex flex-col items-center gap-1.5 px-1 py-2.5 rounded-lg text-center transition-all ${isVisible
+                    ? 'border border-white/8 bg-white/[0.03] hover:bg-white/[0.06]'
+                    : 'border border-transparent opacity-30 hover:opacity-50'}`}>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}/>
+                                <span className="text-[10px] font-medium text-white/65 leading-none">{label}</span>
+                                <span className="text-[9px] font-mono rounded px-1 py-0.5 leading-none" style={{ color, backgroundColor: `${color}18` }}>
+                                    {count}
+                                </span>
+                            </button>);
+        })}
+                </div>
+            </div>
+
+            
+            <div className="px-3 pt-3 pb-3">
+                <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest mb-2.5">Relationships</p>
+                <div className="flex flex-col gap-0.5">
+                    {ALL_EDGE_TYPES.map(edgeType => {
+            const info = EDGE_INFO[edgeType];
+            const isVisible = visibleEdgeTypes.includes(edgeType);
+            const count = edgeCounts[edgeType] ?? 0;
+            return (<button key={edgeType} onClick={() => toggleEdgeVisibility(edgeType)} className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left transition-all ${isVisible ? 'hover:bg-white/[0.03]' : 'opacity-30 hover:opacity-50'}`}>
+                                
+                                <div className="flex items-center gap-0.5 w-10 shrink-0">
+                                    <div className="h-px flex-1" style={{ backgroundColor: info.color }}/>
+                                    <div className="w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px] border-t-transparent border-b-transparent" style={{ borderLeftColor: info.color }}/>
+                                </div>
+                                <span className={`text-xs flex-1 ${isVisible ? 'text-white/65' : 'text-white/30'}`}>{info.label}</span>
+                                <span className="text-[9px] font-mono text-white/20 tabular-nums">{count}</span>
+                            </button>);
+        })}
+                </div>
+            </div>
+
+            
+            {languages.length > 0 && (<div className="px-3 pt-3 pb-4">
+                    <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest mb-2.5">Languages</p>
+                    <div className="flex flex-col gap-1.5">
+                        {languages.map(([lang, count]) => {
+                const total = languages.reduce((s, [, c]) => s + c, 0);
+                const pct = Math.round((count / total) * 100);
+                const color = langColor(lang);
+                return (<div key={lang} className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }}/>
+                                    <span className="text-[11px] text-white/55 capitalize flex-1 font-mono">{lang}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }}/>
+                                        </div>
+                                        <span className="text-[9px] font-mono text-white/20 w-6 text-right">{pct}%</span>
+                                    </div>
+                                </div>);
+            })}
+                    </div>
+                </div>)}
+        </div>);
+};
 interface FileTreePanelProps {
     onFocusNode: (nodeId: string) => void;
+    onCollapsedChange?: (collapsed: boolean) => void;
 }
-export const FileTreePanel = ({ onFocusNode }: FileTreePanelProps) => {
-    const { graph, visibleLabels, toggleLabelVisibility, visibleEdgeTypes, toggleEdgeVisibility, selectedNode, setSelectedNode, openCodePanel, depthFilter, setDepthFilter, } = useKGState();
+export const FileTreePanel = ({ onFocusNode, onCollapsedChange }: FileTreePanelProps) => {
+    const { graph, visibleLabels, toggleLabelVisibility, visibleEdgeTypes, toggleEdgeVisibility, selectedNode, setSelectedNode, openCodePanel } = useKGState();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    useEffect(() => {
+        onCollapsedChange?.(isCollapsed);
+    }, [isCollapsed, onCollapsedChange]);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<'files' | 'filters'>('files');
@@ -153,38 +333,52 @@ export const FileTreePanel = ({ onFocusNode }: FileTreePanelProps) => {
         }
     }, [setSelectedNode, openCodePanel, onFocusNode, selectedNode]);
     const selectedPath = selectedNode?.properties.filePath || null;
+    const flatSearchResults = useMemo(() => {
+        if (!searchQuery.trim() || !graph)
+            return null;
+        const q = searchQuery.toLowerCase();
+        return graph.nodes
+            .filter(n => (n.label === 'File' || n.label === 'Folder') &&
+            (n.properties.name?.toLowerCase().includes(q) ||
+                n.properties.filePath?.toLowerCase().includes(q)))
+            .sort((a, b) => {
+            const an = (a.properties.name || '').toLowerCase();
+            const bn = (b.properties.name || '').toLowerCase();
+            const aStarts = an.startsWith(q) ? 0 : 1;
+            const bStarts = bn.startsWith(q) ? 0 : 1;
+            if (aStarts !== bStarts)
+                return aStarts - bStarts;
+            return an.localeCompare(bn);
+        });
+    }, [searchQuery, graph]);
     const tabCls = (tab: 'files' | 'filters') => `px-3 py-1.5 text-xs font-medium rounded transition-colors ${activeTab === tab
         ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary-light)]'
         : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'}`;
     if (isCollapsed) {
-        return (<div className="h-full w-12 bg-[#121215] border-r border-[#262626] flex flex-col items-center py-3 gap-1">
-        <button onClick={() => setIsCollapsed(false)} className="p-2 text-white/30 hover:text-white/80 hover:bg-white/[0.04] rounded transition-colors" title="Expand">
+        return (<div className="h-full w-12 shrink-0 bg-[#121215] border border-[#262626] rounded-xl shadow-xl shadow-black/30 flex flex-col items-center py-3 gap-1">
+        <button onClick={() => setIsCollapsed(false)} className="p-2 text-white/30 hover:text-white/80 hover:bg-white/[0.04] rounded-lg transition-colors" title="Expand">
           <PanelLeft className="w-4 h-4"/>
         </button>
         <div className="w-5 h-px bg-[#262626] my-1"/>
-        <button onClick={() => { setIsCollapsed(false); setActiveTab('files'); }} className={`p-2 rounded transition-colors ${activeTab === 'files' ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'text-white/30 hover:text-white/70 hover:bg-white/[0.04]'}`} title="Explorer">
+        <button onClick={() => { setIsCollapsed(false); setActiveTab('files'); }} className={`p-2 rounded-lg transition-colors ${activeTab === 'files' ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'text-white/30 hover:text-white/70 hover:bg-white/[0.04]'}`} title="Explorer">
           <Folder className="w-4 h-4"/>
         </button>
-        <button onClick={() => { setIsCollapsed(false); setActiveTab('filters'); }} className={`p-2 rounded transition-colors ${activeTab === 'filters' ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'text-white/30 hover:text-white/70 hover:bg-white/[0.04]'}`} title="Filters">
+        <button onClick={() => { setIsCollapsed(false); setActiveTab('filters'); }} className={`p-2 rounded-lg transition-colors ${activeTab === 'filters' ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'text-white/30 hover:text-white/70 hover:bg-white/[0.04]'}`} title="Filters">
           <Filter className="w-4 h-4"/>
         </button>
       </div>);
     }
-    return (<div className="h-full w-64 bg-[#121215] border-r border-[#262626] flex flex-col shrink-0">
+    return (<div className="h-full w-64 shrink-0 min-h-0 flex flex-col bg-[#121215] border border-[#262626] rounded-xl shadow-xl shadow-black/30 overflow-hidden">
       
-      <div className="px-3 pt-3 pb-2 border-b border-[#262626]">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <GitBranch className="w-3.5 h-3.5 text-[var(--color-primary)]"/>
-            <span className="text-xs font-semibold text-white/80 tracking-wide">Knowledge Graph</span>
+      <div className="px-3 pt-3 pb-2 border-b border-[#262626] shrink-0">
+        <div className="flex items-center gap-2 mb-2 min-w-0">
+          <div className="flex gap-1 flex-1 min-w-0">
+            <button type="button" onClick={() => setActiveTab('files')} className={tabCls('files')}>Explorer</button>
+            <button type="button" onClick={() => setActiveTab('filters')} className={tabCls('filters')}>Filters</button>
           </div>
-          <button onClick={() => setIsCollapsed(true)} className="p-1 text-white/25 hover:text-white/70 hover:bg-white/[0.04] rounded transition-colors" title="Collapse">
+          <button type="button" onClick={() => setIsCollapsed(true)} className="p-1.5 shrink-0 text-white/25 hover:text-white/70 hover:bg-white/[0.04] rounded-lg transition-colors" title="Collapse">
             <PanelLeftClose className="w-3.5 h-3.5"/>
           </button>
-        </div>
-        <div className="flex gap-1">
-          <button onClick={() => setActiveTab('files')} className={tabCls('files')}>Explorer</button>
-          <button onClick={() => setActiveTab('filters')} className={tabCls('filters')}>Filters</button>
         </div>
       </div>
 
@@ -196,79 +390,19 @@ export const FileTreePanel = ({ onFocusNode }: FileTreePanelProps) => {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto py-1 custom-scrollbar">
-            {fileTree.length === 0 ? (<div className="px-3 py-6 text-center text-white/25 text-xs">No files loaded</div>) : (fileTree.map(node => (<TreeItem key={node.id} node={node} depth={0} searchQuery={searchQuery} onNodeClick={handleNodeClick} expandedPaths={expandedPaths} toggleExpanded={toggleExpanded} selectedPath={selectedPath}/>)))}
+            {fileTree.length === 0 ? (<div className="px-3 py-6 text-center text-white/25 text-xs">No files loaded</div>) : flatSearchResults ? (flatSearchResults.length === 0 ? (<div className="px-3 py-6 text-center text-white/25 text-xs">No files match "{searchQuery}"</div>) : (<div>
+                        <div className="px-3 py-1 text-[10px] text-white/20 font-mono">{flatSearchResults.length} result{flatSearchResults.length !== 1 ? 's' : ''}</div>
+                        {flatSearchResults.map(node => (<FlatSearchResult key={node.id} node={node} isSelected={selectedNode?.id === node.id} query={searchQuery} onClick={() => {
+                        setSelectedNode(node);
+                        if (node.label === 'File')
+                            openCodePanel();
+                        onFocusNode(node.id);
+                    }}/>))}
+                    </div>)) : (fileTree.map(node => (<TreeItem key={node.id} node={node} depth={0} onNodeClick={handleNodeClick} expandedPaths={expandedPaths} toggleExpanded={toggleExpanded} selectedPath={selectedPath}/>)))}
           </div>
         </>)}
 
-      {activeTab === 'filters' && (<div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-          
-          <div className="mb-1">
-            <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mb-2">Node Types</p>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            {FILTERABLE_LABELS.map(label => {
-                const Icon = getNodeTypeIcon(label);
-                const isVisible = visibleLabels.includes(label);
-                return (<button key={label} onClick={() => toggleLabelVisibility(label)} className={`flex items-center gap-2.5 px-2 py-1.5 rounded text-left transition-colors ${isVisible ? 'bg-[#1a1a1a] text-white/80' : 'text-white/30 hover:bg-white/[0.03] hover:text-white/50'}`}>
-                  <div className={`w-5 h-5 rounded flex items-center justify-center ${isVisible ? '' : 'opacity-40'}`} style={{ backgroundColor: `${NODE_COLORS[label]}20` }}>
-                    <Icon className="w-3 h-3" style={{ color: NODE_COLORS[label] }}/>
-                  </div>
-                  <span className="text-xs flex-1">{label}</span>
-                  <div className={`w-2 h-2 rounded-full transition-colors ${isVisible ? 'bg-[var(--color-primary)]' : 'bg-[#262626]'}`}/>
-                </button>);
-            })}
-          </div>
-
-          
-          <div className="mt-5 pt-4 border-t border-[#262626]">
-            <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mb-2">Edge Types</p>
-            <div className="flex flex-col gap-0.5">
-              {ALL_EDGE_TYPES.map(edgeType => {
-                const info = EDGE_INFO[edgeType];
-                const isVisible = visibleEdgeTypes.includes(edgeType);
-                return (<button key={edgeType} onClick={() => toggleEdgeVisibility(edgeType)} className={`flex items-center gap-2.5 px-2 py-1.5 rounded text-left transition-colors ${isVisible ? 'bg-[#1a1a1a] text-white/80' : 'text-white/30 hover:bg-white/[0.03] hover:text-white/50'}`}>
-                    <div className={`w-5 h-1.5 rounded-full ${isVisible ? '' : 'opacity-40'}`} style={{ backgroundColor: info.color }}/>
-                    <span className="text-xs flex-1">{info.label}</span>
-                    <div className={`w-2 h-2 rounded-full transition-colors ${isVisible ? 'bg-[var(--color-primary)]' : 'bg-[#262626]'}`}/>
-                  </button>);
-            })}
-            </div>
-          </div>
-
-          
-          <div className="mt-5 pt-4 border-t border-[#262626]">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Target className="w-3 h-3 text-white/30"/>
-              <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Focus Depth</p>
-            </div>
-            <p className="text-[11px] text-white/25 mb-3">Show nodes within N hops of selection</p>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { value: null, label: 'All' },
-                { value: 1, label: '1 hop' },
-                { value: 2, label: '2 hops' },
-                { value: 3, label: '3 hops' },
-                { value: 5, label: '5 hops' },
-            ].map(({ value, label }) => (<button key={label} onClick={() => setDepthFilter(value)} className={`px-2.5 py-1 text-xs rounded transition-colors ${depthFilter === value
-                    ? 'bg-[var(--color-primary)] text-white font-medium'
-                    : 'bg-[#1a1a1a] border border-[#262626] text-white/50 hover:text-white/80 hover:border-[var(--color-primary)]/40'}`}>
-                  {label}
-                </button>))}
-            </div>
-            {depthFilter !== null && !selectedNode && (<p className="mt-2 text-[10px] text-[var(--color-primary-light)]">Select a node to apply depth filter</p>)}
-          </div>
-
-          
-          <div className="mt-5 pt-4 border-t border-[#262626]">
-            <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mb-2">Legend</p>
-            <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
-              {(['Folder', 'File', 'Class', 'Function', 'Interface', 'Method'] as NodeLabel[]).map(label => (<div key={label} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: NODE_COLORS[label] }}/>
-                  <span className="text-[10px] text-white/35">{label}</span>
-                </div>))}
-            </div>
-          </div>
-        </div>)}
+      {activeTab === 'filters' && (<FiltersPanel graph={graph} visibleLabels={visibleLabels} toggleLabelVisibility={toggleLabelVisibility} visibleEdgeTypes={visibleEdgeTypes} toggleEdgeVisibility={toggleEdgeVisibility}/>)}
 
       
       {graph && (<div className="px-3 py-2 border-t border-[#262626] bg-[#0e0e11]">

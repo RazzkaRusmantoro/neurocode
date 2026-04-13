@@ -62,13 +62,8 @@ const MAIN_MENU_ITEMS: MenuItem[] = [
         label: 'Hot Zones',
         iconPath: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z'
     },
-    {
-        id: 'Billing',
-        label: 'Billing',
-        iconPath: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'
-    }
 ];
-const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-2 text-sm rounded transition-colors duration-200 flex items-center gap-3 cursor-pointer';
+const BUTTON_BASE_CLASSES = 'w-full text-left pl-4 py-3 text-sm rounded transition-colors duration-200 flex items-center gap-3.5 cursor-pointer';
 const BUTTON_ACTIVE_CLASSES = 'text-white bg-[#2a2a2a]/50 font-bold';
 const BUTTON_INACTIVE_CLASSES = 'text-white/60 hover:text-white hover:bg-[#2a2a2a]/50';
 function Icon({ iconPath, className = 'w-5 h-5' }: {
@@ -97,7 +92,7 @@ function SubMenuItem({ item, activeItem, setActiveItem, onMinimizeSidebar, route
       <svg className="absolute left-[-21px] top-1/2 -translate-y-1/2 w-[22px] h-[12px] overflow-visible pointer-events-none">
         <path d="M 0 -6 L 0 0 Q 0 6 11 6" stroke="#424242" strokeWidth="1" fill="none" strokeLinecap="round"/>
       </svg>
-      <button onClick={handleClick} className={`w-full text-left pl-4 py-1.5 text-sm rounded transition-colors duration-200 cursor-pointer ${isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
+      <button onClick={handleClick} className={`w-full text-left pl-4 py-2.5 text-sm rounded transition-colors duration-200 cursor-pointer ${isActive ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
         {item.label}
       </button>
     </li>);
@@ -139,7 +134,7 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
         const parentIsActive = item.subItems!.some(sub => activeItem === sub.id);
         return (<div>
         <button onClick={handleParentClick} className={`${BUTTON_BASE_CLASSES} ${isMinimized ? '' : 'pr-4 justify-between'} ${parentIsActive ? 'text-white hover:bg-[#2a2a2a]/50' : BUTTON_INACTIVE_CLASSES}`}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <Icon iconPath={item.iconPath}/>
             <span className={`${parentIsActive ? 'font-bold' : ''} transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>{item.label}</span>
           </div>
@@ -147,10 +142,10 @@ function MenuItemComponent({ item, isExpanded, onToggle, activeItem, setActiveIt
             <Icon iconPath="M19 9l-7 7-7-7" className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}/>
           </span>
         </button>
-        {isExpanded && !isMinimized && (<div className="relative mt-1">
+        {isExpanded && !isMinimized && (<div className="relative mt-2">
             
             <div className="absolute left-[26px] top-0 bottom-0 w-[1.5px] bg-[#424242]"></div>
-            <ul className="space-y-1 pl-12">
+            <ul className="space-y-2 pl-12">
               {item.subItems!.map((subItem) => (<SubMenuItem key={subItem.id} item={subItem} activeItem={activeItem} setActiveItem={setActiveItem} onMinimizeSidebar={onMinimizeSidebar} router={router} pathname={pathname}/>))}
             </ul>
           </div>)}
@@ -229,9 +224,6 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
         startLoading();
         router.push('/settings');
     }, [router, startLoading]);
-    const handleOrgItemClick = useCallback((itemId: string) => {
-        setActiveItem(itemId);
-    }, []);
     const handleExpandSidebar = useCallback(() => {
         if (isMinimized) {
             setIsMinimized(false);
@@ -264,7 +256,7 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
         <div className="border-t border-[#262626]"></div>
 
         
-        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-4`}>
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} pt-5`}>
           {isMinimized ? (<button type="button" className="w-full py-2 flex items-center justify-center bg-[#1a1a1a] border border-[#262626] rounded hover:bg-[#1a1a1a]/80 transition-colors duration-200 cursor-pointer" aria-label="Search">
               <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -278,11 +270,11 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
         </div>
 
         
-        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'}`}>
+        <nav className={`flex-1 flex flex-col overflow-y-auto sidebar-scrollbar ${isMinimized ? 'px-2' : 'px-4'} py-2`}>
           
-          <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">MAIN</h3>}
-            <ul className="space-y-1">
+          <div className="pt-5 pb-5">
+            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-3 tracking-wide">MAIN</h3>}
+            <ul className="space-y-2.5">
               {MAIN_MENU_ITEMS.map((item) => (<li key={item.id}>
                   <MenuItemComponent item={item} isExpanded={expandedStates[item.id] || false} onToggle={() => setExpandedState(item.id, !expandedStates[item.id])} activeItem={activeItem} setActiveItem={setActiveItem} router={router} pathname={pathname} isMinimized={isMinimized} onExpandSidebar={handleExpandSidebar} onMinimizeSidebar={handleMinimizeSidebar}/>
                 </li>))}
@@ -290,33 +282,13 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
           </div>
 
           
-          <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
-          <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">ORGANIZATION</h3>}
-            <ul className="space-y-1">
-              <li>
-                <button onClick={() => handleOrgItemClick('Configurations')} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Configurations' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
-                  <Icon iconPath={[
-            "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
-            "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        ]}/>
-                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Configurations</span>
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleOrgItemClick('Access')} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Access' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
-                  <Icon iconPath="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Access</span>
-                </button>
-              </li>
-            </ul>
-          </div>
+          
 
           
           <div className={`border-t border-[#262626] ${isMinimized ? '' : '-mx-4'}`}></div>
-          <div className="pt-4 pb-3">
-            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-2">CONFIGURATIONS</h3>}
-            <ul className="space-y-1">
+          <div className="pt-5 pb-6">
+            {!isMinimized && <h3 className="text-xs text-white pl-4 mb-3 tracking-wide">CONFIGURATIONS</h3>}
+            <ul className="space-y-2.5">
               <li>
                 <button onClick={handleSettingsClick} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Settings' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
                   <Icon iconPath={[
@@ -324,12 +296,6 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
             "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
         ]}/>
                   <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Settings</span>
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleOrgItemClick('Help')} className={`${BUTTON_BASE_CLASSES} ${activeItem === 'Help' ? BUTTON_ACTIVE_CLASSES : BUTTON_INACTIVE_CLASSES}`}>
-                  <Icon iconPath="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  <span className={`transition-all duration-300 ${isMinimized ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>Help</span>
                 </button>
               </li>
               <li>
@@ -343,8 +309,8 @@ export default function Sidebar({ isExpanded, onToggle, userName: propUserName, 
         </nav>
 
         
-        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-3`}>
-          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-2.5'} p-2.5`}>
+        <div className={`${isMinimized ? 'px-2' : 'px-4'} py-4`}>
+          <div className={`flex items-center ${isMinimized ? 'justify-center' : 'gap-3'} p-3`}>
             
             <div className="flex-shrink-0">
               {userImageUrl ? (<img src={userImageUrl} alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm"/>) : (<img src="/Pfp-placeholder.png" alt="Profile" className="w-10 h-10 rounded object-cover shadow-sm"/>)}

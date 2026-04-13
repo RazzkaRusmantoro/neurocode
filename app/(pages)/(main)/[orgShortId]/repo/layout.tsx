@@ -4,17 +4,8 @@ import { getUserOrganizations } from '@/actions/organization';
 import { getCachedSession } from '@/lib/session';
 import { getCachedUserById } from '@/lib/models/user';
 import { getRepositoriesByOrganization } from '@/lib/models/repository';
+import { getGitHubAvatarUrl } from '@/lib/utils/github-avatar';
 import RepoLayoutClient from '../../components/RepoLayoutClient';
-function getGitHubAvatarUrl(user: {
-    github?: {
-        status: string;
-        providerUserId?: string;
-    };
-} | null): string | null {
-    if (!user?.github?.providerUserId || user.github.status !== 'active')
-        return null;
-    return `https://avatars.githubusercontent.com/u/${user.github.providerUserId}`;
-}
 export default async function RepoLayout({ children, params }: {
     children: React.ReactNode;
     params: Promise<{

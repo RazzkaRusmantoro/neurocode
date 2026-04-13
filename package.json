@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "strip-comments": "node ../scripts/strip-js-comments.mjs",
     "remotion:studio": "remotion studio src/index.tsx",
     "remotion:render": "remotion render"
   },
@@ -50,6 +51,7 @@
     "react-syntax-highlighter": "^16.1.0",
     "recharts": "^3.7.0",
     "remotion": "^4.0.427",
+    "resend": "^6.10.0",
     "sigma": "^3.0.2",
     "three": "^0.183.2"
   },
