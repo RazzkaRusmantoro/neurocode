@@ -1,4 +1,4 @@
-![NeuroCode Full Logo](./frontend/public/Full-logo.png)
+![NeuroCode Full Logo](./public/Full-logo.png)
 
 ## Project Overview
 
